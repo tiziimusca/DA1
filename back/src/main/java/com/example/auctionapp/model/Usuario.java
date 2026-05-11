@@ -13,21 +13,26 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "personas")
-public class Persona {
-
+@Table(name = "usuarios")
+public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
-    @Column(length = 100)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(length = 100)
+    @Lob
+    @Column
+    private byte[] dorso_doc;
+    
+    @Lob
+    @Column
+    private byte[] frente_doc;
+
+    @Column(nullable = false)
     private String contraseña;
 
-    @Col
-
-    @Column(length = 100)
+    @Column(nullable = false)
     private Integer personaId;
 }
