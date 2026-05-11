@@ -7,8 +7,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "productos")
 public class Producto {
 
@@ -16,85 +20,25 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
+    @Column
     private LocalDate fecha;
 
     @Column(length = 2)
     private String disponible;
 
     @Column(length = 500)
-    private String descripcionCatalogo;
+    private String descripcionCatalogo = "No posee";
 
     @Column(nullable = false, length = 300)
     private String descripcionCompleta;
 
+    @Column(nullable = false)
     private Integer revisor;
 
+    @Column(nullable = false)
     private Integer duenio;
 
     @Column(length = 30)
     private String seguro;
 
-    public Integer getIdentificador() {
-        return identificador;
-    }
-
-    public void setIdentificador(Integer identificador) {
-        this.identificador = identificador;
-    }
-
-    public LocalDate getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
-    }
-
-    public String getDisponible() {
-        return disponible;
-    }
-
-    public void setDisponible(String disponible) {
-        this.disponible = disponible;
-    }
-
-    public String getDescripcionCatalogo() {
-        return descripcionCatalogo;
-    }
-
-    public void setDescripcionCatalogo(String descripcionCatalogo) {
-        this.descripcionCatalogo = descripcionCatalogo;
-    }
-
-    public String getDescripcionCompleta() {
-        return descripcionCompleta;
-    }
-
-    public void setDescripcionCompleta(String descripcionCompleta) {
-        this.descripcionCompleta = descripcionCompleta;
-    }
-
-    public Integer getRevisor() {
-        return revisor;
-    }
-
-    public void setRevisor(Integer revisor) {
-        this.revisor = revisor;
-    }
-
-    public Integer getDuenio() {
-        return duenio;
-    }
-
-    public void setDuenio(Integer duenio) {
-        this.duenio = duenio;
-    }
-
-    public String getSeguro() {
-        return seguro;
-    }
-
-    public void setSeguro(String seguro) {
-        this.seguro = seguro;
-    }
 }

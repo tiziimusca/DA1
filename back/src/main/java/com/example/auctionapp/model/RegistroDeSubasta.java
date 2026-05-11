@@ -7,8 +7,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "registroDeSubasta")
 public class RegistroDeSubasta {
 
@@ -16,12 +20,16 @@ public class RegistroDeSubasta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
+    @Column(nullable = false)
     private Integer subasta;
 
+    @Column(nullable = false)
     private Integer duenio;
 
+    @Column(nullable = false)
     private Integer producto;
 
+    @Column(nullable = false)
     private Integer cliente;
 
     @Column(nullable = false)
@@ -30,59 +38,4 @@ public class RegistroDeSubasta {
     @Column(nullable = false)
     private BigDecimal comision;
 
-    public Integer getIdentificador() {
-        return identificador;
-    }
-
-    public void setIdentificador(Integer identificador) {
-        this.identificador = identificador;
-    }
-
-    public Integer getSubasta() {
-        return subasta;
-    }
-
-    public void setSubasta(Integer subasta) {
-        this.subasta = subasta;
-    }
-
-    public Integer getDuenio() {
-        return duenio;
-    }
-
-    public void setDuenio(Integer duenio) {
-        this.duenio = duenio;
-    }
-
-    public Integer getProducto() {
-        return producto;
-    }
-
-    public void setProducto(Integer producto) {
-        this.producto = producto;
-    }
-
-    public Integer getCliente() {
-        return cliente;
-    }
-
-    public void setCliente(Integer cliente) {
-        this.cliente = cliente;
-    }
-
-    public BigDecimal getImporte() {
-        return importe;
-    }
-
-    public void setImporte(BigDecimal importe) {
-        this.importe = importe;
-    }
-
-    public BigDecimal getComision() {
-        return comision;
-    }
-
-    public void setComision(BigDecimal comision) {
-        this.comision = comision;
-    }
 }

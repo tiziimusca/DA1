@@ -5,12 +5,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "seguros")
 public class Seguro {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(length = 30)
     private String nroPoliza;
 
@@ -23,35 +28,4 @@ public class Seguro {
     @Column(nullable = false)
     private BigDecimal importe;
 
-    public String getNroPoliza() {
-        return nroPoliza;
-    }
-
-    public void setNroPoliza(String nroPoliza) {
-        this.nroPoliza = nroPoliza;
-    }
-
-    public String getCompania() {
-        return compania;
-    }
-
-    public void setCompania(String compania) {
-        this.compania = compania;
-    }
-
-    public String getPolizaCombinada() {
-        return polizaCombinada;
-    }
-
-    public void setPolizaCombinada(String polizaCombinada) {
-        this.polizaCombinada = polizaCombinada;
-    }
-
-    public BigDecimal getImporte() {
-        return importe;
-    }
-
-    public void setImporte(BigDecimal importe) {
-        this.importe = importe;
-    }
 }

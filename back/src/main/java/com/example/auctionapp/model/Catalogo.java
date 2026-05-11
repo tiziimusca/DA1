@@ -6,8 +6,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "catalogos")
 public class Catalogo {
 
@@ -18,39 +22,10 @@ public class Catalogo {
     @Column(nullable = false, length = 250)
     private String descripcion;
 
+    @Column
     private Integer subasta;
 
+    @Column(nullable = false)
     private Integer responsable;
 
-    public Integer getIdentificador() {
-        return identificador;
-    }
-
-    public void setIdentificador(Integer identificador) {
-        this.identificador = identificador;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public Integer getSubasta() {
-        return subasta;
-    }
-
-    public void setSubasta(Integer subasta) {
-        this.subasta = subasta;
-    }
-
-    public Integer getResponsable() {
-        return responsable;
-    }
-
-    public void setResponsable(Integer responsable) {
-        this.responsable = responsable;
-    }
 }

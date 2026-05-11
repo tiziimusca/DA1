@@ -5,8 +5,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "asistentes")
 public class Asistente {
 
@@ -14,41 +18,13 @@ public class Asistente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
+    @Column(nullable = false)
     private Integer numeroPostor;
 
+    @Column(nullable = false)
     private Integer cliente;
 
+    @Column(nullable = false)
     private Integer subasta;
 
-    public Integer getIdentificador() {
-        return identificador;
-    }
-
-    public void setIdentificador(Integer identificador) {
-        this.identificador = identificador;
-    }
-
-    public Integer getNumeroPostor() {
-        return numeroPostor;
-    }
-
-    public void setNumeroPostor(Integer numeroPostor) {
-        this.numeroPostor = numeroPostor;
-    }
-
-    public Integer getCliente() {
-        return cliente;
-    }
-
-    public void setCliente(Integer cliente) {
-        this.cliente = cliente;
-    }
-
-    public Integer getSubasta() {
-        return subasta;
-    }
-
-    public void setSubasta(Integer subasta) {
-        this.subasta = subasta;
-    }
 }

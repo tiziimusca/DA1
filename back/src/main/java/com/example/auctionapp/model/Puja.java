@@ -7,8 +7,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "pujos")
 public class Puja {
 
@@ -16,8 +20,10 @@ public class Puja {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
+    @Column(nullable = false)
     private Integer asistente;
 
+    @Column(nullable = false)
     private Integer item;
 
     @Column(nullable = false)
@@ -26,43 +32,4 @@ public class Puja {
     @Column(length = 2)
     private String ganador = "no";
 
-    public Integer getIdentificador() {
-        return identificador;
-    }
-
-    public void setIdentificador(Integer identificador) {
-        this.identificador = identificador;
-    }
-
-    public Integer getAsistente() {
-        return asistente;
-    }
-
-    public void setAsistente(Integer asistente) {
-        this.asistente = asistente;
-    }
-
-    public Integer getItem() {
-        return item;
-    }
-
-    public void setItem(Integer item) {
-        this.item = item;
-    }
-
-    public BigDecimal getImporte() {
-        return importe;
-    }
-
-    public void setImporte(BigDecimal importe) {
-        this.importe = importe;
-    }
-
-    public String getGanador() {
-        return ganador;
-    }
-
-    public void setGanador(String ganador) {
-        this.ganador = ganador;
-    }
 }

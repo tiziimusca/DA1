@@ -4,14 +4,20 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "duenios")
 public class Dueno {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
+    @Column
     private Integer numeroPais;
 
     @Column(length = 2)
@@ -20,55 +26,10 @@ public class Dueno {
     @Column(length = 2)
     private String verificacionJudicial;
 
+    @Column
     private Integer calificacionRiesgo;
 
+    @Column(nullable = false)
     private Integer verificador;
 
-    public Integer getIdentificador() {
-        return identificador;
-    }
-
-    public void setIdentificador(Integer identificador) {
-        this.identificador = identificador;
-    }
-
-    public Integer getNumeroPais() {
-        return numeroPais;
-    }
-
-    public void setNumeroPais(Integer numeroPais) {
-        this.numeroPais = numeroPais;
-    }
-
-    public String getVerificacionFinanciera() {
-        return verificacionFinanciera;
-    }
-
-    public void setVerificacionFinanciera(String verificacionFinanciera) {
-        this.verificacionFinanciera = verificacionFinanciera;
-    }
-
-    public String getVerificacionJudicial() {
-        return verificacionJudicial;
-    }
-
-    public void setVerificacionJudicial(String verificacionJudicial) {
-        this.verificacionJudicial = verificacionJudicial;
-    }
-
-    public Integer getCalificacionRiesgo() {
-        return calificacionRiesgo;
-    }
-
-    public void setCalificacionRiesgo(Integer calificacionRiesgo) {
-        this.calificacionRiesgo = calificacionRiesgo;
-    }
-
-    public Integer getVerificador() {
-        return verificador;
-    }
-
-    public void setVerificador(Integer verificador) {
-        this.verificador = verificador;
-    }
 }

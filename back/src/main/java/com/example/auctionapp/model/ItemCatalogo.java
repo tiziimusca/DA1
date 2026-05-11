@@ -7,8 +7,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "itemsCatalogo")
 public class ItemCatalogo {
 
@@ -16,8 +20,10 @@ public class ItemCatalogo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
+    @Column(nullable = false)
     private Integer catalogo;
 
+    @Column(nullable = false)
     private Integer producto;
 
     @Column(nullable = false)
@@ -29,51 +35,4 @@ public class ItemCatalogo {
     @Column(length = 2)
     private String subastado;
 
-    public Integer getIdentificador() {
-        return identificador;
-    }
-
-    public void setIdentificador(Integer identificador) {
-        this.identificador = identificador;
-    }
-
-    public Integer getCatalogo() {
-        return catalogo;
-    }
-
-    public void setCatalogo(Integer catalogo) {
-        this.catalogo = catalogo;
-    }
-
-    public Integer getProducto() {
-        return producto;
-    }
-
-    public void setProducto(Integer producto) {
-        this.producto = producto;
-    }
-
-    public BigDecimal getPrecioBase() {
-        return precioBase;
-    }
-
-    public void setPrecioBase(BigDecimal precioBase) {
-        this.precioBase = precioBase;
-    }
-
-    public BigDecimal getComision() {
-        return comision;
-    }
-
-    public void setComision(BigDecimal comision) {
-        this.comision = comision;
-    }
-
-    public String getSubastado() {
-        return subastado;
-    }
-
-    public void setSubastado(String subastado) {
-        this.subastado = subastado;
-    }
 }
