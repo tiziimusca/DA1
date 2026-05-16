@@ -25,6 +25,6 @@ public class Sector {
     @Column(length = 10)
     private String codigoSector;
 
-+   @Column(nullable = false)
+    @Column(nullable = false)
     private Integer responsableSector;
 }

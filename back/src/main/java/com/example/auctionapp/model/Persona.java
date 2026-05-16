@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,14 +19,18 @@ public class Persona {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
-    @Column(length = 100)
-    private String email;
+    @Column(length = 20, nullable = false)
+    private String documento;
 
-    @Column(length = 100)
-    private String contraseña;
+    @Column(length = 150, nullable = false)
+    private String nombre;
 
-    @Col
+    @Column(length = 250)
+    private String direccion;
 
-    @Column(length = 100)
-    private Integer personaId;
+    @Column(length = 15)
+    private String estado;
+
+    @Column(columnDefinition = "varbinary(max)")
+    private byte[] foto;
 }

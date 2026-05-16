@@ -5,6 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import lombok.Getter;
@@ -40,5 +43,13 @@ public class Producto {
 
     @Column(length = 30)
     private String seguro;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "revisor", insertable = false, updatable = false)
+    private Empleado revisorEmpleado;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "duenio", insertable = false, updatable = false)
+    private Dueno duenioEntity;
 
 }

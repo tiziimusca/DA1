@@ -8,6 +8,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import jakarta.persistence.Column;
 
 @Entity
 @Getter

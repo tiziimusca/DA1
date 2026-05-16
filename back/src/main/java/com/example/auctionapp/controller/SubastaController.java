@@ -1,11 +1,15 @@
 package com.example.auctionapp.controller;
 
+import com.example.auctionapp.dto.SubastaDTO;
 import com.example.auctionapp.model.Subasta;
 import com.example.auctionapp.service.SubastaService;
+import com.example.auctionapp.util.MapperUtil;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/subastas")
@@ -18,36 +22,39 @@ public class SubastaController {
     }
 
     @GetMapping
-    public List<Subasta> listar() {
-        return subastaService.obtenerTodas();
+    public List<SubastaDTO> listar() {
+        return subastaService.obtenerTodas().stream().map(MapperUtil::toSubastaDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/abiertas")
-    public List<Subasta> obtenerAbiertas() {
-        return subastaService.obtenerAbiertas();
+    public List<SubastaDTO> obtenerAbiertas() {
+        return subastaService.obtenerAbiertas().stream().map(MapperUtil::toSubastaDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/proximas")
-    public List<Subasta> obtenerProximas() {
-        return subastaService.obtenerProximas();
+    public List<SubastaDTO> obtenerProximas() {
+        return subastaService.obtenerProximas().stream().map(MapperUtil::toSubastaDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Subasta> buscar(@PathVariable Integer id) {
+    public ResponseEntity<SubastaDTO> buscar(@PathVariable Integer id) {
         return subastaService.obtenerPorId(id)
+                .map(MapperUtil::toSubastaDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Subasta crear(@RequestBody Subasta subasta) {
-        return subastaService.crear(subasta);
+    public SubastaDTO crear(@Valid @RequestBody SubastaDTO subastaDto) {
+        Subasta subasta = MapperUtil.toSubastaEntity(subastaDto);
+        return MapperUtil.toSubastaDTO(subastaService.crear(subasta));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Subasta> actualizar(@PathVariable Integer id, @RequestBody Subasta subasta) {
+    public ResponseEntity<SubastaDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody SubastaDTO subastaDto) {
         try {
-            return ResponseEntity.ok(subastaService.actualizar(id, subasta));
+            Subasta subasta = MapperUtil.toSubastaEntity(subastaDto);
+            return ResponseEntity.ok(MapperUtil.toSubastaDTO(subastaService.actualizar(id, subasta)));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

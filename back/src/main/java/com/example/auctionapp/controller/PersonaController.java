@@ -2,6 +2,9 @@ package com.example.auctionapp.controller;
 
 import com.example.auctionapp.model.Persona;
 import com.example.auctionapp.service.PersonaService;
+import com.example.auctionapp.dto.PersonaDTO;
+import com.example.auctionapp.util.MapperUtil;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,33 +14,41 @@ import java.util.List;
 @RequestMapping("/api/personas")
 public class PersonaController {
 
-    private final PersonaRepository personaRepository;
+    private final PersonaService personaService;
 
     public PersonaController(PersonaService personaService) {
         this.personaService = personaService;
     }
 
     @GetMapping
-    public List<Persona> listar() {
-        return personaService.obtenerTodas();
+    public List<PersonaDTO> listar() {
+        return personaService.obtenerTodas()
+                .stream()
+                .map(MapperUtil::toPersonaDTO)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Persona> buscar(@PathVariable Integer id) {
+    public ResponseEntity<PersonaDTO> buscar(@PathVariable Integer id) {
         return personaService.obtenerPorId(id)
+                .map(MapperUtil::toPersonaDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Persona crear(@RequestBody Persona persona) {
-        return personaService.crear(persona);
+    public PersonaDTO crear(@Valid @RequestBody PersonaDTO personaDto) {
+        Persona p = MapperUtil.toPersonaEntity(personaDto);
+        Persona saved = personaService.crear(p);
+        return MapperUtil.toPersonaDTO(saved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Persona> actualizar(@PathVariable Integer id, @RequestBody Persona persona) {
+    public ResponseEntity<PersonaDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody PersonaDTO personaDto) {
         try {
-            return ResponseEntity.ok(personaService.actualizar(id, persona));
+            Persona p = MapperUtil.toPersonaEntity(personaDto);
+            Persona updated = personaService.actualizar(id, p);
+            return ResponseEntity.ok(MapperUtil.toPersonaDTO(updated));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

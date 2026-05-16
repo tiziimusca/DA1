@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,19 +20,20 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
+    @Email
     @Column(nullable = false, unique = true)
     private String email;
 
     @Lob
     @Column
     private byte[] dorso_doc;
-    
+
     @Lob
     @Column
     private byte[] frente_doc;
 
-    @Column(nullable = false)
-    private String contraseña;
+    @Column(name = "contraseña", nullable = false)
+    private String password;
 
     @Column(nullable = false)
     private Integer personaId;
