@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,6 +27,7 @@ public class Sector {
     @Column(length = 10)
     private String codigoSector;
 
-    @Column(nullable = false)
-    private Integer responsableSector;
+    @OneToOne
+    @JoinColumn(name = "responsableSector", referencedColumnName = "identificador", nullable = false)
+    private Empleado responsableSector;
 }

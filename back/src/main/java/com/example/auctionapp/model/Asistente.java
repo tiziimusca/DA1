@@ -2,9 +2,12 @@ package com.example.auctionapp.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,10 +25,12 @@ public class Asistente {
     @Column(nullable = false)
     private Integer numeroPostor;
 
-    @Column(nullable = false)
-    private Integer cliente;
+    @OneToOne
+    @JoinColumn(name = "cliente", referencedColumnName = "identificador", nullable = false)
+    private Cliente cliente;
 
-    @Column(nullable = false)
-    private Integer subasta;
+    @OneToOne
+    @JoinColumn(name = "subasta", referencedColumnName = "identificador", nullable = false)
+    private Subasta subasta;
 
 }

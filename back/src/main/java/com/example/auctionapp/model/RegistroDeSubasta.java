@@ -2,9 +2,12 @@ package com.example.auctionapp.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.Getter;
@@ -20,17 +23,21 @@ public class RegistroDeSubasta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
-    @Column(nullable = false)
-    private Integer subasta;
+    @OneToOne
+    @JoinColumn(name = "subasta", referencedColumnName = "identificador", nullable = false)
+    private Subasta subasta;
 
-    @Column(nullable = false)
-    private Integer duenio;
+    @OneToOne
+    @JoinColumn(name = "duenio", referencedColumnName = "identificador", nullable = false)
+    private Dueno duenio;
 
-    @Column(nullable = false)
-    private Integer producto;
+    @OneToOne
+    @JoinColumn(name = "producto", referencedColumnName = "identificador", nullable = false)
+    private Producto producto;
 
-    @Column(nullable = false)
-    private Integer cliente;
+    @OneToOne
+    @JoinColumn(name = "cliente", referencedColumnName = "identificador", nullable = false)
+    private Cliente cliente;
 
     @Column(nullable = false)
     private BigDecimal importe;

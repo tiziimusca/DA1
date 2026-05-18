@@ -1,0 +1,36 @@
+package com.example.auctionapp.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class MetodoPagoChequeResponseDTO {
+
+    private Integer id;
+    private String tipo = "cheque";
+    private MetodoPagoChequeDatosDTO datos;
+    private String estado;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MetodoPagoChequeDatosDTO {
+        private String numeroCheque; // Enmascarado: ********1564
+        private MetodoPagoChequePhotosDTO fotos;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MetodoPagoChequePhotosDTO {
+        private String frente; // URL o base64
+        private String dorso;  // URL o base64
+    }
+}

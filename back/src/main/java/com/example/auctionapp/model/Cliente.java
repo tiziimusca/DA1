@@ -3,11 +3,13 @@ package com.example.auctionapp.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 
 @Entity
 @Getter
@@ -16,11 +18,16 @@ import jakarta.persistence.GenerationType;
 public class Cliente {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
-    @Column
-    private Integer numeroPais;
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "identificador", referencedColumnName = "identificador", nullable = false)
+    private Persona persona;
+
+    @ManyToOne
+    @JoinColumn(name = "numeroPais", referencedColumnName = "numero")
+    private Pais numeroPais;
 
     @Column(length = 2)
     private String admitido;
@@ -28,7 +35,8 @@ public class Cliente {
     @Column(length = 10)
     private String categoria;
 
-    @Column(nullable = false)
-    private Integer verificador;
+    @ManyToOne
+    @JoinColumn(name = "verificador", referencedColumnName = "identificador", nullable = false)
+    private Empleado verificador;
 
 }

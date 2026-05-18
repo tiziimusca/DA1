@@ -44,12 +44,12 @@ public class Producto {
     @Column(length = 30)
     private String seguro;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "revisor", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "revisor", referencedColumnName = "identificador", insertable = false, updatable = false, nullable = false)
     private Empleado revisorEmpleado;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "duenio", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "duenio", referencedColumnName = "identificador", insertable = false, updatable = false, nullable = false)
     private Dueno duenioEntity;
 
 }
