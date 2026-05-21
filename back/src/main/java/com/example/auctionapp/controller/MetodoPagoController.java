@@ -7,7 +7,6 @@ import com.example.auctionapp.dto.*;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/clientes/me/metodos-pago")
-@PreAuthorize("isAuthenticated()")
 public class MetodoPagoController {
 
     private final MetodoPagoBancoService bancoService;
@@ -38,11 +36,10 @@ public class MetodoPagoController {
 
     @PostMapping
     public ResponseEntity<?> crearMetodoPago(
-            @RequestHeader("Authorization") String token,
+            @RequestParam Integer clienteId,
             @Valid @RequestBody CrearMetodoPagoRequestDTO request) {
-        
+
         try {
-            Integer clienteId = extraerClienteIdDelToken(token);
             String tipo = request.getTipo();
             JsonNode datos = request.getDatos();
 
@@ -69,7 +66,8 @@ public class MetodoPagoController {
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Faltan datos obligatorios para el método seleccionado o el formato es incorrecto: " + e.getMessage());
+                    .body("Faltan datos obligatorios para el método seleccionado o el formato es incorrecto: "
+                            + e.getMessage());
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
                     .body("Error: " + e.getMessage());
@@ -78,9 +76,8 @@ public class MetodoPagoController {
 
     @GetMapping
     public ResponseEntity<List<Object>> listarMetodosPago(
-            @RequestHeader("Authorization") String token) {
-        
-        Integer clienteId = extraerClienteIdDelToken(token);
+            @RequestParam Integer clienteId) {
+
         List<Object> todosMétodos = new ArrayList<>();
 
         todosMétodos.addAll(bancoService.obtenerPorCliente(clienteId));
@@ -93,9 +90,7 @@ public class MetodoPagoController {
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerMetodoPago(
             @PathVariable Integer id,
-            @RequestHeader("Authorization") String token) {
-        
-        Integer clienteId = extraerClienteIdDelToken(token);
+            @RequestParam Integer clienteId) {
 
         // Buscar en banco
         var banco = bancoService.obtenerPorIdYCliente(id, clienteId);
@@ -120,34 +115,29 @@ public class MetodoPagoController {
 
     @GetMapping("/tipo/banco")
     public ResponseEntity<List<MetodoPagoBancoResponseDTO>> obtenerMetodosBanco(
-            @RequestHeader("Authorization") String token) {
-        
-        Integer clienteId = extraerClienteIdDelToken(token);
+            @RequestParam Integer clienteId) {
+
         return ResponseEntity.ok(bancoService.obtenerPorCliente(clienteId));
     }
 
     @GetMapping("/tipo/tarjeta")
     public ResponseEntity<List<MetodoPagoTarjetaResponseDTO>> obtenerMetodosTarjeta(
-            @RequestHeader("Authorization") String token) {
-        
-        Integer clienteId = extraerClienteIdDelToken(token);
+            @RequestParam Integer clienteId) {
+
         return ResponseEntity.ok(tarjetaService.obtenerPorCliente(clienteId));
     }
 
     @GetMapping("/tipo/cheque")
     public ResponseEntity<List<MetodoPagoChequeResponseDTO>> obtenerMetodosCheque(
-            @RequestHeader("Authorization") String token) {
-        
-        Integer clienteId = extraerClienteIdDelToken(token);
+            @RequestParam Integer clienteId) {
+
         return ResponseEntity.ok(chequeService.obtenerPorCliente(clienteId));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarMetodoPago(
             @PathVariable Integer id,
-            @RequestHeader("Authorization") String token) {
-        
-        Integer clienteId = extraerClienteIdDelToken(token);
+            @RequestParam Integer clienteId) {
 
         try {
             // Intentar eliminar de banco
@@ -177,17 +167,5 @@ public class MetodoPagoController {
         }
 
         return ResponseEntity.notFound().build();
-    }
-
-    private Integer extraerClienteIdDelToken(String token) {
-        // TODO: Implementar la lógica para extraer el clienteId del token JWT
-        // Este es un placeholder que debería usar tu servicio de autenticación
-        // Ejemplo:
-        // String tokenLimpio = token.replace("Bearer ", "");
-        // Claims claims = jwtUtil.getAllClaimsFromToken(tokenLimpio);
-        // return claims.get("clienteId", Integer.class);
-        
-        // Por ahora, retorna un valor de ejemplo
-        throw new RuntimeException("Implementar extracción de clienteId del token JWT");
     }
 }
