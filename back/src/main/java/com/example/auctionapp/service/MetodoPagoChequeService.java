@@ -10,9 +10,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
 
 @Service
 public class MetodoPagoChequeService {
@@ -120,13 +117,11 @@ public class MetodoPagoChequeService {
         dto.setId(cheque.getId());
         dto.setEstado(cheque.getEstado());
 
-        MetodoPagoChequeResponseDTO.MetodoPagoChequePhotosDTO fotos = 
-            new MetodoPagoChequeResponseDTO.MetodoPagoChequePhotosDTO();
+        MetodoPagoChequeResponseDTO.MetodoPagoChequePhotosDTO fotos = new MetodoPagoChequeResponseDTO.MetodoPagoChequePhotosDTO();
         fotos.setFrente(Base64.getEncoder().encodeToString(cheque.getFotoFrente()));
         fotos.setDorso(Base64.getEncoder().encodeToString(cheque.getFotoDorso()));
 
-        MetodoPagoChequeResponseDTO.MetodoPagoChequeDatosDTO datos = 
-            new MetodoPagoChequeResponseDTO.MetodoPagoChequeDatosDTO();
+        MetodoPagoChequeResponseDTO.MetodoPagoChequeDatosDTO datos = new MetodoPagoChequeResponseDTO.MetodoPagoChequeDatosDTO();
         datos.setNumeroCheque(enmascararCheque(cheque.getNumeroCheque()));
         datos.setFotos(fotos);
 

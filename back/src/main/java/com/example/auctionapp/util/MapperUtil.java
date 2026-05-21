@@ -9,6 +9,7 @@ import com.example.auctionapp.model.Pais;
 import com.example.auctionapp.model.Persona;
 import com.example.auctionapp.model.Producto;
 import com.example.auctionapp.model.Subasta;
+import com.example.auctionapp.model.Subastador;
 import com.example.auctionapp.model.Usuario;
 
 public class MapperUtil {
@@ -47,7 +48,13 @@ public class MapperUtil {
         subasta.setFecha(dto.getFecha());
         subasta.setHora(dto.getHora());
         subasta.setEstado(dto.getEstado());
-        subasta.setSubastador(dto.getSubastador());
+        if (dto.getSubastador() != null) {
+            Subastador s = new Subastador();
+            s.setIdentificador(dto.getSubastador());
+            subasta.setSubastador(s);
+        } else {
+            subasta.setSubastador(null);
+        }
         subasta.setUbicacion(dto.getUbicacion());
         subasta.setCapacidadAsistentes(dto.getCapacidadAsistentes());
         subasta.setTieneDeposito(dto.getTieneDeposito());
@@ -64,7 +71,7 @@ public class MapperUtil {
         dto.setFecha(subasta.getFecha());
         dto.setHora(subasta.getHora());
         dto.setEstado(subasta.getEstado());
-        dto.setSubastador(subasta.getSubastador());
+        dto.setSubastador(subasta.getSubastador().getIdentificador());
         dto.setUbicacion(subasta.getUbicacion());
         dto.setCapacidadAsistentes(subasta.getCapacidadAsistentes());
         dto.setTieneDeposito(subasta.getTieneDeposito());

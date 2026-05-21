@@ -18,6 +18,8 @@ public class Seguro {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer identificador;
+
     @Column(length = 30)
     private String nroPoliza;
 
