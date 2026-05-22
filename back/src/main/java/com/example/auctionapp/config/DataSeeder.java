@@ -1,0 +1,325 @@
+package com.example.auctionapp.config;
+
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.sql.PreparedStatement;
+import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+@Profile("!railway")
+public class DataSeeder implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public DataSeeder(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    @Transactional
+    public void run(String... args) {
+        if (hasSeedData()) {
+            return;
+        }
+
+        log.info("Creando datos iniciales de prueba con SQL nativo");
+
+        jdbcTemplate.update(
+                "INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)",
+                "Argentina", "AR", "Buenos Aires", "Argentina", "Español");
+        jdbcTemplate.update(
+                "INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)",
+                "Chile", "CL", "Santiago", "Chilena", "Español");
+
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-1001", "Usuario Demo", "Calle 1", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-3001", "Dueno Demo 1", "Calle 3", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-3002", "Dueno Demo 2", "Calle 32", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-3003", "Dueno Demo 3", "Calle 33", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-2001", "Cliente Demo 1", "Calle 2", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-2002", "Cliente Demo 2", "Calle 22", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-2003", "Cliente Demo 3", "Calle 23", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-4001", "Subastador Demo 1", "Calle 4", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-4002", "Subastador Demo 2", "Calle 42", "Activo");
+        jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                "DNI-4003", "Subastador Demo 3", "Calle 43", "Activo");
+
+        Integer personaUsuarioId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-1001");
+        Integer duenoUnoId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-3001");
+        Integer duenoDosId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-3002");
+        Integer duenoTresId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-3003");
+        Integer clienteUnoId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-2001");
+        Integer clienteDosId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-2002");
+        Integer clienteTresId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-2003");
+        Integer subastadorUnoId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-4001");
+        Integer subastadorDosId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-4002");
+        Integer subastadorTresId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-4003");
+
+        jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
+                "usuario.demo@auctionapp.test", "demo1234", personaUsuarioId);
+
+        jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Verificador Demo", 100);
+        jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 1", 200);
+        jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 2", 201);
+        jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 3", 202);
+
+        Integer empleadoVerificadorId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                "Verificador Demo");
+        Integer responsableUnoId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                "Responsable Catalogo 1");
+        Integer responsableDosId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                "Responsable Catalogo 2");
+        Integer responsableTresId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                "Responsable Catalogo 3");
+
+        jdbcTemplate.update("INSERT INTO sectores (nombre_sector, codigo_sector, responsable_sector) VALUES (?, ?, ?)",
+                "Catalogo y Operaciones", "CAT-01", responsableUnoId);
+        Integer sectorId = getInteger("SELECT identificador FROM sectores WHERE codigo_sector = ?", "CAT-01");
+        jdbcTemplate.update("UPDATE empleados SET sector = ? WHERE identificador = ?", sectorId, responsableUnoId);
+
+        Integer argentinaId = getInteger("SELECT numero FROM paises WHERE nombre_corto = ?", "AR");
+        Integer chileId = getInteger("SELECT numero FROM paises WHERE nombre_corto = ?", "CL");
+
+        jdbcTemplate.update(
+                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                duenoUnoId, argentinaId, "SI", "SI", 2, empleadoVerificadorId);
+        jdbcTemplate.update(
+                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                duenoDosId, chileId, "SI", "SI", 3, empleadoVerificadorId);
+        jdbcTemplate.update(
+                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                duenoTresId, argentinaId, "SI", "NO", 4, empleadoVerificadorId);
+
+        jdbcTemplate.update(
+                "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
+                clienteUnoId, chileId, "SI", "A", empleadoVerificadorId);
+        jdbcTemplate.update(
+                "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
+                clienteDosId, argentinaId, "SI", "B", empleadoVerificadorId);
+        jdbcTemplate.update(
+                "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
+                clienteTresId, chileId, "SI", "C", empleadoVerificadorId);
+
+        jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                subastadorUnoId, "SUB-0001", "Centro");
+        jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                subastadorDosId, "SUB-0002", "Norte");
+        jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                subastadorTresId, "SUB-0003", "Sur");
+
+        jdbcTemplate.update("INSERT INTO seguros (nro_poliza, compania, poliza_combinada, importe) VALUES (?, ?, ?, ?)",
+                "POL-0001", "Seguros Demo SA 1", "SI", new BigDecimal("1250.00"));
+        jdbcTemplate.update("INSERT INTO seguros (nro_poliza, compania, poliza_combinada, importe) VALUES (?, ?, ?, ?)",
+                "POL-0002", "Seguros Demo SA 2", "SI", new BigDecimal("1350.00"));
+        jdbcTemplate.update("INSERT INTO seguros (nro_poliza, compania, poliza_combinada, importe) VALUES (?, ?, ?, ?)",
+                "POL-0003", "Seguros Demo SA 3", "NO", new BigDecimal("1450.00"));
+
+        seedAuction(
+                LocalDate.now().minusDays(5),
+                LocalTime.of(19, 0),
+                "finalizada",
+                subastadorUnoId,
+                "Salon antiguo",
+                40,
+                "SI",
+                "SI",
+                "arte",
+                "Catalogo pasado",
+                responsableUnoId,
+                new ProductSpec(
+                        "Pintura clasica europea",
+                        "Pintura del siglo XIX",
+                        empleadoVerificadorId,
+                        duenoUnoId,
+                        "POL-0001",
+                        new BigDecimal("3000.00"),
+                        new BigDecimal("250.00"),
+                        "NO",
+                        new String[] {
+                                "https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&w=900&q=80",
+                                "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=900&q=80"
+                        }),
+                new BidSpec(clienteUnoId, 1, new BigDecimal("3550.00"), "SI"));
+
+        seedAuction(
+                LocalDate.now().plusDays(2),
+                LocalTime.of(18, 30),
+                "programada",
+                subastadorDosId,
+                "Salon principal",
+                50,
+                "SI",
+                "NO",
+                "general",
+                "Catalogo futuro uno",
+                responsableDosId,
+                new ProductSpec(
+                        "Reloj de pared",
+                        "Reloj antiguo de pared",
+                        empleadoVerificadorId,
+                        duenoDosId,
+                        "POL-0002",
+                        new BigDecimal("5000.00"),
+                        new BigDecimal("500.00"),
+                        "NO",
+                        new String[] {
+                                "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=900&q=80",
+                                "https://images.unsplash.com/photo-1507646227500-4d389b0012be?auto=format&fit=crop&w=900&q=80"
+                        }),
+                new BidSpec(clienteDosId, 2, new BigDecimal("6200.00"), "SI"));
+
+        seedAuction(
+                LocalDate.now().plusDays(14),
+                LocalTime.of(20, 0),
+                "programada",
+                subastadorTresId,
+                "Galeria norte",
+                60,
+                "SI",
+                "NO",
+                "coleccion",
+                "Catalogo futuro dos",
+                responsableTresId,
+                new ProductSpec(
+                        "Bicicleta clasica",
+                        "Bicicleta restaurada",
+                        empleadoVerificadorId,
+                        duenoTresId,
+                        "POL-0003",
+                        new BigDecimal("900.00"),
+                        new BigDecimal("100.00"),
+                        "NO",
+                        new String[] {
+                                "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=80",
+                                "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=80"
+                        }),
+                new BidSpec(clienteTresId, 3, new BigDecimal("1250.00"), "SI"));
+
+        jdbcTemplate.update(
+                "INSERT INTO metodos_pago_banco (cliente_id, nombre_titular, dni_titular, nombre_banco, numero_cuenta, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                clienteUnoId, "Cliente Demo 1", 12345678, "Banco Demo", "000123456789", "aprobado",
+                System.currentTimeMillis());
+
+        jdbcTemplate.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO metodos_pago_cheque (cliente_id, numero_cheque, foto_frente, foto_dorso, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?)");
+            statement.setInt(1, clienteUnoId);
+            statement.setInt(2, 1001);
+            statement.setBytes(3, "cheque-frente".getBytes(StandardCharsets.UTF_8));
+            statement.setBytes(4, "cheque-dorso".getBytes(StandardCharsets.UTF_8));
+            statement.setString(5, "en_revision");
+            statement.setLong(6, System.currentTimeMillis());
+            return statement;
+        });
+
+        jdbcTemplate.update(
+                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                clienteUnoId, "Cliente Demo 1", 4111111111111111L, "12/28", "123", "aprobado",
+                System.currentTimeMillis());
+
+        log.info("Datos iniciales creados correctamente");
+    }
+
+    private boolean hasSeedData() {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM personas", Integer.class);
+        return count != null && count > 0;
+    }
+
+    private Integer getInteger(String sql, Object... args) {
+        Integer value = jdbcTemplate.queryForObject(sql, Integer.class, args);
+        if (value == null) {
+            throw new IllegalStateException("No se encontro el valor esperado para: " + sql);
+        }
+        return value;
+    }
+
+    private void seedAuction(
+            LocalDate fecha,
+            LocalTime hora,
+            String estado,
+            Integer subastadorId,
+            String ubicacion,
+            Integer capacidadAsistentes,
+            String tieneDeposito,
+            String seguridadPropia,
+            String categoria,
+            String catalogoDescripcion,
+            Integer responsableId,
+            ProductSpec product,
+            BidSpec bid) {
+
+        jdbcTemplate.update(
+                "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                fecha, Time.valueOf(hora), estado, subastadorId, ubicacion, capacidadAsistentes, tieneDeposito,
+                seguridadPropia, categoria);
+        Integer subastaId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?", ubicacion);
+
+        jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
+                catalogoDescripcion, subastaId, responsableId);
+        Integer catalogoId = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
+                catalogoDescripcion);
+
+        jdbcTemplate.update(
+                "INSERT INTO productos (fecha, disponible, descripcion_catalogo, descripcion_completa, revisor, duenio, seguro) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                LocalDate.now(), "SI", product.descripcionCatalogo(), product.descripcionCompleta(),
+                product.revisorId(), product.duenioId(), product.seguro());
+        Integer productoId = getInteger("SELECT identificador FROM productos WHERE descripcion_completa = ?",
+                product.descripcionCompleta());
+
+        jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
+                product.photoUrls()[0].getBytes(StandardCharsets.UTF_8));
+        jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
+                product.photoUrls()[1].getBytes(StandardCharsets.UTF_8));
+
+        jdbcTemplate.update(
+                "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
+                catalogoId, productoId, product.precioBase(), product.comision(), product.subastado());
+        Integer itemId = getInteger("SELECT identificador FROM items_catalogo WHERE producto = ?", productoId);
+
+        jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)",
+                bid.numeroPostor(), bid.clienteId(), subastaId);
+        Integer asistenteId = getInteger("SELECT identificador FROM asistentes WHERE cliente = ? AND subasta = ?",
+                bid.clienteId(), subastaId);
+
+        jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
+                asistenteId, itemId, bid.importe(), bid.ganador());
+
+        jdbcTemplate.update(
+                "INSERT INTO registro_de_subasta (subasta, duenio, producto, cliente, importe, comision) VALUES (?, ?, ?, ?, ?, ?)",
+                subastaId, product.duenioId(), productoId, bid.clienteId(), bid.importe(), product.comision());
+    }
+
+    private record ProductSpec(
+            String descripcionCatalogo,
+            String descripcionCompleta,
+            Integer revisorId,
+            Integer duenioId,
+            String seguro,
+            BigDecimal precioBase,
+            BigDecimal comision,
+            String subastado,
+            String[] photoUrls) {
+    }
+
+    private record BidSpec(Integer clienteId, Integer numeroPostor, BigDecimal importe, String ganador) {
+    }
+}
