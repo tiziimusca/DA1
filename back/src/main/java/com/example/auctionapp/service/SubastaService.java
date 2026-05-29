@@ -1,9 +1,20 @@
 package com.example.auctionapp.service;
 
+import com.example.auctionapp.dto.SubastaActivaDTO;
+import com.example.auctionapp.model.Catalogo;
+import com.example.auctionapp.model.Foto;
+import com.example.auctionapp.model.ItemCatalogo;
+import com.example.auctionapp.model.Producto;
 import com.example.auctionapp.model.Subasta;
+import com.example.auctionapp.repository.CatalogoRepository;
+import com.example.auctionapp.repository.FotoRepository;
+import com.example.auctionapp.repository.ItemCatalogoRepository;
 import com.example.auctionapp.repository.SubastaRepository;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,9 +22,20 @@ import java.util.Optional;
 public class SubastaService {
 
     private final SubastaRepository subastaRepository;
+    private final CatalogoRepository catalogoRepository;
+    private final ItemCatalogoRepository itemCatalogoRepository;
+    private final FotoRepository fotoRepository;
 
-    public SubastaService(SubastaRepository subastaRepository) {
+    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
+    public SubastaService(SubastaRepository subastaRepository,
+            CatalogoRepository catalogoRepository,
+            ItemCatalogoRepository itemCatalogoRepository,
+            FotoRepository fotoRepository) {
         this.subastaRepository = subastaRepository;
+        this.catalogoRepository = catalogoRepository;
+        this.itemCatalogoRepository = itemCatalogoRepository;
+        this.fotoRepository = fotoRepository;
     }
 
     public List<Subasta> obtenerTodas() {
@@ -28,6 +50,12 @@ public class SubastaService {
         return subastaRepository.findAll()
                 .stream()
                 .filter(s -> "abierta".equalsIgnoreCase(s.getEstado()))
+                .toList();
+    }
+
+    public List<SubastaActivaDTO> obtenerActivas() {
+        return obtenerAbiertas().stream()
+                .map(this::toSubastaActivaDTO)
                 .toList();
     }
 
@@ -66,4 +94,50 @@ public class SubastaService {
     public void eliminar(Integer id) {
         subastaRepository.deleteById(id);
     }
+
+    private SubastaActivaDTO toSubastaActivaDTO(Subasta subasta) {
+        Catalogo catalogo = catalogoRepository.findBySubasta_Identificador(subasta.getIdentificador()).orElse(null);
+        ItemCatalogo item = itemCatalogoRepository
+                .findFirstByCatalogo_IdentificadorAndSubastadoIgnoreCaseOrderByIdentificadorAsc(
+                        catalogo.getIdentificador(), "no")
+                .orElse(null);
+
+        Producto producto = item.getProducto();
+
+        SubastaActivaDTO dto = new SubastaActivaDTO();
+        dto.setId(subasta.getIdentificador());
+        dto.setTituloProducto(producto.getDescripcionCatalogo());
+        dto.setCategoria(subasta.getCategoria());
+        dto.setFecha(formatFecha(subasta));
+        dto.setPrecioBase(item.getPrecioBase());
+        dto.setMoneda("USD");
+        dto.setImagen(primerUrlImagen(item));
+        return dto;
+    }
+
+    private String primerUrlImagen(ItemCatalogo item) {
+        if (item == null || item.getProducto() == null) {
+            return null;
+        }
+
+        List<Foto> fotos = fotoRepository
+                .findByProducto_IdentificadorOrderByIdentificadorAsc(item.getProducto().getIdentificador());
+        if (fotos == null || fotos.isEmpty()) {
+            return null;
+        }
+
+        return "/api/fotos/" + fotos.get(0).getIdentificador();
+    }
+
+    private String formatFecha(Subasta subasta) {
+        if (subasta.getFecha() == null) {
+            return null;
+        }
+
+        LocalDateTime fechaHora = subasta.getHora() == null
+                ? subasta.getFecha().atStartOfDay()
+                : subasta.getFecha().atTime(subasta.getHora());
+        return fechaHora.format(FECHA_FORMATTER);
+    }
+
 }

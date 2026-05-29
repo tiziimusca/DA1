@@ -1,5 +1,6 @@
 package com.example.auctionapp.controller;
 
+import com.example.auctionapp.dto.SubastaActivaDTO;
 import com.example.auctionapp.dto.SubastaDTO;
 import com.example.auctionapp.model.Subasta;
 import com.example.auctionapp.service.SubastaService;
@@ -29,6 +30,11 @@ public class SubastaController {
     @GetMapping("/abiertas")
     public List<SubastaDTO> obtenerAbiertas() {
         return subastaService.obtenerAbiertas().stream().map(MapperUtil::toSubastaDTO).collect(Collectors.toList());
+    }
+
+    @GetMapping("/activas")
+    public List<SubastaActivaDTO> obtenerActivas() {
+        return subastaService.obtenerActivas();
     }
 
     @GetMapping("/proximas")
