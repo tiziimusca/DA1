@@ -46,6 +46,7 @@ const guestAuctions = [
     id: '1',
     title: 'Reloj Rolex',
     subtitle: 'Termina hoy, 20:00',
+    description: 'Pieza de coleccionista excepcional en perfecto estado.',
     category: 'PLATINO',
     image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80',
     cta: 'Ver catálogo',
@@ -54,6 +55,7 @@ const guestAuctions = [
     id: '2',
     title: 'Televisor 115"',
     subtitle: 'Termina el 20 Abril, 18:00',
+    description: 'Pantalla premium con imagen de alta definición y gran formato.',
     category: 'ORO',
     image: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=900&q=80',
     cta: 'Ver catálogo',
@@ -62,6 +64,7 @@ const guestAuctions = [
     id: '3',
     title: 'Nike Air Max',
     subtitle: 'Termina 12 de Abril, 18:30',
+    description: 'Zapatillas deportivas de edición moderna y gran comodidad.',
     category: 'COMUN',
     image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
     cta: 'Ver catálogo',
@@ -70,6 +73,7 @@ const guestAuctions = [
     id: '4',
     title: 'Radio antigua',
     subtitle: 'Termina mañana, 22:00',
+    description: 'Objeto vintage restaurado con diseño y sonido clásico.',
     category: 'ESPECIAL',
     image: 'https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&w=900&q=80',
     cta: 'Ver catálogo',
@@ -143,7 +147,13 @@ export default function HomeScreen({ navigation, route }) {
           </View>
         }
         renderItem={({ item }) => (
-          <AuctionCard item={item} colors={colors} radius={radius} onPress={() => navigation.navigate('Auctions')} isGuest={isGuest} />
+          <AuctionCard
+            item={item}
+            colors={colors}
+            radius={radius}
+            onPress={() => (isGuest ? navigation.navigate('Catalog', { product: item }) : navigation.navigate('Auctions'))}
+            isGuest={isGuest}
+          />
         )}
         ListFooterComponent={<View style={{ height: 16 }} />}
       />
@@ -175,6 +185,7 @@ function AuctionCard({ item, colors, radius, onPress, isGuest }) {
           <View style={{ flex: 1 }}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
             <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{item.subtitle}</Text>
+            {isGuest ? <Text style={[styles.cardDescription, { color: colors.text }]}>{item.description}</Text> : null}
           </View>
           {!isGuest ? <Text style={[styles.cardPrice, { color: colors.primary }]}>{item.price}</Text> : null}
         </View>
@@ -217,6 +228,7 @@ const styles = StyleSheet.create({
   cardTextRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '500' },
   cardSubtitle: { fontSize: 11, marginTop: 2 },
+  cardDescription: { fontSize: 12, lineHeight: 17, marginTop: 10 },
   cardPrice: { fontSize: 15, fontWeight: '700', textAlign: 'right' },
   cardBtn: { alignSelf: 'center', minWidth: 140, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, paddingHorizontal: 18 },
 });

@@ -9,6 +9,7 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import TermsAndConditionsScreen from './src/screens/TermsAndConditionsScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import CatalogScreen from './src/screens/CatalogScreen';
 import AuctionListScreen from './src/screens/AuctionListScreen';
 import ProductDetailsScreen from './src/screens/ProductDetailsScreen';
 import BidScreen from './src/screens/BidScreen';
@@ -35,6 +36,7 @@ function RootNavigator() {
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: 'Generar Nueva Contraseña' }} />
         <Stack.Screen name="TermsAndConditions" component={TermsAndConditionsScreen} options={{ title: 'Terminos y Condiciones' }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
+        <Stack.Screen name="Catalog" component={CatalogScreen} options={{ title: 'Catalogo' }} />
         <Stack.Screen name="Auctions" component={AuctionListScreen} options={{ title: 'Subastas' }} />
         <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} options={{ title: 'Detalle' }} />
         <Stack.Screen name="Bid" component={BidScreen} options={{ title: 'Pujar' }} />
