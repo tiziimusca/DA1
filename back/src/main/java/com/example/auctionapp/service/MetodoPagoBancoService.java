@@ -106,8 +106,7 @@ public class MetodoPagoBancoService {
         dto.setId(banco.getId());
         dto.setEstado(banco.getEstado());
 
-        MetodoPagoBancoResponseDTO.MetodoPagoBancoDatosDTO datos = 
-            new MetodoPagoBancoResponseDTO.MetodoPagoBancoDatosDTO();
+        MetodoPagoBancoResponseDTO.MetodoPagoBancoDatosDTO datos = new MetodoPagoBancoResponseDTO.MetodoPagoBancoDatosDTO();
         datos.setNombreTitular(banco.getNombreTitular());
         datos.setDniTitular(enmascararDNI(banco.getDniTitular()));
         datos.setNombreBanco(banco.getNombreBanco());

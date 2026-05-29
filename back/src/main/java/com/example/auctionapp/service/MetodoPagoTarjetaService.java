@@ -110,8 +110,7 @@ public class MetodoPagoTarjetaService {
         dto.setId(tarjeta.getId());
         dto.setEstado(tarjeta.getEstado());
 
-        MetodoPagoTarjetaResponseDTO.MetodoPagoTarjetaDatosDTO datos = 
-            new MetodoPagoTarjetaResponseDTO.MetodoPagoTarjetaDatosDTO();
+        MetodoPagoTarjetaResponseDTO.MetodoPagoTarjetaDatosDTO datos = new MetodoPagoTarjetaResponseDTO.MetodoPagoTarjetaDatosDTO();
         datos.setNombreTitular(tarjeta.getNombreTitular());
         datos.setNumeroTarjeta(enmascararTarjeta(tarjeta.getNumeroTarjeta()));
         datos.setFechaVencimiento(tarjeta.getFechaVencimiento());
