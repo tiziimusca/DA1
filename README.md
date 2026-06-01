@@ -68,7 +68,10 @@ mvn spring-boot:run
 ```bash
 cd front
 npm install
-npm run android
+npx expo start
+si tira el error: Error: Cannot find module 'babel-preset-expo'
+ejecutar: npm install --save-dev babel-preset-expo@54.0.11
+npx expo start --clear
 ```
 
 ## 🔗 Integración
