@@ -115,9 +115,11 @@ public class AuthService {
         Cliente nuevoCliente = new Cliente();
         nuevoCliente.setPersona(personaGuardada);
         nuevoCliente.setAdmitido("no");
-        nuevoCliente.setNumeroPais(paisRepository.getPaisById(request.getNumeroPais()));
+        nuevoCliente.setNumeroPais(paisRepository.findById(request.getNumeroPais()) 
+                .orElseThrow(() -> new IllegalArgumentException("País no encontrado")));
         nuevoCliente.setCategoria("comun");
-        nuevoCliente.setVerificador(empleadoRepository.getEmpleadoById(-1));
+        nuevoCliente.setVerificador(empleadoRepository.findById(-1) 
+                .orElseThrow(() -> new IllegalArgumentException("Empleado revisor no encontrado")));
 
         Cliente clienteGuardado = clienteRepository.save(nuevoCliente);
 
