@@ -1,10 +1,15 @@
 package com.example.auctionapp.util;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.example.auctionapp.dto.PaisDTO;
 import com.example.auctionapp.dto.PersonaDTO;
 import com.example.auctionapp.dto.ProductoDTO;
+import com.example.auctionapp.dto.ProponerProductoDTO;
 import com.example.auctionapp.dto.SubastaDTO;
 import com.example.auctionapp.dto.UsuarioDTO;
+import com.example.auctionapp.dto.productoPropuestoDTO;
 import com.example.auctionapp.model.Pais;
 import com.example.auctionapp.model.Persona;
 import com.example.auctionapp.model.Producto;
@@ -80,24 +85,43 @@ public class MapperUtil {
         return dto;
     }
 
-    public static Producto toProductoEntity(ProductoDTO dto) {
-        if (dto == null)
-            return null;
+    public static Producto toProductoEntity(ProponerProductoDTO requestDto) {
+        if (requestDto == null) return null;
         Producto p = new Producto();
-        p.setIdentificador(dto.getIdentificador());
-        p.setFecha(dto.getFecha());
-        p.setDisponible(dto.getDisponible());
-        p.setDescripcionCatalogo(dto.getDescripcionCatalogo());
-        p.setDescripcionCompleta(dto.getDescripcionCompleta());
-        p.setRevisor(dto.getRevisorId());
-        p.setDuenio(dto.getDuenioId());
-        p.setSeguro(dto.getSeguro());
+        p.setDescripcionCatalogo(requestDto.getDescripcionCatalogo());
+        p.setDescripcionCompleta(requestDto.getDescripcionCompleta());
+        if (requestDto.getRevisorId() != null) {
+            p.setRevisor(requestDto.getRevisorId());
+        } else {
+            p.setRevisor(1); // Asumiendo que el empleado con ID 1 existe gracias a tu DataSeeder
+        }
+        if (requestDto.getDuenioId() != null) {
+            p.setDuenio(requestDto.getDuenioId());
+        } else {
+            p.setDuenio(2); // Dueño por defecto
+        }
+        
+        return p;
+    }
+
+    public static Producto toProductoEntity(ProductoDTO requestDto) {
+        if (requestDto == null) return null;
+        
+        Producto p = new Producto();
+        p.setIdentificador(requestDto.getIdentificador());
+        p.setFecha(requestDto.getFecha());
+        p.setDisponible(requestDto.getDisponible());
+        p.setDescripcionCatalogo(requestDto.getDescripcionCatalogo());
+        p.setDescripcionCompleta(requestDto.getDescripcionCompleta());
+        p.setRevisor(requestDto.getRevisorId());
+        p.setDuenio(requestDto.getDuenioId());
+        
         return p;
     }
 
     public static ProductoDTO toProductoDTO(Producto p) {
-        if (p == null)
-            return null;
+        if (p == null) return null;
+        
         ProductoDTO dto = new ProductoDTO();
         dto.setIdentificador(p.getIdentificador());
         dto.setFecha(p.getFecha());
@@ -106,7 +130,16 @@ public class MapperUtil {
         dto.setDescripcionCompleta(p.getDescripcionCompleta());
         dto.setRevisorId(p.getRevisor());
         dto.setDuenioId(p.getDuenio());
-        dto.setSeguro(p.getSeguro());
+        
+        return dto;
+    }
+
+    public static productoPropuestoDTO toProductoPropuestoDTO(Producto p) {
+        if (p == null) return null;
+        
+        productoPropuestoDTO dto = new productoPropuestoDTO();
+        dto.setIdentificador(p.getIdentificador());
+        
         return dto;
     }
 

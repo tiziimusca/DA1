@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/clientes/me/metodos-pago")
 public class MetodoPagoController {
@@ -167,5 +168,44 @@ public class MetodoPagoController {
         }
 
         return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizarMetodoPago(
+            @PathVariable Integer id,
+            @RequestParam Integer clienteId,
+            @Valid @RequestBody CrearMetodoPagoRequestDTO request) {
+
+        try {
+            String tipo = request.getTipo();
+            JsonNode datos = request.getDatos();
+
+            switch (tipo) {
+                case "banco":
+                    MetodoPagoBancoDTO bancoDTO = objectMapper.convertValue(datos, MetodoPagoBancoDTO.class);
+                    return ResponseEntity.ok(bancoService.actualizar(id, clienteId, bancoDTO));
+
+                case "tarjeta":
+                    MetodoPagoTarjetaDTO tarjetaDTO = objectMapper.convertValue(datos, MetodoPagoTarjetaDTO.class);
+                    return ResponseEntity.ok(tarjetaService.actualizar(id, clienteId, tarjetaDTO));
+
+                case "cheque":
+                    MetodoPagoChequeDTO chequeDTO = objectMapper.convertValue(datos, MetodoPagoChequeDTO.class);
+                    return ResponseEntity.ok(chequeService.actualizar(id, clienteId, chequeDTO));
+
+                default:
+                    return ResponseEntity.badRequest().body("Tipo de método de pago inválido. Debe ser 'banco', 'tarjeta' o 'cheque'");
+            }
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Faltan datos obligatorios para el método seleccionado o el formato es incorrecto: " + e.getMessage());
+        } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            if (msg.contains("no encontrado") || msg.contains("no existe") || msg.contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
     }
 }
