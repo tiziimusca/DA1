@@ -4,7 +4,8 @@
     "slug": "subastas-app",
     "version": "1.0.0",
     "platforms": [
-      "android"
+      "android",
+      "web"
     ]
   }
 }

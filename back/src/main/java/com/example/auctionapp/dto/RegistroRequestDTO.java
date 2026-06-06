@@ -1,7 +1,5 @@
 package com.example.auctionapp.dto;
 
-import java.io.ByteArrayOutputStream;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,14 +27,10 @@ public class RegistroRequestDTO {
     @Size(max = 255)
     private String email;
 
-    @NotBlank
-    @Size(min = 8, max = 255, message = "La contraseña debe tener al menos 8 caracteres")
-    private String password;
-
-    @NotBlank(message = "La foto del frente es obligatoria")
+    @NotNull(message = "La foto del frente es obligatoria")
     private byte[] fotoDocumentoFrente; // Asumiendo base64 según tu documento
 
-    @NotBlank(message = "La foto del dorso es obligatoria")
+    @NotNull(message = "La foto del dorso es obligatoria")
     private byte[] fotoDocumentoDorso;
 
     // Getters
@@ -58,10 +52,6 @@ public class RegistroRequestDTO {
 
     public String getEmail() {
         return email;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public byte[] getFotoDocumentoFrente() {
@@ -91,10 +81,6 @@ public class RegistroRequestDTO {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public void setFotoDocumentoFrente(byte[] fotoDocumentoFrente) {

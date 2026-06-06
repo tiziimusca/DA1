@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
+import { getUser } from '../auth/authManager';
 
 const featuredAuctions = [
   {
@@ -92,7 +93,8 @@ export default function HomeScreen({ navigation, route }) {
   const accessMode = route?.params?.accessMode || 'authenticated';
   const isGuest = accessMode === 'guest';
   const auctions = isGuest ? guestAuctions : featuredAuctions;
-  const userName = route?.params?.userName || 'Laura Gomez';
+  const authUser = getUser();
+  const userName = !isGuest ? authUser?.nombre || route?.params?.userName || 'Laura Gomez' : 'Inicie Sesión';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -122,7 +124,15 @@ export default function HomeScreen({ navigation, route }) {
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Acceso rápido</Text>
                 <View style={styles.quickGrid}>
                   {quickActions.map((action) => (
-                    <TouchableOpacity key={action.id} style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}>
+                    <TouchableOpacity
+                      key={action.id}
+                      style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
+                      onPress={() => {
+                        if (action.id === 'profile') {
+                          navigation.navigate('Profile');
+                        }
+                      }}
+                    >
                       <Text style={styles.quickIcon}>{action.icon}</Text>
                       <Text style={[styles.quickText, { color: colors.text }]}>{action.title}</Text>
                     </TouchableOpacity>

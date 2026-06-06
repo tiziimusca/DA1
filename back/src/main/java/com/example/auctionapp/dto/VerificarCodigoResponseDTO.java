@@ -4,8 +4,8 @@ public class VerificarCodigoResponseDTO {
 
     private String tokenReseteo;
 
-    public VerificarCodigoResponseDTO(String tokenReseteo2) {
-        // TODO Auto-generated constructor stub
+    public VerificarCodigoResponseDTO(String tokenReseteo) {
+        this.tokenReseteo = tokenReseteo;
     }
 
     public String getTokenReseteo() {

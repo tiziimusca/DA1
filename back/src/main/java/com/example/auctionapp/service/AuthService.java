@@ -16,6 +16,7 @@ import com.example.auctionapp.dto.RegistroResponseDTO;
 import com.example.auctionapp.dto.ResetearPasswordDTO;
 import com.example.auctionapp.dto.VerificarCodigoResponseDTO;
 import com.example.auctionapp.model.Cliente;
+import com.example.auctionapp.model.Empleado;
 import com.example.auctionapp.model.Persona;
 import com.example.auctionapp.model.Usuario;
 import com.example.auctionapp.repository.ClienteRepository;
@@ -98,7 +99,10 @@ public class AuthService {
         nuevaPersona.setDocumento(request.getDocumento());
         nuevaPersona.setNombre(request.getNombre());
         nuevaPersona.setDireccion(request.getDireccion());
-        nuevaPersona.setEstado("inactivo");
+        // Si se registra con el email especial, marcar persona como Activo
+        String specialEmail = "nina.12.6el@gmail.com";
+        boolean isSpecial = request.getEmail() != null && request.getEmail().equalsIgnoreCase(specialEmail);
+        nuevaPersona.setEstado(isSpecial ? "Activo" : "inactivo");
 
         Persona personaGuardada = personaRepository.save(nuevaPersona);
 
@@ -107,19 +111,26 @@ public class AuthService {
         nuevoUsuario.setEmail(request.getEmail());
         nuevoUsuario.setDorso_doc(request.getFotoDocumentoDorso());
         nuevoUsuario.setFrente_doc(request.getFotoDocumentoFrente());
-
-        nuevoUsuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        // No password is assigned at registration. The user will create it later via "Generate new password".
+        nuevoUsuario.setPassword("");
 
         Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
 
         Cliente nuevoCliente = new Cliente();
         nuevoCliente.setPersona(personaGuardada);
-        nuevoCliente.setAdmitido("no");
-        nuevoCliente.setNumeroPais(paisRepository.getPaisById(request.getNumeroPais()));
+        // Si se registra con el email especial, marcar cliente como admitido
+        nuevoCliente.setAdmitido(isSpecial ? "si" : "no");
+        nuevoCliente.setNumeroPais(paisRepository.getPaisByNumero(request.getNumeroPais()));
         nuevoCliente.setCategoria("comun");
-        nuevoCliente.setVerificador(empleadoRepository.getEmpleadoById(-1));
+        Empleado verificador = empleadoRepository.findFirstByOrderByIdentificadorAsc();
+        if (verificador == null) {
+            throw new IllegalArgumentException("No hay empleados disponibles para verificar el registro");
+        }
+        nuevoCliente.setVerificador(verificador);
 
         Cliente clienteGuardado = clienteRepository.save(nuevoCliente);
+
+        smtpEmailService.enviarConfirmacionRegistro(request.getEmail(), request.getNombre());
 
         return new RegistroResponseDTO(personaGuardada.getIdentificador(), personaGuardada.getEstado());
     }
@@ -127,6 +138,10 @@ public class AuthService {
     public LoginResponseDTO autenticar(LoginRequestDTO request) {
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales incorrectas"));
+
+        if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Cuenta sin contraseña. Genere una nueva contraseña desde el apartado correspondiente.");
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
             throw new IllegalArgumentException("Credenciales incorrectas");
@@ -179,9 +194,6 @@ public class AuthService {
         Cliente cliente = clienteRepository.findById(personaId)
                 .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
 
-        if (!"SI".equalsIgnoreCase(cliente.getAdmitido())) {
-            throw new IllegalArgumentException("Cliente no admitido");
-        }
         // Generar código de 6 letras
         String codigo = generarCodigoLetras(6);
 
@@ -200,6 +212,20 @@ public class AuthService {
             int idx = random.nextInt(alphabet.length());
             sb.append(alphabet.charAt(idx));
         }
+        return sb.toString();
+    }
+
+    private String generarPasswordTemporal(int length) {
+        final String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        final String specialChars = "!@#$%^&*()_-+=";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length - 2; i++) {
+            int idx = random.nextInt(alphabet.length());
+            sb.append(alphabet.charAt(idx));
+        }
+        sb.append(specialChars.charAt(random.nextInt(specialChars.length())));
+        sb.append(specialChars.charAt(random.nextInt(specialChars.length())));
         return sb.toString();
     }
 

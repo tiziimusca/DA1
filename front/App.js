@@ -13,6 +13,8 @@ import CatalogScreen from './src/screens/CatalogScreen';
 import AuctionListScreen from './src/screens/AuctionListScreen';
 import ProductDetailsScreen from './src/screens/ProductDetailsScreen';
 import BidScreen from './src/screens/BidScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
 import { AppThemeProvider, useAppTheme } from './src/theme/AppTheme';
 
 const Stack = createNativeStackNavigator();
@@ -40,6 +42,9 @@ function RootNavigator() {
         <Stack.Screen name="Auctions" component={AuctionListScreen} options={{ title: 'Subastas' }} />
         <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} options={{ title: 'Detalle' }} />
         <Stack.Screen name="Bid" component={BidScreen} options={{ title: 'Pujar' }} />
+        <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }}/>
+
       </Stack.Navigator>
     </NavigationContainer>
   );

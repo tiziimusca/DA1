@@ -6,5 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EmpleadoRepository extends JpaRepository<Empleado, Integer> {
-    Empleado getEmpleadoById(Integer id);
+    Empleado getEmpleadoByIdentificador(Integer identificador);
+
+    Empleado findFirstByOrderByIdentificadorAsc();
 }

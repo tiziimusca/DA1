@@ -29,18 +29,29 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (hasSeedData()) {
-            return;
-        }
+                // Reemplazamos/insertamos explícitamente la lista de países en el mismo orden
+                jdbcTemplate.update("DELETE FROM paises");
 
-        log.info("Creando datos iniciales de prueba con SQL nativo");
-
-        jdbcTemplate.update(
-                "INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)",
-                "Argentina", "AR", "Buenos Aires", "Argentina", "Español");
-        jdbcTemplate.update(
-                "INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)",
-                "Chile", "CL", "Santiago", "Chilena", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Argentina", "AR", "Buenos Aires", "Argentina", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Bolivia", "BO", "Sucre", "Bolivia", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Brasil", "BR", "Brasilia", "Brasil", "Portugués");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Chile", "CL", "Santiago", "Chile", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Colombia", "CO", "Bogotá", "Colombia", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Costa Rica", "CR", "San José", "Costa Rica", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Cuba", "CU", "La Habana", "Cuba", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "República Dominicana", "DO", "Santo Domingo", "República Dominicana", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Ecuador", "EC", "Quito", "Ecuador", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "El Salvador", "SV", "San Salvador", "El Salvador", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Guatemala", "GT", "Ciudad de Guatemala", "Guatemala", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Honduras", "HN", "Tegucigalpa", "Honduras", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "México", "MX", "Ciudad de México", "México", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Nicaragua", "NI", "Managua", "Nicaragua", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Panamá", "PA", "Ciudad de Panamá", "Panamá", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Paraguay", "PY", "Asunción", "Paraguay", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Perú", "PE", "Lima", "Perú", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Puerto Rico", "PR", "San Juan", "Puerto Rico", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Uruguay", "UY", "Montevideo", "Uruguay", "Español");
+                jdbcTemplate.update("INSERT INTO paises (nombre, nombre_corto, capital, nacionalidad, idiomas) VALUES (?, ?, ?, ?, ?)", "Venezuela", "VE", "Caracas", "Venezuela", "Español");
 
         jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
                 "DNI-1001", "Usuario Demo", "Calle 1", "Activo");

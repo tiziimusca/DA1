@@ -16,7 +16,7 @@ public class SmtpEmailService implements EmailService {
     private final JavaMailSender mailSender;
     private final Logger logger = LoggerFactory.getLogger(SmtpEmailService.class);
 
-    @Value("${spring.mail.username:}")
+    @Value("${spring.mail.properties.mail.smtp.from:}")
     private String from;
 
     @Value("${app.name:Auction App}")
@@ -51,6 +51,30 @@ public class SmtpEmailService implements EmailService {
         }
     }
 
+    @Override
+    public void enviarConfirmacionRegistro(String to, String nombre) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, "utf-8");
+
+            String subject = String.format("[%s] Registro recibido", appName);
+            String html = buildRegistrationBody(nombre);
+
+            helper.setTo(to);
+            if (from != null && !from.isBlank()) {
+                helper.setFrom(from);
+            }
+            helper.setSubject(subject);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+            logger.info("Correo de confirmación de registro enviado a {}", to);
+        } catch (MessagingException ex) {
+            logger.error("Error enviando email de confirmación de registro", ex);
+            throw new RuntimeException("No se pudo enviar el email de confirmación de registro", ex);
+        }
+    }
+
     private String buildHtmlBody(String codigo) {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><body style=\"font-family:Arial,Helvetica,sans-serif;color:#333;\">\n");
@@ -65,6 +89,23 @@ public class SmtpEmailService implements EmailService {
         sb.append("<hr style=\"border:none;border-top:1px solid #eee;\">\n");
         sb.append("<p style=\"font-size:12px;color:#666;\">Gracias por confiar en nosotros.<br/>Equipo de " + appName
                 + "</p>");
+        sb.append("</body></html>");
+        return sb.toString();
+    }
+
+    private String buildRegistrationBody(String nombre) {
+        String displayName = (nombre == null || nombre.isBlank()) ? "" : nombre.trim();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><body style=\"font-family:Arial,Helvetica,sans-serif;color:#333;\">\n");
+        sb.append(String.format("<h2 style=\"color:#2a7ae2;\">%s</h2>", appName));
+        sb.append("<p>Hola" + (displayName.isEmpty() ? "" : " " + displayName) + ",</p>");
+        sb.append("<p>Recibimos tu solicitud de registro correctamente.</p>");
+        sb.append("<p>Tu cuenta fue registrada y está en proceso de verificación.</p>");
+        sb.append("<p>Para completar tu acceso, ingresa al apartado <strong>Generar una nueva contraseña</strong> y solicita el código por correo.</p>");
+        sb.append("<p>Una vez que recibas el código, podrás usarlo para definir tu nueva contraseña.</p>");
+        sb.append("<hr style=\"border:none;border-top:1px solid #eee;\">\n");
+        sb.append("<p style=\"font-size:12px;color:#666;\">Gracias por confiar en nosotros.<br/>Equipo de " + appName + "</p>");
         sb.append("</body></html>");
         return sb.toString();
     }

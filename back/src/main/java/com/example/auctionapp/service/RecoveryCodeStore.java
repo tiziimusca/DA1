@@ -23,11 +23,14 @@ public class RecoveryCodeStore {
 
     public void save(String email, String code, Duration ttl) {
         Instant expiresAt = Instant.now().plus(ttl);
-        entriesByCode.put(code, new RecoveryCodeEntry(email, expiresAt));
+        entriesByCode.put(code.toUpperCase(), new RecoveryCodeEntry(email, expiresAt));
     }
 
     public String consumeValidCode(String code) {
-        RecoveryCodeEntry entry = entriesByCode.remove(code);
+        if (code == null) {
+            throw new IllegalArgumentException("Código incorrecto o expirado");
+        }
+        RecoveryCodeEntry entry = entriesByCode.remove(code.toUpperCase());
         if (entry == null) {
             throw new IllegalArgumentException("Código incorrecto o expirado");
         }
