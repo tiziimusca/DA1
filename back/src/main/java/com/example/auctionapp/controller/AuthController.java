@@ -10,6 +10,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = {
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    "http://localhost:19006",
+    "http://127.0.0.1:19006"
+})
 public class AuthController {
 
     private final AuthService authService;
@@ -57,12 +63,13 @@ public class AuthController {
     }
 
     @PostMapping("/verificar-codigo")
-    public ResponseEntity<VerificarCodigoResponseDTO> verificarCodigo(@Valid @RequestBody VerificarCodigoDTO request) {
+    public ResponseEntity<Object> verificarCodigo(@Valid @RequestBody VerificarCodigoDTO request) {
         try {
             VerificarCodigoResponseDTO response = authService.validarCodigo(request.getCodigo());
             return ResponseEntity.ok(response); // 200 OK
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build(); // 400 Bad Request
+            ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
+            return ResponseEntity.badRequest().body(error); // 400 Bad Request with message
         }
     }
 

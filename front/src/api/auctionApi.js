@@ -1,4 +1,8 @@
-const BASE_URL = 'http://10.0.2.2:8080/api';
+import { Platform } from 'react-native';
+
+const BASE_URL = Platform.OS === 'web'
+  ? 'http://localhost:8080/api'
+  : 'http://10.0.2.2:8080/api';
 
 export async function fetchSubastas() {
   const response = await fetch(`${BASE_URL}/subastas`);
@@ -16,7 +20,7 @@ export async function fetchProducto(id) {
 }
 
 export function createWebSocket(onMessage, onOpen, onError) {
-  const socket = new WebSocket('ws://10.0.2.2:8080/ws/bids');
+  const socket = new WebSocket(Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : 'ws://10.0.2.2:8080/ws/bids');
 
   socket.onopen = () => {
     if (onOpen) onOpen();

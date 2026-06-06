@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
+import { verificarCodigo, resetPassword } from '../api/authApi';
 
 export default function ResetPasswordScreen({ navigation, route }) {
   const { colors, radius, spacing, typography } = useAppTheme();
@@ -9,21 +10,54 @@ export default function ResetPasswordScreen({ navigation, route }) {
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (prefillEmail) {
-      // we could prefill or show email, for now ignore
+  function showError(title, message) {
+    try {
+      Alert.alert(title, message);
+    } catch (e) {
+      // ignore
     }
-  }, [prefillEmail]);
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+      window.alert(`${title}: ${message}`);
+    }
+  }
 
-  function handleSubmit() {
-    if (!code.trim()) return Alert.alert('Error', 'Ingrese el código recibido por correo.');
-    if (password.length < 6) return Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.');
-    if (password !== confirm) return Alert.alert('Error', 'Las contraseñas no coinciden.');
+  async function handleSubmit() {
+    console.log('[ResetPasswordScreen] handleSubmit start', { code, password, confirm });
+    if (!code.trim()) {
+      console.log('[ResetPasswordScreen] no code');
+      showError('Error', 'Ingrese el código recibido por correo.');
+      return;
+    }
+    if (password.length < 8) {
+      showError('Error', 'La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (password !== confirm) {
+      showError('Error', 'Las contraseñas no coinciden.');
+      return;
+    }
+    const specialRe = /[!@#$%^&*()_+\-={}\[\]:;"'<>.,?/\\|]/;
+    if (!specialRe.test(password)) {
+      showError('Error', 'La contraseña debe incluir al menos un carácter especial (por ejemplo: !@#$%).');
+      return;
+    }
 
-    // Placeholder: call API to set new password
-    Alert.alert('Contraseña generada', 'Su nueva contraseña ha sido guardada.');
-    navigation.replace('Home', { accessMode: 'authenticated' });
+    try {
+      setIsSubmitting(true);
+      const data = await verificarCodigo(code.trim());
+      console.log('[ResetPasswordScreen] verificarCodigo returned', data);
+      await resetPassword(data.tokenReseteo, password, confirm);
+      Alert.alert('Contraseña generada', 'Su nueva contraseña ha sido guardada. Ahora puede iniciar sesión.');
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('[ResetPasswordScreen] error in submit', error);
+      const message = error?.message || 'No se pudo actualizar la contraseña.';
+      Alert.alert('Error', message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -34,7 +68,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
           <Text style={[styles.help, { color: colors.muted }]}>Para finalizar el registro de su cuenta o reestablecer su contraseña, debe generar una nueva a partir del código que le fue enviado.</Text>
 
           <Text style={[styles.label, { color: colors.text }]}>Código recibido por correo:</Text>
-          <TextInput value={code} onChangeText={setCode} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} placeholder="12345" keyboardType="number-pad" />
+          <TextInput value={code} onChangeText={setCode} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} placeholder="Código (ej: ABC123)" />
 
           <Text style={[styles.label, { color: colors.text }]}>Nueva Contraseña</Text>
           <TextInput value={password} onChangeText={setPassword} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} secureTextEntry />

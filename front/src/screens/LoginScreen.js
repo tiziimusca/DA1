@@ -16,6 +16,8 @@ import {
   Alert,
 } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
+import { login, solicitarCodigo } from '../api/authApi';
+import { setSession } from '../auth/authManager';
 
 export default function LoginScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -23,10 +25,31 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [pwModalVisible, setPwModalVisible] = useState(false);
   const [pwEmail, setPwEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleLogin() {
-    // Placeholder: replace with real auth
-    navigation.replace('Home', { accessMode: 'authenticated', userName: 'Laura Gomez' });
+  async function handleLogin() {
+    if (!email || !password) {
+      Alert.alert('Datos incompletos', 'Ingrese email y contraseña.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await login(email.trim(), password);
+      setSession({
+        token: response.token,
+        user: {
+          nombre: response.nombre,
+          categoria: response.categoria,
+          email: email.trim(),
+        },
+      });
+      navigation.replace('Home', { accessMode: 'authenticated' });
+    } catch (error) {
+      Alert.alert('Error de inicio de sesión', error.message || 'No se pudo iniciar sesión.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleContinueAnon() {
@@ -93,10 +116,25 @@ export default function LoginScreen({ navigation }) {
                     <View style={styles.modalButtons}>
                       <TouchableOpacity
                         style={[styles.modalBtn, { backgroundColor: colors.primary }]}
-                        onPress={() => {
-                          // navigate to reset password screen, pass email if entered
-                          setPwModalVisible(false);
-                          navigation.navigate('ResetPassword', { email: pwEmail || email });
+                        onPress={async () => {
+                          const targetEmail = (pwEmail || email).trim();
+                          console.log('[LoginScreen] solicitarCodigo button pressed for', targetEmail);
+                          if (!targetEmail) {
+                            Alert.alert('Error', 'Ingrese un email válido.');
+                            return;
+                          }
+
+                          try {
+                            await solicitarCodigo(targetEmail);
+                            Alert.alert(
+                              'Código enviado',
+                              'Si el email existe, recibirás un código para generar la nueva contraseña.'
+                            );
+                            setPwModalVisible(false);
+                            navigation.navigate('ResetPassword', { email: targetEmail });
+                          } catch (error) {
+                            Alert.alert('Error', error.message || 'No se pudo enviar el código.');
+                          }
                         }}
                       >
                         <Text style={{ color: '#fff' }}>Aceptar</Text>
@@ -113,8 +151,9 @@ export default function LoginScreen({ navigation }) {
                 onPress={handleLogin}
                 activeOpacity={0.9}
                 style={[styles.button, { backgroundColor: colors.primary, borderRadius: radius.round, paddingVertical: spacing.md }]}
+                disabled={isLoading}
               >
-                <Text style={[styles.buttonText]}>Iniciar sesion</Text>
+                <Text style={[styles.buttonText]}>{isLoading ? 'Ingresando...' : 'Iniciar sesion'}</Text>
               </TouchableOpacity>
 
               <View style={styles.dividerRow}>
@@ -129,7 +168,7 @@ export default function LoginScreen({ navigation }) {
 
               <View style={styles.footerTextRow}>
                 <Text style={{ color: colors.muted }}>¿Todavia no tienes una cuenta? </Text>
-                <TouchableOpacity onPress={() => {}}>
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                   <Text style={{ color: colors.accent }}>Registrate</Text>
                 </TouchableOpacity>
               </View>

@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface FotoRepository extends JpaRepository<Foto, Integer> {
-    List<Foto> findByProducto_IdentificadorOrderByIdentificadorAsc(Integer productoId);
+    List<Foto> findByProducto_IdentificadorOrderByIdentificadorAsc(Integer producto);
 }
