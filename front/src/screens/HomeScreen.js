@@ -81,10 +81,10 @@ const guestAuctions = [
 ];
 
 const quickActions = [
-  { id: 'metrics', title: 'Métricas', icon: '◔' },
-  { id: 'item', title: 'Proponer Item', icon: '+' },
-  { id: 'payments', title: 'Métodos de pago', icon: '▤' },
-  { id: 'profile', title: 'Perfil', icon: '◉' },
+  { id: 'metrics', title: 'Métricas', direccion: 'metricas',icon: '◔' },
+  { id: 'item', title: 'Proponer Item', direccion: 'MisPropuestas', icon: '+' },
+  { id: 'payments', title: 'Métodos de pago', direccion: 'MetodosDePago', icon: '▤' },
+  { id: 'profile', title: 'Perfil', direccion: 'Perfil', icon: '◉' },
 ];
 
 export default function HomeScreen({ navigation, route }) {
@@ -122,7 +122,8 @@ export default function HomeScreen({ navigation, route }) {
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Acceso rápido</Text>
                 <View style={styles.quickGrid}>
                   {quickActions.map((action) => (
-                    <TouchableOpacity key={action.id} style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}>
+                    <TouchableOpacity key={action.id} style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
+                      onPress={() => navigation.navigate(action.direccion)}>
                       <Text style={styles.quickIcon}>{action.icon}</Text>
                       <Text style={[styles.quickText, { color: colors.text }]}>{action.title}</Text>
                     </TouchableOpacity>

@@ -14,6 +14,7 @@ import AuctionListScreen from './src/screens/AuctionListScreen';
 import ProductDetailsScreen from './src/screens/ProductDetailsScreen';
 import BidScreen from './src/screens/BidScreen';
 import { AppThemeProvider, useAppTheme } from './src/theme/AppTheme';
+import MisPropuestasScreen from './src/screens/MisPropuestasScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +41,8 @@ function RootNavigator() {
         <Stack.Screen name="Auctions" component={AuctionListScreen} options={{ title: 'Subastas' }} />
         <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} options={{ title: 'Detalle' }} />
         <Stack.Screen name="Bid" component={BidScreen} options={{ title: 'Pujar' }} />
+        <Stack.Screen name="MisPropuestas" component={MisPropuestasScreen} options={{ title: 'Mis Propuestas', headerShown: false}} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
