@@ -124,8 +124,17 @@ export default function HomeScreen({ navigation, route }) {
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Acceso rápido</Text>
                 <View style={styles.quickGrid}>
                   {quickActions.map((action) => (
-                    <TouchableOpacity key={action.id} style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
-                      onPress={() => navigation.navigate(action.direccion)}>
+                    <TouchableOpacity
+                      key={action.id}
+                      style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
+                      onPress={() => {
+                        if (action.id === 'metrics') {
+                          navigation.navigate('Metrics');
+                          return;
+                        }
+                        navigation.navigate(action.direccion);
+                      }}
+                    >
                       <Text style={styles.quickIcon}>{action.icon}</Text>
                       <Text style={[styles.quickText, { color: colors.text }]}>{action.title}</Text>
                     </TouchableOpacity>

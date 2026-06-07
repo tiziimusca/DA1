@@ -19,6 +19,23 @@ export async function fetchProducto(id) {
   return response.json();
 }
 
+export async function fetchHomeDashboard(authToken) {
+  const response = await fetch(`${BASE_URL}/home`, {
+    headers: authToken ? { Authorization: authToken } : undefined,
+  });
+  return response.json();
+}
+
+export async function fetchPujas() {
+  const response = await fetch(`${BASE_URL}/pujas`);
+  return response.json();
+}
+
+export async function fetchRegistrosSubasta() {
+  const response = await fetch(`${BASE_URL}/registros-subasta`);
+  return response.json();
+}
+
 export function createWebSocket(onMessage, onOpen, onError) {
   const socket = new WebSocket(Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : 'ws://10.0.2.2:8080/ws/bids');
 
