@@ -16,11 +16,6 @@ function compactMoney(value) {
   return `$${amount.toFixed(0)}`;
 }
 
-function percentLabel(numerator, denominator) {
-  if (!denominator) return '0%';
-  return `${Math.round((numerator / denominator) * 100)}%`;
-}
-
 function getItemTitle(puja) {
   return (
     puja?.item?.producto?.descripcionCompleta ||
@@ -77,7 +72,12 @@ export default function MetricsScreen() {
   const wins = home?.metricas?.subastasGanadas ?? 0;
   const totalOffered = useMemo(() => pujas.reduce((sum, puja) => sum + Number(puja?.importe || 0), 0), [pujas]);
   const totalSpent = useMemo(() => registros.reduce((sum, registro) => sum + Number(registro?.importe || 0), 0), [registros]);
-  const winRate = percentLabel(wins, assisted || pujas.length);
+  const winRate = '-';
+  const assistedDelta = '-';
+  const winsDelta = '-';
+  const offeredDelta = '-';
+  const spentDelta = '-';
+  const winInsight = 'Tu eficiencia de victoria ha mejorado un - comparado con el trimestre anterior.';
 
   const participatedItems = useMemo(() => {
     const seen = new Map();
@@ -125,10 +125,10 @@ export default function MetricsScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Métricas de Subastas</Text>
 
         <View style={styles.grid}>
-          <MetricCard title="Subastas asistidas" value={assisted} delta="+12%" note="vs último período" colors={colors} radius={radius} />
-          <MetricCard title="Subastas ganadas" value={wins} delta="-3%" note="verificación de eficiencia" colors={colors} radius={radius} />
-          <MetricCard title="Monto total ofertado" value={compactMoney(totalOffered)} delta="+24%" note="tasa de ejecución" colors={colors} radius={radius} />
-          <MetricCard title="Total gastado" value={compactMoney(totalSpent)} delta="+18%" note="capital utilizado" colors={colors} radius={radius} />
+          <MetricCard title="Subastas asistidas" value={assisted} delta={assistedDelta} note="vs último período" colors={colors} radius={radius} />
+          <MetricCard title="Subastas ganadas" value={wins} delta={winsDelta} note="verificación de eficiencia" colors={colors} radius={radius} />
+          <MetricCard title="Monto total ofertado" value={compactMoney(totalOffered)} delta={offeredDelta} note="tasa de ejecución" colors={colors} radius={radius} />
+          <MetricCard title="Total gastado" value={compactMoney(totalSpent)} delta={spentDelta} note="capital utilizado" colors={colors} radius={radius} />
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
@@ -138,7 +138,7 @@ export default function MetricsScreen() {
               <Text style={[styles.ringValue, { color: colors.text }]}>{winRate}</Text>
             </View>
           </View>
-          <Text style={[styles.insight, { color: colors.muted }]}>Tu eficiencia de victoria ha mejorado un 4.2% comparado con el trimestre anterior.</Text>
+          <Text style={[styles.insight, { color: colors.muted }]}>{winInsight}</Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
@@ -167,12 +167,14 @@ export default function MetricsScreen() {
 }
 
 function MetricCard({ title, value, delta, note, colors, radius }) {
+  const deltaColor = delta === '-' ? colors.muted : colors.success;
+
   return (
     <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
       <Text style={[styles.metricTitle, { color: colors.text }]}>{title}</Text>
       <View style={styles.metricRow}>
         <Text style={[styles.metricValue, { color: colors.primary }]}>{value}</Text>
-        <Text style={[styles.metricDelta, { color: colors.success }]}>{delta}</Text>
+        <Text style={[styles.metricDelta, { color: deltaColor }]}>{delta}</Text>
       </View>
       <Text style={[styles.metricNote, { color: colors.muted }]}>{note}</Text>
     </View>

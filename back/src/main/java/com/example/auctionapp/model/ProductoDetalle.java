@@ -52,7 +52,7 @@ public class ProductoDetalle {
     private LocalDateTime fechaAceptado;
 
     @ManyToOne
-    @JoinColumn(name = "seguro_id", referencedColumnName = "identificador")
+    @JoinColumn(name = "seguro_id", referencedColumnName = "nro_poliza")
     private Seguro seguroEntity;
-    
+
 }
