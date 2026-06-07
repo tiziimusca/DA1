@@ -25,6 +25,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [pwModalVisible, setPwModalVisible] = useState(false);
   const [pwEmail, setPwEmail] = useState('');
+  const [pwEmailError, setPwEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleLogin() {
@@ -105,13 +106,21 @@ export default function LoginScreen({ navigation }) {
                     <Text style={[styles.label, { marginTop: 12 }]}>Email</Text>
                     <TextInput
                       value={pwEmail}
-                      onChangeText={setPwEmail}
+                      onChangeText={(value) => {
+                        setPwEmail(value);
+                        if (pwEmailError) setPwEmailError('');
+                      }}
                       placeholder="Name@example.com"
                       placeholderTextColor={colors.muted}
-                      style={[styles.modalInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+                      style={[
+                        styles.modalInput,
+                        { backgroundColor: colors.surface, color: colors.text },
+                        pwEmailError ? styles.errorInput : { borderColor: colors.border },
+                      ]}
                       keyboardType="email-address"
                       autoCapitalize="none"
                     />
+                    {pwEmailError ? <Text style={styles.errorText}>{pwEmailError}</Text> : null}
 
                     <View style={styles.modalButtons}>
                       <TouchableOpacity
@@ -120,12 +129,13 @@ export default function LoginScreen({ navigation }) {
                           const targetEmail = (pwEmail || email).trim();
                           console.log('[LoginScreen] solicitarCodigo button pressed for', targetEmail);
                           if (!targetEmail) {
-                            Alert.alert('Error', 'Ingrese un email válido.');
+                            setPwEmailError('Ingrese un email válido o existente.');
                             return;
                           }
 
                           try {
                             await solicitarCodigo(targetEmail);
+                            setPwEmailError('');
                             Alert.alert(
                               'Código enviado',
                               'Si el email existe, recibirás un código para generar la nueva contraseña.'
@@ -133,7 +143,12 @@ export default function LoginScreen({ navigation }) {
                             setPwModalVisible(false);
                             navigation.navigate('ResetPassword', { email: targetEmail });
                           } catch (error) {
-                            Alert.alert('Error', error.message || 'No se pudo enviar el código.');
+                            const message = error.message || 'No se pudo enviar el código.';
+                            if (message.toLowerCase().includes('email no registrado') || message.toLowerCase().includes('email inválido') || message.toLowerCase().includes('email invalido')) {
+                              setPwEmailError('Email inválido o inexistente');
+                            } else {
+                              Alert.alert('Error', message);
+                            }
                           }
                         }}
                       >
@@ -210,5 +225,7 @@ const styles = StyleSheet.create({
   modalInput: { height: 44, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, marginTop: 8 },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginHorizontal: 6 },
+  errorInput: { borderColor: '#D32F2F' },
+  errorText: { color: '#D32F2F', fontSize: 12, marginTop: 6, marginBottom: -4 },
 });
 

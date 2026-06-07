@@ -92,14 +92,17 @@ public class ClienteService {
         Persona persona = personaRepository.findById(cliente.getIdentificador())
                 .orElseThrow(() -> new SecurityException("Token inválido o sesión expirada"));
 
-        persona.setNombre(request.getNombre());
+        String nombreCompleto = String.format("%s %s", request.getNombre().trim(), request.getApellido().trim());
+        persona.setNombre(nombreCompleto);
         persona.setDireccion(request.getDireccion());
 
         Pais pais = paisRepository.findById(request.getIdPaisNacimiento())
                 .orElseThrow(() -> new IllegalArgumentException("País no encontrado"));
         cliente.setNumeroPais(pais);
 
-        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         personaRepository.save(persona);
         clienteRepository.save(cliente);

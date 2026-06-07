@@ -10,6 +10,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [codeError, setCodeError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function showError(title, message) {
@@ -25,9 +26,10 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
   async function handleSubmit() {
     console.log('[ResetPasswordScreen] handleSubmit start', { code, password, confirm });
+    setCodeError('');
     if (!code.trim()) {
       console.log('[ResetPasswordScreen] no code');
-      showError('Error', 'Ingrese el código recibido por correo.');
+      setCodeError('Ingrese el código recibido por correo.');
       return;
     }
     if (password.length < 8) {
@@ -54,7 +56,11 @@ export default function ResetPasswordScreen({ navigation, route }) {
     } catch (error) {
       console.error('[ResetPasswordScreen] error in submit', error);
       const message = error?.message || 'No se pudo actualizar la contraseña.';
-      Alert.alert('Error', message);
+      if (message.toLowerCase().includes('código inválido') || message.toLowerCase().includes('codigo inválido') || message.toLowerCase().includes('código no válido') || message.toLowerCase().includes('codigo no valido') || message.toLowerCase().includes('no se pudo validar') || message.toLowerCase().includes('no existe')) {
+        setCodeError('Código inválido');
+      } else {
+        Alert.alert('Error', message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -68,7 +74,20 @@ export default function ResetPasswordScreen({ navigation, route }) {
           <Text style={[styles.help, { color: colors.muted }]}>Para finalizar el registro de su cuenta o reestablecer su contraseña, debe generar una nueva a partir del código que le fue enviado.</Text>
 
           <Text style={[styles.label, { color: colors.text }]}>Código recibido por correo:</Text>
-          <TextInput value={code} onChangeText={setCode} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} placeholder="Código (ej: ABC123)" />
+          <TextInput
+            value={code}
+            onChangeText={(value) => {
+              setCode(value);
+              if (codeError) setCodeError('');
+            }}
+            style={[
+              styles.input,
+              { backgroundColor: colors.surface },
+              codeError ? styles.errorInput : { borderColor: colors.border },
+            ]}
+            placeholder="Código (ej: ABC123)"
+          />
+          {codeError ? <Text style={styles.errorText}>{codeError}</Text> : null}
 
           <Text style={[styles.label, { color: colors.text }]}>Nueva Contraseña</Text>
           <TextInput value={password} onChangeText={setPassword} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} secureTextEntry />
@@ -98,4 +117,6 @@ const styles = StyleSheet.create({
   input: { height: 48, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12 },
   cta: { marginTop: 18, paddingVertical: 14, borderRadius: 24, alignItems: 'center' },
   secondary: { marginTop: 12, alignItems: 'center', paddingVertical: 10, backgroundColor: '#EFEFEF', borderRadius: 20 },
+  errorInput: { borderColor: '#D32F2F' },
+  errorText: { color: '#D32F2F', fontSize: 12, marginTop: 6, marginBottom: -4 },
 });

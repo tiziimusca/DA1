@@ -18,8 +18,6 @@ import countries from '../data/countries';
 import { getToken } from '../auth/authManager';
 import { updateProfile } from '../api/authApi';
 
-
-
 export default function EditProfileScreen({ navigation, route }) {
   const { colors } = useAppTheme();
 
@@ -36,8 +34,7 @@ export default function EditProfileScreen({ navigation, route }) {
 
   useEffect(() => {
     if (initialProfile) {
-      const nombreParts = [initialProfile.nombre, initialProfile.apellido].filter(Boolean);
-      setFullName(nombreParts.join(' ').trim());
+      setFullName(initialProfile.nombre || '');
       setPais(initialProfile.pais || '');
       setDireccion(initialProfile.direccion || '');
     }
@@ -66,12 +63,12 @@ export default function EditProfileScreen({ navigation, route }) {
       errors.direccion = 'Domicilio obligatorio';
     }
 
-    if (!password) {
-      errors.password = 'Contraseña obligatoria';
-    } else if (password.length < 8) {
-      errors.password = 'La contraseña debe tener al menos 8 caracteres.';
-    } else if (!/[!@#$%^&*()_+\-={}\[\]:;"'<>.,?/\\|]/.test(password)) {
-      errors.password = 'Debe incluir al menos un carácter especial.';
+    if (password) {
+      if (password.length < 8) {
+        errors.password = 'La contraseña debe tener al menos 8 caracteres.';
+      } else if (!/[!@#$%^&*()_+\-={}\[\]:;"'<>.,?/\\|]/.test(password)) {
+        errors.password = 'Debe incluir al menos un carácter especial.';
+      }
     }
 
     const nameParts = trimmedFullName.split(' ').filter(Boolean);
@@ -92,8 +89,11 @@ export default function EditProfileScreen({ navigation, route }) {
       apellido,
       idPaisNacimiento: findCountryIdByName(pais),
       direccion: direccion,
-      password: password,
     };
+
+    if (password) {
+      payload.password = password;
+    }
 
     try {
       setIsSaving(true);
@@ -167,6 +167,7 @@ export default function EditProfileScreen({ navigation, route }) {
         <TouchableOpacity
           style={[
             styles.select,
+            { borderColor: colors.border, backgroundColor: colors.surface },
             fieldErrors.country ? styles.errorInput : null,
           ]}
           onPress={() => setCountryModalVisible(true)}
@@ -219,9 +220,10 @@ export default function EditProfileScreen({ navigation, route }) {
           value={password}
           onChangeText={setPassword}
           style={[styles.input, fieldErrors.password ? styles.errorInput : null]}
-          placeholder="Nueva contraseña"
+          placeholder="Nueva contraseña (opcional)"
           placeholderTextColor={colors.muted}
         />
+        <Text style={[{ color: colors.muted, marginBottom: 12 }]}>Deja en blanco para mantener la contraseña actual.</Text>
         {fieldErrors.password ? <Text style={styles.errorText}>{fieldErrors.password}</Text> : null}
 
         {formError ? <Text style={styles.formError}>{formError}</Text> : null}
@@ -287,6 +289,15 @@ const styles = StyleSheet.create({
     width: '48%',
   },
 
+  select: {
+    borderWidth: 1,
+    borderRadius: 8,
+    height: 46,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    marginTop: 6,
+    marginBottom: 16,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#DDD',

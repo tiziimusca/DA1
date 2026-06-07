@@ -17,7 +17,6 @@ import {
 import { useAppTheme } from '../theme/AppTheme';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import countries from '../data/countries';
 
 export default function RegisterScreen({ navigation }) {
@@ -50,10 +49,10 @@ export default function RegisterScreen({ navigation }) {
     }
 
     // basic client-side validation
-    const missingRequiredFields = !documento || !nombre || !domicilio || !pais || !email;
+    const missingRequiredFields = !documento || !nombre || !domicilio || !pais || !email || !declaracion;
     const missingPhotos = !frontUri || !backUri;
 
-    if (missingRequiredFields || (missingPhotos && !isWeb)) {
+    if (missingRequiredFields || missingPhotos) {
       console.log('[RegisterScreen] Validation failed', {
         documento: !!documento,
         nombre: !!nombre,
@@ -62,57 +61,79 @@ export default function RegisterScreen({ navigation }) {
         email: !!email,
         frontUri: !!frontUri,
         backUri: !!backUri,
+        declaracion: !!declaracion,
       });
-      Alert.alert(
-        'Faltan datos',
-        isWeb && missingPhotos
-          ? 'En web puedes probar el flujo sin fotos. Si quieres usar fotos, súbelas del frente y dorso del documento.'
-          : 'Complete todos los campos obligatorios y cargue las fotos del frente y dorso del documento.'
-      );
+      const missingMsg = !declaracion
+        ? 'Debe aceptar la declaración sobre el origen de los fondos.'
+        : 'Complete todos los campos obligatorios y cargue las fotos del frente y dorso del documento.';
+
+      Alert.alert('Faltan datos', missingMsg);
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      const [frontBase64, backBase64] = await Promise.all([
-        frontUri ? uriToBase64(frontUri) : Promise.resolve(placeholderPhotoBase64),
-        backUri ? uriToBase64(backUri) : Promise.resolve(placeholderPhotoBase64),
-      ]);
-
-      if (isWeb && (!frontUri || !backUri)) {
-        console.log('[RegisterScreen] Web test mode: sending placeholder photos');
-      }
-
-      // map country to a number (use index+1 as fallback)
-      const numeroPais = Math.max(1, countries.findIndex(c => c.name === pais) + 1);
-
-      const payload = {
-        documento: documento,
-        nombre: `${nombre} ${apellido}`.trim(),
-        direccion: domicilio,
-        numeroPais: numeroPais,
-        email: email,
-        fotoDocumentoFrente: frontBase64,
-        fotoDocumentoDorso: backBase64,
-      };
-
-      console.log('[RegisterScreen] payload ->', payload);
-
       const API_BASE = isWeb
         ? 'http://localhost:8080/api'
-        : 'http://10.0.2.2:8080/api';
-      const resp = await fetch(`${API_BASE}/auth/registrar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        : 'http://192.168.0.181:8080/api';
+
+      const formData = new FormData();
+      formData.append('documento', documento);
+      formData.append('nombre', `${nombre} ${apellido}`.trim());
+      formData.append('direccion', domicilio);
+      formData.append('numeroPais', String(Math.max(1, countries.findIndex(c => c.name === pais) + 1)));
+      formData.append('email', email);
+
+      const frontFile = fileInfo(frontUri, 'frente');
+      const backFile = fileInfo(backUri, 'dorso');
+
+      if (frontFile) {
+        formData.append('fotoDocumentoFrente', frontFile);
+      }
+      if (backFile) {
+        formData.append('fotoDocumentoDorso', backFile);
+      }
+
+      console.log('[RegisterScreen] formData ->', {
+        documento,
+        nombre: `${nombre} ${apellido}`.trim(),
+        direccion: domicilio,
+        numeroPais: Math.max(1, countries.findIndex(c => c.name === pais) + 1),
+        email,
+        frontSelected: !!frontUri,
+        backSelected: !!backUri,
       });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      let resp;
+      try {
+        resp = await fetch(`${API_BASE}/auth/registrar`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.error('[RegisterScreen] request aborted (timeout)');
+          throw new Error('Tiempo de conexión agotado al enviar el registro. Intente nuevamente.');
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       console.log('[RegisterScreen] registrar response status ->', resp.status);
 
       if (resp.status === 201) {
-        // success: show verify modal
-        setVerifyModalVisible(true);
+        const userName = `${nombre} ${apellido}`.trim() || 'Usuario';
+        Alert.alert('Registro recibido', 'Tu registro fue enviado correctamente. Te redirigimos al Home.', [
+          {
+            text: 'Aceptar',
+            onPress: () => navigation.replace('Home', { accessMode: 'guest', userName }),
+          },
+        ], { cancelable: false });
         return;
       } else {
         const rawBody = await resp.text();
@@ -141,29 +162,6 @@ export default function RegisterScreen({ navigation }) {
     }
   }
 
-  async function uriToBase64(uri) {
-    if (!uri) {
-      return '';
-    }
-
-    if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = typeof reader.result === 'string' ? reader.result : '';
-          resolve(result.split(',')[1] || '');
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    return FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-  }
-
   function handleUpload(side) {
     Alert.alert('Subir documento', 'Elige una opción', [
       { text: 'Tomar foto', onPress: () => pickFromCamera(side) },
@@ -180,10 +178,17 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, base64: true });
-    if (!result.cancelled) {
-      if (side === 'frente') setFrontUri(result.uri);
-      else setBackUri(result.uri);
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.3, allowsEditing: true, aspect: [4, 3] });
+    let uri = null;
+    if (result && result.cancelled === false && result.uri) {
+      uri = result.uri;
+    } else if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) {
+      uri = result.assets[0].uri;
+    }
+
+    if (uri) {
+      if (side === 'frente') setFrontUri(uri);
+      else setBackUri(uri);
     }
   }
 
@@ -194,11 +199,40 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7, allowsEditing: true, base64: true });
-    if (!result.cancelled) {
-      if (side === 'frente') setFrontUri(result.uri);
-      else setBackUri(result.uri);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.3,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    let uri = null;
+    if (result && result.cancelled === false && result.uri) {
+      uri = result.uri;
+    } else if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) {
+      uri = result.assets[0].uri;
     }
+
+    if (uri) {
+      if (side === 'frente') setFrontUri(uri);
+      else setBackUri(uri);
+    }
+  }
+
+  function fileInfo(uri, side) {
+    if (!uri) return null;
+    const fileName = uri.split('/').pop() || `${side}-${Date.now()}.jpg`;
+    const lowerName = fileName.toLowerCase();
+    let type = 'image/jpeg';
+    if (lowerName.endsWith('.png')) type = 'image/png';
+    else if (lowerName.endsWith('.pdf')) type = 'application/pdf';
+    else if (lowerName.endsWith('.heic')) type = 'image/heic';
+    else if (lowerName.endsWith('.heif')) type = 'image/heif';
+
+    return {
+      uri: uri.startsWith('file://') ? uri : uri,
+      name: fileName,
+      type,
+    };
   }
 
   async function pickDocument(side) {
@@ -278,12 +312,34 @@ export default function RegisterScreen({ navigation }) {
           <Text style={[styles.label, { color: colors.text }]}>Fotos del documento (Frente / Dorso) *</Text>
           <View style={styles.uploadRow}>
             <TouchableOpacity style={[styles.uploadBox, { borderColor: colors.border }]} onPress={() => handleUpload('frente')}>
-              <Text style={{ fontSize: 28 }}>📷</Text>
-              <Text style={{ marginTop: 8 }}>Frente</Text>
+              {frontUri ? (
+                <>
+                  <Image source={{ uri: frontUri }} style={styles.uploadImage} />
+                  <View style={styles.uploadedOverlay}>
+                    <Text style={styles.uploadedText}>Agregado</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 28 }}>📷</Text>
+                  <Text style={{ marginTop: 8 }}>Frente</Text>
+                </>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={[styles.uploadBox, { borderColor: colors.border }]} onPress={() => handleUpload('dorso')}>
-              <Text style={{ fontSize: 28 }}>📷</Text>
-              <Text style={{ marginTop: 8 }}>Dorso</Text>
+              {backUri ? (
+                <>
+                  <Image source={{ uri: backUri }} style={styles.uploadImage} />
+                  <View style={styles.uploadedOverlay}>
+                    <Text style={styles.uploadedText}>Agregado</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 28 }}>📷</Text>
+                  <Text style={{ marginTop: 8 }}>Dorso</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
           <Text style={[styles.small, { color: colors.muted }]}>Tamaño máximo de archivo 6MB. Formatos: JPG, PNG, PDF.</Text>
@@ -345,6 +401,9 @@ const styles = StyleSheet.create({
   select: { height: 44, borderWidth: 1, borderRadius: 8, justifyContent: 'center', paddingHorizontal: 12, marginBottom: 12 },
   uploadRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   uploadBox: { width: '48%', height: 120, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF' },
+  uploadImage: { width: '100%', height: 120, borderRadius: 12 },
+  uploadedOverlay: { position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  uploadedText: { color: '#FFF', fontSize: 12 },
   small: { fontSize: 12, marginTop: 8 },
   declarationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   checkbox: { width: 20, height: 20, borderWidth: 1, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },

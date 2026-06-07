@@ -85,7 +85,7 @@ const quickActions = [
   { id: 'metrics', title: 'Métricas', direccion: 'metricas',icon: '◔' },
   { id: 'item', title: 'Proponer Item', direccion: 'MisPropuestas', icon: '+' },
   { id: 'payments', title: 'Métodos de pago', direccion: 'MetodosDePago', icon: '▤' },
-  { id: 'profile', title: 'Perfil', direccion: 'Perfil', icon: '◉' },
+  { id: 'profile', title: 'Perfil', direccion: 'Profile', icon: '◉' },
 ];
 
 export default function HomeScreen({ navigation, route }) {

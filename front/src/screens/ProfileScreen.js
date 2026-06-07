@@ -41,7 +41,9 @@ export default function ProfileScreen({ navigation }) {
       }
     }
 
+    const unsubscribe = navigation.addListener('focus', loadProfile);
     loadProfile();
+    return unsubscribe;
   }, [navigation]);
 
   function handleConfirmLogout() {

@@ -20,7 +20,6 @@ public class ActualizarPerfilClienteRequestDTO {
     @Size(max = 250)
     private String direccion;
 
-    @NotBlank
     @Size(min = 8, max = 255)
     private String password;
 
