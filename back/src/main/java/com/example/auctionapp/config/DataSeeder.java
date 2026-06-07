@@ -174,7 +174,7 @@ public class DataSeeder implements CommandLineRunner {
         seedAuction(
                 LocalDate.now().plusDays(2),
                 LocalTime.of(18, 30),
-                "programada",
+                "abierta",
                 subastadorDosId,
                 "Salon principal",
                 50,
@@ -201,7 +201,7 @@ public class DataSeeder implements CommandLineRunner {
         seedAuction(
                 LocalDate.now().plusDays(14),
                 LocalTime.of(20, 0),
-                "programada",
+                "abierta",
                 subastadorTresId,
                 "Galeria norte",
                 60,

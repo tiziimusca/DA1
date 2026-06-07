@@ -18,6 +18,7 @@ import { useAppTheme } from '../theme/AppTheme';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import countries from '../data/countries';
+import { isValidEmail, isValidName } from '../utils/validation';
 
 export default function RegisterScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -32,6 +33,8 @@ export default function RegisterScreen({ navigation }) {
   const [domicilio, setDomicilio] = useState('');
   const [declaracion, setDeclaracion] = useState(false);
   const [frontUri, setFrontUri] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
   const [backUri, setBackUri] = useState(null);
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [verifyModalVisible, setVerifyModalVisible] = useState(false);
@@ -48,26 +51,41 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    // basic client-side validation
-    const missingRequiredFields = !documento || !nombre || !domicilio || !pais || !email || !declaracion;
-    const missingPhotos = !frontUri || !backUri;
+    setFieldErrors({});
+    setGeneralError('');
 
-    if (missingRequiredFields || missingPhotos) {
-      console.log('[RegisterScreen] Validation failed', {
-        documento: !!documento,
-        nombre: !!nombre,
-        domicilio: !!domicilio,
-        pais: !!pais,
-        email: !!email,
-        frontUri: !!frontUri,
-        backUri: !!backUri,
-        declaracion: !!declaracion,
-      });
-      const missingMsg = !declaracion
-        ? 'Debe aceptar la declaración sobre el origen de los fondos.'
-        : 'Complete todos los campos obligatorios y cargue las fotos del frente y dorso del documento.';
+    const errors = {};
+    const trimmedNombre = nombre.trim();
+    const trimmedApellido = apellido.trim();
+    const trimmedEmail = email.trim();
 
-      Alert.alert('Faltan datos', missingMsg);
+    if (!trimmedNombre || !isValidName(trimmedNombre)) {
+      errors.nombre = 'Nombre invalido';
+    }
+    if (!trimmedApellido || !isValidName(trimmedApellido)) {
+      errors.apellido = 'Apellido invalido';
+    }
+    if (!trimmedEmail || !isValidEmail(trimmedEmail)) {
+      errors.email = 'Email invalido';
+    }
+    if (!domicilio.trim()) {
+      errors.domicilio = 'Domicilio obligatorio';
+    }
+    if (!documento.trim()) {
+      errors.documento = 'Documento obligatorio';
+    }
+    if (!pais) {
+      errors.pais = 'Seleccione un país';
+    }
+    if (!declaracion) {
+      errors.declaracion = 'Debe aceptar la declaración sobre el origen de los fondos.';
+    }
+    if (!frontUri || !backUri) {
+      errors.documentos = 'Debe cargar fotos del frente y dorso del documento.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -127,15 +145,9 @@ export default function RegisterScreen({ navigation }) {
       console.log('[RegisterScreen] registrar response status ->', resp.status);
 
       if (resp.status === 201) {
-        const userName = `${nombre} ${apellido}`.trim() || 'Usuario';
-        Alert.alert('Registro recibido', 'Tu registro fue enviado correctamente. Te redirigimos al Home.', [
-          {
-            text: 'Aceptar',
-            onPress: () => navigation.replace('Home', { accessMode: 'guest', userName }),
-          },
-        ], { cancelable: false });
-        return;
-      } else {
+          setVerifyModalVisible(true);
+          return;
+        } else {
         const rawBody = await resp.text();
         let msg = `Error ${resp.status}`;
 
@@ -152,7 +164,14 @@ export default function RegisterScreen({ navigation }) {
           status: resp.status,
           body: rawBody,
         });
-        Alert.alert('Registro fallido', msg);
+
+        const lowerMsg = String(msg).toLowerCase();
+        if (lowerMsg.includes('email ya utilizado') || lowerMsg.includes('email ya registrado') || lowerMsg.includes('already exists') || lowerMsg.includes('already in use') || lowerMsg.includes('ya existe')) {
+          setFieldErrors({ email: 'Email ya utilizado' });
+          return;
+        }
+
+        setGeneralError(msg);
       }
     } catch (e) {
       console.error('Registration error', e);
@@ -256,11 +275,39 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.row}>
             <View style={styles.half}>
               <Text style={[styles.label, { color: colors.text }]}>Nombre *</Text>
-              <TextInput value={nombre} onChangeText={setNombre} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} />
+              <TextInput
+                value={nombre}
+                onChangeText={(value) => {
+                  setNombre(value);
+                  if (fieldErrors.nombre) {
+                    setFieldErrors((prev) => ({ ...prev, nombre: '' }));
+                  }
+                }}
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.surface },
+                  fieldErrors.nombre ? styles.errorInput : { borderColor: colors.border },
+                ]}
+              />
+              {fieldErrors.nombre ? <Text style={styles.errorText}>{fieldErrors.nombre}</Text> : null}
             </View>
             <View style={styles.half}>
               <Text style={[styles.label, { color: colors.text }]}>Apellido *</Text>
-              <TextInput value={apellido} onChangeText={setApellido} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} />
+              <TextInput
+                value={apellido}
+                onChangeText={(value) => {
+                  setApellido(value);
+                  if (fieldErrors.apellido) {
+                    setFieldErrors((prev) => ({ ...prev, apellido: '' }));
+                  }
+                }}
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.surface },
+                  fieldErrors.apellido ? styles.errorInput : { borderColor: colors.border },
+                ]}
+              />
+              {fieldErrors.apellido ? <Text style={styles.errorText}>{fieldErrors.apellido}</Text> : null}
             </View>
           </View>
 
@@ -299,7 +346,25 @@ export default function RegisterScreen({ navigation }) {
           </Modal>
 
           <Text style={[styles.label, { color: colors.text }]}>Email *</Text>
-          <TextInput value={email} onChangeText={setEmail} placeholder="Name@example.com" placeholderTextColor={colors.muted} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} keyboardType="email-address" />
+          <TextInput
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (fieldErrors.email) {
+                setFieldErrors((prev) => ({ ...prev, email: '' }));
+              }
+            }}
+            placeholder="Name@example.com"
+            placeholderTextColor={colors.muted}
+            style={[
+              styles.input,
+              { backgroundColor: colors.surface },
+              fieldErrors.email ? styles.errorInput : { borderColor: colors.border },
+            ]}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {fieldErrors.email ? <Text style={styles.errorText}>{fieldErrors.email}</Text> : null}
 
           <Text style={[styles.helpText, { color: colors.muted, marginBottom: 10 }]}>No se solicita contraseña en este paso. Recibirás un código por correo para definirla después.</Text>
 
@@ -351,6 +416,7 @@ export default function RegisterScreen({ navigation }) {
             <Text style={{ color: colors.muted, flex: 1, marginLeft: 8 }}>Declaro que todos los fondos utilizados para las subastas son de origen lícito</Text>
           </TouchableOpacity>
 
+          {generalError ? <Text style={styles.errorText}>{generalError}</Text> : null}
           <TouchableOpacity
             onPress={handleContinue}
             activeOpacity={0.9}
@@ -369,8 +435,8 @@ export default function RegisterScreen({ navigation }) {
             <View style={styles.verifyOverlay}>
               <View style={[styles.verifyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
                 <Text style={[styles.verifyTitle, { color: colors.text }]}>Verificando</Text>
-                <Text style={[styles.verifyText, { color: colors.muted }]}>Tu registro fue recibido. Recibirás un correo de confirmación y otro con el código para definir tu contraseña cuando la cuenta esté aprobada.</Text>
-                <TouchableOpacity style={[styles.verifyBtn, { backgroundColor: colors.primary }]} onPress={() => { setVerifyModalVisible(false); navigation.navigate('Home', { accessMode: 'authenticated', userName: nombre ? `${nombre} ${apellido}`.trim() : 'Laura Gomez' }); }}>
+                <Text style={[styles.verifyText, { color: colors.muted }]}>Su cuenta está siendo verificada. Le enviaremos un correo una vez se confirme la primera parte del registro.</Text>
+                <TouchableOpacity style={[styles.verifyBtn, { backgroundColor: colors.primary }]} onPress={() => { setVerifyModalVisible(false); navigation.replace('Home', { accessMode: 'guest', userName: nombre ? `${nombre} ${apellido}`.trim() : 'Laura Gomez' }); }}>
                   <Text style={{ color: '#fff' }}>Aceptar</Text>
                 </TouchableOpacity>
               </View>
@@ -415,4 +481,6 @@ const styles = StyleSheet.create({
   verifyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
   verifyText: { fontSize: 14, marginBottom: 12 },
   verifyBtn: { alignSelf: 'flex-end', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
+  errorInput: { borderColor: '#D32F2F' },
+  errorText: { color: '#D32F2F', fontSize: 12, marginTop: 6, marginBottom: -4 },
 });

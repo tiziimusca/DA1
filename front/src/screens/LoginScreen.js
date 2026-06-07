@@ -15,9 +15,11 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { login, solicitarCodigo } from '../api/authApi';
 import { setSession } from '../auth/authManager';
+import { isValidEmail } from '../utils/validation';
 
 export default function LoginScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -26,11 +28,27 @@ export default function LoginScreen({ navigation }) {
   const [pwModalVisible, setPwModalVisible] = useState(false);
   const [pwEmail, setPwEmail] = useState('');
   const [pwEmailError, setPwEmailError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleLogin() {
-    if (!email || !password) {
-      Alert.alert('Datos incompletos', 'Ingrese email y contraseña.');
+    setEmailError('');
+    setPasswordError('');
+
+    const trimmedEmail = email.trim();
+    let hasError = false;
+
+    if (!trimmedEmail || !isValidEmail(trimmedEmail)) {
+      setEmailError('Email invalido');
+      hasError = true;
+    }
+    if (!password) {
+      setPasswordError('Contraseña obligatoria');
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
 
@@ -72,23 +90,48 @@ export default function LoginScreen({ navigation }) {
               <Text style={[styles.label, { color: colors.text }]}>Email</Text>
               <TextInput
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  if (emailError) setEmailError('');
+                }}
                 placeholder="Name@example.com"
                 placeholderTextColor={colors.muted}
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.surface, color: colors.text },
+                  emailError ? styles.errorInput : { borderColor: colors.border },
+                ]}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
               <Text style={[styles.label, { color: colors.text }]}>Contraseña</Text>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="******"
-                placeholderTextColor={colors.muted}
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                secureTextEntry
-              />
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  value={password}
+                  onChangeText={(value) => {
+                    setPassword(value);
+                    if (passwordError) setPasswordError('');
+                  }}
+                  placeholder="******"
+                  placeholderTextColor={colors.muted}
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    { backgroundColor: colors.surface, color: colors.text },
+                    passwordError ? styles.errorInput : { borderColor: colors.border },
+                  ]}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={() => setShowPassword((prev) => !prev)}
+                >
+                  <Icon name={showPassword ? 'eye-off' : 'eye'} size={20} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
               <TouchableOpacity onPress={() => setPwModalVisible(true)} style={{ alignSelf: 'flex-start', marginTop: 8 }}>
                 <Text style={{ color: colors.primary }}>Generar una nueva contraseña</Text>
@@ -128,18 +171,14 @@ export default function LoginScreen({ navigation }) {
                         onPress={async () => {
                           const targetEmail = (pwEmail || email).trim();
                           console.log('[LoginScreen] solicitarCodigo button pressed for', targetEmail);
-                          if (!targetEmail) {
-                            setPwEmailError('Ingrese un email válido o existente.');
+                          if (!targetEmail || !isValidEmail(targetEmail)) {
+                            setPwEmailError('Email inválido o inexistente');
                             return;
                           }
 
                           try {
                             await solicitarCodigo(targetEmail);
                             setPwEmailError('');
-                            Alert.alert(
-                              'Código enviado',
-                              'Si el email existe, recibirás un código para generar la nueva contraseña.'
-                            );
                             setPwModalVisible(false);
                             navigation.navigate('ResetPassword', { email: targetEmail });
                           } catch (error) {
@@ -210,6 +249,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 12,
   },
+  passwordWrapper: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  passwordInput: { flex: 1, paddingRight: 44 },
+  iconButton: { position: 'absolute', right: 12, padding: 8 },
   button: { marginTop: 12, alignItems: 'center' },
   buttonText: { color: '#fff', fontWeight: '600' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },

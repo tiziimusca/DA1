@@ -1,88 +1,11 @@
-import React from 'react';
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
-import { getUser } from '../auth/authManager';
-
-const featuredAuctions = [
-  {
-    id: '1',
-    title: 'Reloj Rolex',
-    subtitle: 'Empieza: 20 de Abril, 18:00',
-    price: 'USD 4.500',
-    category: 'PLATINO',
-    image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ingresar',
-  },
-  {
-    id: '2',
-    title: 'Televisor 115"',
-    subtitle: 'Empieza: 20 de Abril, 18:00',
-    price: 'USD 1.000',
-    category: 'ORO',
-    image: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ingresar',
-  },
-  {
-    id: '3',
-    title: 'Nike Air Max',
-    subtitle: 'Empieza: 12 de Abril, 18:30',
-    price: 'ARS 80.000',
-    category: 'COMUN',
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ingresar',
-  },
-  {
-    id: '4',
-    title: 'Radio antigua',
-    subtitle: 'Empieza mañana, 22:00',
-    price: 'ARS 300.000',
-    category: 'ESPECIAL',
-    image: 'https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ingresar',
-  },
-];
-
-const guestAuctions = [
-  {
-    id: '1',
-    title: 'Reloj Rolex',
-    subtitle: 'Termina hoy, 20:00',
-    description: 'Pieza de coleccionista excepcional en perfecto estado.',
-    category: 'PLATINO',
-    image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ver catálogo',
-  },
-  {
-    id: '2',
-    title: 'Televisor 115"',
-    subtitle: 'Termina el 20 Abril, 18:00',
-    description: 'Pantalla premium con imagen de alta definición y gran formato.',
-    category: 'ORO',
-    image: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ver catálogo',
-  },
-  {
-    id: '3',
-    title: 'Nike Air Max',
-    subtitle: 'Termina 12 de Abril, 18:30',
-    description: 'Zapatillas deportivas de edición moderna y gran comodidad.',
-    category: 'COMUN',
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ver catálogo',
-  },
-  {
-    id: '4',
-    title: 'Radio antigua',
-    subtitle: 'Termina mañana, 22:00',
-    description: 'Objeto vintage restaurado con diseño y sonido clásico.',
-    category: 'ESPECIAL',
-    image: 'https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&w=900&q=80',
-    cta: 'Ver catálogo',
-  },
-];
+import { getUser, getToken } from '../auth/authManager';
+import { fetchHomeDashboard } from '../api/auctionApi';
 
 const quickActions = [
-  { id: 'metrics', title: 'Métricas', direccion: 'metricas',icon: '◔' },
+  { id: 'metrics', title: 'Métricas', direccion: 'metricas', icon: '◔' },
   { id: 'item', title: 'Proponer Item', direccion: 'MisPropuestas', icon: '+' },
   { id: 'payments', title: 'Métodos de pago', direccion: 'MetodosDePago', icon: '▤' },
   { id: 'profile', title: 'Perfil', direccion: 'Profile', icon: '◉' },
@@ -92,83 +15,123 @@ export default function HomeScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
   const accessMode = route?.params?.accessMode || 'authenticated';
   const isGuest = accessMode === 'guest';
-  const auctions = isGuest ? guestAuctions : featuredAuctions;
+  
+  const [homeData, setHomeData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const authUser = getUser();
-  const userName = !isGuest ? authUser?.nombre || route?.params?.userName || 'Laura Gomez' : 'Inicie Sesión';
+  const token = getToken();
+  const userName = authUser?.nombre || route?.params?.userName || 'Usuario';
+
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const authHeader = isGuest ? null : (token ? `Bearer ${token}` : null);
+        const data = await fetchHomeDashboard(authHeader);
+        
+        console.log('[HomeScreen] homeData fetched:', data);
+        setHomeData(data);
+      } catch (err) {
+        console.error('[HomeScreen] Error fetching home data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHomeData();
+  }, [isGuest, token]);
+
+  const auctions = homeData?.subastasActivas || []; 
+  const metricas = homeData?.metricas;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <FlatList
-        data={auctions}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View style={styles.headerWrap}>
-            <View style={styles.topRow}>
-              <View style={styles.profileRow}>
-                <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
-                  <Text style={{ color: colors.primary, fontWeight: '700' }}>{isGuest ? 'i' : 'LG'}</Text>
+      {loading ? (
+        <View style={[styles.safe, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={[styles.safe, { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }]}>
+          <Text style={{ color: colors.text, textAlign: 'center', fontSize: 16 }}>Error al cargar datos: {error}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={auctions}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.headerWrap}>
+              <View style={styles.topRow}>
+                <View style={styles.profileRow}>
+                  <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
+                    <Text style={{ color: colors.primary, fontWeight: '700' }}>{isGuest ? 'i' : 'LG'}</Text>
+                  </View>
+                  <Text style={[styles.userName, { color: colors.text }]}>{isGuest ? 'Inicie Sesión' : userName}</Text>
                 </View>
-                <Text style={[styles.userName, { color: colors.text }]}>{isGuest ? 'Inicie Sesión' : userName}</Text>
               </View>
-            </View>
 
-            {!isGuest ? (
-              <>
-                <View style={styles.statsRow}>
-                  <StatCard title="Subastas Activas" value="12" colors={colors} radius={radius} />
-                  <StatCard title="Subastas Ganadas" value="4" colors={colors} radius={radius} />
-                </View>
+              {!isGuest && metricas ? (
+                <>
+                  <View style={styles.statsRow}>
+                    <StatCard title="Subastas Activas" value={metricas.subastasActivas || '0'} colors={colors} radius={radius} />
+                    <StatCard title="Subastas Ganadas" value={metricas.subastasGanadas || '0'} colors={colors} radius={radius} />
+                  </View>
 
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Acceso rápido</Text>
-                <View style={styles.quickGrid}>
-                  {quickActions.map((action) => (
-                    <TouchableOpacity
-                      key={action.id}
-                      style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
-                      onPress={() => {
-                        if (action.id === 'metrics') {
-                          navigation.navigate('Metrics');
-                          return;
-                        }
-                        navigation.navigate(action.direccion);
-                      }}
-                    >
-                      <Text style={styles.quickIcon}>{action.icon}</Text>
-                      <Text style={[styles.quickText, { color: colors.text }]}>{action.title}</Text>
-                    </TouchableOpacity>
-                  ))}
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Acceso rápido</Text>
+                  <View style={styles.quickGrid}>
+                    {quickActions.map((action) => (
+                      <TouchableOpacity
+                        key={action.id}
+                        style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
+                        onPress={() => {
+                          if (action.id === 'metrics') {
+                            navigation.navigate('Metrics');
+                            return;
+                          }
+                          navigation.navigate(action.direccion);
+                        }}
+                      >
+                        <Text style={styles.quickIcon}>{action.icon}</Text>
+                        <Text style={[styles.quickText, { color: colors.text }]}>{action.title}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              ) : isGuest ? (
+                <View style={[styles.guestBanner, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
+                  <Text style={[styles.guestBannerText, { color: colors.text }]}>Inicie sesión para acceder a todas las funcionalidades</Text>
+                  <TouchableOpacity style={[styles.guestBannerBtn, { backgroundColor: colors.primary, borderRadius: radius.round }]} onPress={() => navigation.navigate('Login')}>
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>Iniciar sesión</Text>
+                  </TouchableOpacity>
                 </View>
-              </>
-            ) : (
-              <View style={[styles.guestBanner, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
-                <Text style={[styles.guestBannerText, { color: colors.text }]}>Inicie sesión para acceder a todas las funcionalidades</Text>
-                <TouchableOpacity style={[styles.guestBannerBtn, { backgroundColor: colors.primary, borderRadius: radius.round }]} onPress={() => navigation.navigate('Login')}>
-                  <Text style={{ color: '#fff', fontWeight: '600' }}>Iniciar sesión</Text>
+              ) : null}
+
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Subastas activas</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Auctions')}>
+                  <Text style={{ color: colors.primary, fontSize: 12 }}>Ver todas</Text>
                 </TouchableOpacity>
               </View>
-            )}
-
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Subastas activas</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Auctions')}>
-                <Text style={{ color: colors.primary, fontSize: 12 }}>Ver todas</Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <AuctionCard
-            item={item}
-            colors={colors}
-            radius={radius}
-            onPress={() => (isGuest ? navigation.navigate('Catalog', { product: item }) : navigation.navigate('Auctions'))}
-            isGuest={isGuest}
-          />
-        )}
-        ListFooterComponent={<View style={{ height: 16 }} />}
-      />
+          }
+          renderItem={({ item }) => (
+            <AuctionCard
+              item={item}
+              colors={colors}
+              radius={radius}
+              onPress={() => (isGuest ? navigation.navigate('Catalog', { product: item }) : navigation.navigate('Auctions'))}
+              isGuest={isGuest}
+            />
+          )}
+          ListFooterComponent={<View style={{ height: 16 }} />}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -183,27 +146,46 @@ function StatCard({ title, value, colors, radius }) {
 }
 
 function AuctionCard({ item, colors, radius, onPress, isGuest }) {
+  const defaultImages = [
+    'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&w=900&q=80',
+  ];
+  
+  // Use a consistent image based on item id for each auction
+  const imageIndex = (item.identificador?.charCodeAt(0) || 0) % defaultImages.length;
+  const image = defaultImages[imageIndex];
+  
+  // Format date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Próximamente';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const price = !isGuest && item.precioBase ? `${item.moneda || 'USD'} ${item.precioBase.toFixed(2)}` : null;
+
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
       <View style={styles.imageWrap}>
-        <Image source={{ uri: item.image }} style={styles.image} />
+        <Image source={{ uri: image }} style={styles.image} />
         <View style={styles.tag}>
-          <Text style={styles.tagText}>{item.category}</Text>
+          <Text style={styles.tagText}>{item.categoria || 'GENERAL'}</Text>
         </View>
       </View>
 
       <View style={styles.cardBody}>
         <View style={styles.cardTextRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
-            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{item.subtitle}</Text>
-            {isGuest ? <Text style={[styles.cardDescription, { color: colors.text }]}>{item.description}</Text> : null}
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{item.titulo}</Text>
+            <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{formatDate(item.fecha)}</Text>
           </View>
-          {!isGuest ? <Text style={[styles.cardPrice, { color: colors.primary }]}>{item.price}</Text> : null}
+          {price ? <Text style={[styles.cardPrice, { color: colors.primary }]}>{price}</Text> : null}
         </View>
 
         <TouchableOpacity style={[styles.cardBtn, { backgroundColor: colors.primary, borderRadius: radius.round }]} onPress={onPress}>
-          <Text style={{ color: '#fff', fontWeight: '600' }}>{item.cta}</Text>
+          <Text style={{ color: '#fff', fontWeight: '600' }}>{isGuest ? 'Ver catálogo' : 'Ingresar'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -240,7 +222,6 @@ const styles = StyleSheet.create({
   cardTextRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '500' },
   cardSubtitle: { fontSize: 11, marginTop: 2 },
-  cardDescription: { fontSize: 12, lineHeight: 17, marginTop: 10 },
   cardPrice: { fontSize: 15, fontWeight: '700', textAlign: 'right' },
   cardBtn: { alignSelf: 'center', minWidth: 140, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, paddingHorizontal: 18 },
 });
