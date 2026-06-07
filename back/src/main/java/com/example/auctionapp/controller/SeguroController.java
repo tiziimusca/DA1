@@ -24,7 +24,7 @@ public class SeguroController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Seguro> buscar(@PathVariable Integer id) {
+    public ResponseEntity<Seguro> buscar(@PathVariable String id) {
         return seguroService.obtenerPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -36,7 +36,7 @@ public class SeguroController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Seguro> actualizar(@PathVariable Integer id,
+    public ResponseEntity<Seguro> actualizar(@PathVariable String id,
             @Valid @RequestBody Seguro seguro) {
         try {
             Seguro updated = seguroService.actualizar(id, seguro);
@@ -47,7 +47,7 @@ public class SeguroController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+    public ResponseEntity<Void> eliminar(@PathVariable String id) {
         seguroService.eliminar(id);
         return ResponseEntity.noContent().build();
     }

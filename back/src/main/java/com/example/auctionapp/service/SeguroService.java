@@ -21,24 +21,24 @@ public class SeguroService {
         return seguroRepository.findAll();
     }
 
-    public Optional<Seguro> obtenerPorId(Integer id) {
-        return seguroRepository.findById(id);
+    public Optional<Seguro> obtenerPorId(String nroPoliza) {
+        return seguroRepository.findById(nroPoliza);
     }
 
     public Seguro crear(Seguro seguro) {
         return seguroRepository.save(seguro);
     }
 
-    public Seguro actualizar(Integer id, Seguro seguro) {
-        return seguroRepository.findById(id)
+    public Seguro actualizar(String nroPoliza, Seguro seguro) {
+        return seguroRepository.findById(nroPoliza)
                 .map(existing -> {
-                    BeanUtils.copyProperties(seguro, existing, "identificador");
+                    BeanUtils.copyProperties(seguro, existing, "nroPoliza");
                     return seguroRepository.save(existing);
                 })
                 .orElseThrow(() -> new RuntimeException("Seguro no encontrado"));
     }
 
-    public void eliminar(Integer id) {
-        seguroRepository.deleteById(id);
+    public void eliminar(String nroPoliza) {
+        seguroRepository.deleteById(nroPoliza);
     }
 }
