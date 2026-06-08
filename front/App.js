@@ -18,6 +18,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import { AppThemeProvider, useAppTheme } from './src/theme/AppTheme';
 import MisPropuestasScreen from './src/screens/MisPropuestasScreen';
+import ProponerProductoScreen from './src/screens/ProponerProductoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -47,6 +48,7 @@ function RootNavigator() {
         <Stack.Screen name="Bid" component={BidScreen} options={{ title: 'Pujar' }} />
         <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="ProponerProducto" component={ProponerProductoScreen} options={{ headerShown: false }}/>
 
         <Stack.Screen name="MisPropuestas" component={MisPropuestasScreen} options={{ title: 'Mis Propuestas', headerShown: false}} />
 

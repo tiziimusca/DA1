@@ -279,6 +279,7 @@ export default function ArticulosPropuestos({ navigation }) {
         <TouchableOpacity
           activeOpacity={0.85}
           style={[fabStyles.btn, { backgroundColor: colors.primary, borderRadius: radius.lg }]}
+          onPress={() => navigation.navigate('ProponerProducto')}
         >
           <Text style={[fabStyles.icon, { color: colors.accent }]}>+</Text>
           <Text style={[fabStyles.label, { color: '#FFFFFF' }]}>Proponer Nuevo Artículo</Text>
