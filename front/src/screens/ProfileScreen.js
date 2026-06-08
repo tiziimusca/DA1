@@ -17,6 +17,7 @@ import { useAppTheme } from '../theme/AppTheme';
 import { fetchProfile } from '../api/authApi';
 import { clearSession, getToken } from '../auth/authManager';
 import AppFooterNav from '../components/AppFooterNav';
+import Feather from '@expo/vector-icons/Feather'
 
 export default function ProfileScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -81,7 +82,7 @@ export default function ProfileScreen({ navigation }) {
     {
       title: 'Métricas y Actividad',
       icon: 'stats-chart-outline',
-      onPress: () => {},
+      onPress: () => navigation.navigate('Metrics'),
     },
     {
       title: 'Artículos Propuestos',
@@ -210,7 +211,12 @@ export default function ProfileScreen({ navigation }) {
             ]}
           >
             <Text style={styles.infoLabel}>DIRECCIÓN</Text>
-            <Text>{user.direccion}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <TouchableOpacity onPress={() => {}} style={{ marginRight: 12 }}>
+                <Feather name="map-pin" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={{ flex: 1 }}>{user.direccion}</Text>
+            </View>
           </View>
 
           {/* Menú */}

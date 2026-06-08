@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchHomeDashboard, fetchPujas, fetchRegistrosSubasta } from '../api/auctionApi';
 import { getToken } from '../auth/authManager';
+import AppFooterNav from '../components/AppFooterNav';
 
 function compactMoney(value) {
   const amount = Number(value || 0);
@@ -28,6 +30,7 @@ function getItemTitle(puja) {
 
 export default function MetricsScreen() {
   const { colors, radius } = useAppTheme();
+  const navigation = useNavigation();
   const token = getToken();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -131,7 +134,7 @@ export default function MetricsScreen() {
           <MetricCard title="Total gastado" value={compactMoney(totalSpent)} delta={spentDelta} note="capital utilizado" colors={colors} radius={radius} />
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
+        <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderColor: colors.border, borderRadius: radius.lg }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Tasa de victorias general</Text>
           <View style={styles.ringOuter}>
             <View style={[styles.ringInner, { borderColor: colors.primarySoft }]}>
@@ -141,7 +144,7 @@ export default function MetricsScreen() {
           <Text style={[styles.insight, { color: colors.muted }]}>{winInsight}</Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
+        <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderColor: colors.border, borderRadius: radius.lg }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Subastas participadas</Text>
           <View style={styles.participatedList}>
             {participatedItems.map((item) => (
@@ -162,6 +165,11 @@ export default function MetricsScreen() {
           </View>
         </View>
       </ScrollView>
+      <AppFooterNav
+        navigation={navigation}
+        colors={colors}
+        activeRouteName="Profile"
+      />
     </SafeAreaView>
   );
 }
@@ -170,7 +178,7 @@ function MetricCard({ title, value, delta, note, colors, radius }) {
   const deltaColor = delta === '-' ? colors.muted : colors.success;
 
   return (
-    <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
+    <View style={[styles.metricCard, { backgroundColor: colors.metricsBackground, borderColor: colors.border, borderRadius: radius.lg }]}>
       <Text style={[styles.metricTitle, { color: colors.text }]}>{title}</Text>
       <View style={styles.metricRow}>
         <Text style={[styles.metricValue, { color: colors.primary }]}>{value}</Text>

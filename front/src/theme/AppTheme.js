@@ -4,6 +4,7 @@ import { DefaultTheme } from '@react-navigation/native';
 const colors = {
   background: '#EDEDE8',
   surface: '#FFFDF9',
+  metricsBackground: '#E3DED6',
   text: '#1E2A4A',
   muted: '#667085',
   primary: '#0C2D75',
