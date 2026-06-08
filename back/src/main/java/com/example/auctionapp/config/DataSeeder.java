@@ -213,7 +213,7 @@ public class DataSeeder implements CommandLineRunner {
                                 40,
                                 "SI",
                                 "SI",
-                                "arte",
+                                "Oro",
                                 "Catalogo pasado",
                                 responsableUnoId,
                                 new ProductSpec(
