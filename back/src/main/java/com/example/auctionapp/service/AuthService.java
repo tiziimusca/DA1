@@ -137,7 +137,7 @@ public class AuthService {
 
     public LoginResponseDTO autenticar(LoginRequestDTO request) {
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciales incorrectas"));
+                .orElseThrow(() -> new IllegalArgumentException("Email inexistente"));
 
         if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
             throw new IllegalArgumentException("Cuenta sin contraseña. Genere una nueva contraseña desde el apartado correspondiente.");
@@ -171,7 +171,7 @@ public class AuthService {
         }
 
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Email no registrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Email inexistente"));
 
         Integer personaId = usuario.getPersonaId();
         if (personaId == null) {

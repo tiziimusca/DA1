@@ -365,8 +365,9 @@ const styles = StyleSheet.create({
 
   errorText: {
     color: '#D00000',
+    fontSize: 12,
+    marginTop: -12,
     marginBottom: 12,
-    marginTop: -8,
   },
 
   formError: {

@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 const BASE_URL = Platform.OS === 'web'
   ? 'http://localhost:8080/api'
-  : 'http://192.168.0.181:8080/api';
+  : 'http://10.42.194.57:8080/api';
 
 async function parseError(response) {
   const raw = await response.text();
@@ -66,7 +66,7 @@ export async function fetchRegistrosSubasta() {
 }
 
 export function createWebSocket(onMessage, onOpen, onError) {
-  const socket = new WebSocket(Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : 'ws://192.168.0.181:8080/ws/bids');
+  const socket = new WebSocket(Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : 'ws://10.42.194.57:8080/ws/bids');
 
   socket.onopen = () => {
     if (onOpen) onOpen();

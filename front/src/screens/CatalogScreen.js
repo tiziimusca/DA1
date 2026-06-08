@@ -6,7 +6,7 @@ import { fetchCatalogo } from '../api/auctionApi';
 
 const HOST_URL = Platform.OS === 'web'
   ? 'http://localhost:8080'
-  : 'http://192.168.0.181:8080';
+  : 'http://10.42.194.57:8080';
 
 export default function CatalogScreen({ route, navigation }) {
   const { colors, radius } = useAppTheme();

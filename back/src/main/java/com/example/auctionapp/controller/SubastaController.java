@@ -46,35 +46,6 @@ public class SubastaController {
         return subastaService.obtenerProximas().stream().map(MapperUtil::toSubastaDTO).collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<SubastaDTO> buscar(@PathVariable Integer id) {
-        return subastaService.obtenerPorId(id)
-                .map(MapperUtil::toSubastaDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public SubastaDTO crear(@Valid @RequestBody SubastaDTO subastaDto) {
-        Subasta subasta = MapperUtil.toSubastaEntity(subastaDto);
-        return MapperUtil.toSubastaDTO(subastaService.crear(subasta));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<SubastaDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody SubastaDTO subastaDto) {
-        try {
-            Subasta subasta = MapperUtil.toSubastaEntity(subastaDto);
-            return ResponseEntity.ok(MapperUtil.toSubastaDTO(subastaService.actualizar(id, subasta)));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        subastaService.eliminar(id);
-        return ResponseEntity.noContent().build();
-    }
 
     @GetMapping("/{id}/catalogo")
     public ResponseEntity<CatalogoResponseDTO> getCatalogoPorSubasta(

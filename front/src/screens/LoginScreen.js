@@ -66,7 +66,9 @@ export default function LoginScreen({ navigation }) {
       navigation.replace('Home', { accessMode: 'authenticated' });
     } catch (error) {
       const msg = (error.message || '').toLowerCase();
-      if (msg.includes('401') || msg.includes('credenciales') || msg.includes('incorrecta')) {
+      if (msg.includes('email inexistente') || msg.includes('email no registrado')) {
+        setEmailError('Email inexistente');
+      } else if (msg.includes('401') || msg.includes('credenciales') || msg.includes('incorrecta')) {
         setPasswordError('Contraseña incorrecta');
       } else {
         Alert.alert('Error de inicio de sesión', error.message || 'No se pudo iniciar sesión.');
@@ -187,12 +189,8 @@ export default function LoginScreen({ navigation }) {
                             setPwModalVisible(false);
                             navigation.navigate('ResetPassword', { email: targetEmail });
                           } catch (error) {
-                            const message = error.message || 'No se pudo enviar el código.';
-                            if (message.toLowerCase().includes('email no registrado') || message.toLowerCase().includes('email inválido') || message.toLowerCase().includes('email invalido')) {
-                              setPwEmailError('Email inválido o inexistente');
-                            } else {
-                              Alert.alert('Error', message);
-                            }
+                            console.log('[LoginScreen] Error al solicitar código:', error.message);
+                            setPwEmailError('Email inexistente');
                           }
                         }}
                       >
@@ -269,9 +267,9 @@ const styles = StyleSheet.create({
   modalClose: { position: 'absolute', right: 10, top: 8, padding: 6 },
   modalTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center', marginTop: 6 },
   modalText: { textAlign: 'center', marginTop: 8 },
-  modalInput: { height: 44, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, marginTop: 8 },
+  modalInput: { height: 44, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, marginTop: 8, marginBottom: 12 },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
   modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginHorizontal: 6 },
   errorInput: { borderColor: '#D32F2F' },
-  errorText: { color: '#D32F2F', fontSize: 12, marginTop: 6, marginBottom: -4 },
+  errorText: { color: '#D32F2F', fontSize: 12, marginTop: -8, marginBottom: 8 },
 });

@@ -94,7 +94,7 @@ export default function RegisterScreen({ navigation }) {
 
       const API_BASE = isWeb
         ? 'http://localhost:8080/api'
-        : 'http://192.168.0.181:8080/api';
+        : 'http://10.42.194.57:8080/api';
 
       const formData = new FormData();
       formData.append('documento', documento);
@@ -134,7 +134,7 @@ export default function RegisterScreen({ navigation }) {
         });
       } catch (err) {
         if (err.name === 'AbortError') {
-          console.error('[RegisterScreen] request aborted (timeout)');
+          console.log('[RegisterScreen] request aborted (timeout)');
           throw new Error('Tiempo de conexión agotado al enviar el registro. Intente nuevamente.');
         }
         throw err;
@@ -174,7 +174,7 @@ export default function RegisterScreen({ navigation }) {
         setGeneralError(msg);
       }
     } catch (e) {
-      console.error('Registration error', e);
+      console.log('[RegisterScreen] Registration error', e);
       Alert.alert('Error', 'No se pudo completar el registro. Intente nuevamente.');
     } finally {
       setIsSubmitting(false);
@@ -469,13 +469,13 @@ const styles = StyleSheet.create({
   label: { marginBottom: 6, fontSize: 12 },
   input: { height: 44, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, marginBottom: 12 },
   select: { height: 44, borderWidth: 1, borderRadius: 8, justifyContent: 'center', paddingHorizontal: 12, marginBottom: 12 },
-  uploadRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  uploadRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, marginBottom: 12 },
   uploadBox: { width: '48%', height: 120, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF' },
   uploadImage: { width: '100%', height: 120, borderRadius: 12 },
   uploadedOverlay: { position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   uploadedText: { color: '#FFF', fontSize: 12 },
   small: { fontSize: 12, marginTop: 8 },
-  declarationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  declarationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 12 },
   checkbox: { width: 20, height: 20, borderWidth: 1, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   cta: { marginTop: 16, paddingVertical: 14, borderRadius: 24, alignItems: 'center' },
   privacy: { textAlign: 'center', marginTop: 12, fontSize: 12 },
@@ -486,5 +486,5 @@ const styles = StyleSheet.create({
   verifyText: { fontSize: 14, marginBottom: 12 },
   verifyBtn: { alignSelf: 'flex-end', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
   errorInput: { borderColor: '#D32F2F' },
-  errorText: { color: '#D32F2F', fontSize: 12, marginTop: 6, marginBottom: -4 },
+  errorText: { color: '#D32F2F', fontSize: 12, marginTop: -8, marginBottom: 8 },
 });

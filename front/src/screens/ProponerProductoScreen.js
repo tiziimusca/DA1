@@ -148,6 +148,7 @@ export default function ProponerProductoScreen({ navigation }) {
           keyExtractor={(item) => item.index.toString()}
           numColumns={3}
           scrollEnabled={false}
+          style={{ marginBottom: 16 }}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.imageCell, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -328,6 +329,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#D00000',
+    fontSize: 12,
+    marginTop: -12,
     marginBottom: 12,
   },
 });

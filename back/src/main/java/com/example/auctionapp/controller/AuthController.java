@@ -32,7 +32,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 Unauthorized
         }
     }
-
+/* 
     @PostMapping(value = "/registrar", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> registrar(@Valid @RequestBody RegistroRequestDTO request) {
         try {
@@ -44,6 +44,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(error); // 400 Bad Request
         }
     }
+        */
 
     @PostMapping(value = "/registrar")
     public ResponseEntity<Object> registrarMultipart(

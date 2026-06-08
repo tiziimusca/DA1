@@ -54,7 +54,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
       await resetPassword(data.tokenReseteo, password, confirm);
       navigation.replace('Login');
     } catch (error) {
-      console.error('[ResetPasswordScreen] error in submit', error);
+      console.log('[ResetPasswordScreen] submit rechazado:', error.message);
       setCodeError('Código inválido o expirado');
     } finally {
       setIsSubmitting(false);
@@ -154,5 +154,5 @@ const styles = StyleSheet.create({
   cta: { marginTop: 18, paddingVertical: 14, borderRadius: 24, alignItems: 'center' },
   secondary: { marginTop: 12, alignItems: 'center', paddingVertical: 10, backgroundColor: '#EFEFEF', borderRadius: 20 },
   errorInput: { borderColor: '#D32F2F' },
-  errorText: { color: '#D32F2F', fontSize: 12, marginTop: 6, marginBottom: -4 },
+  errorText: { color: '#D32F2F', fontSize: 12, marginTop: 2, marginBottom: 2 },
 });

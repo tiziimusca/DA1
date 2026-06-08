@@ -7,7 +7,7 @@ import AppFooterNav from '../components/AppFooterNav';
 
 const HOST_URL = Platform.OS === 'web'
   ? 'http://localhost:8080'
-  : 'http://192.168.0.181:8080';
+  : 'http://10.42.194.57:8080';
 
 const quickActions = [
   { id: 'metrics', title: 'Métricas', direccion: 'metricas', icon: '◔' },
@@ -41,7 +41,7 @@ export default function HomeScreen({ navigation, route }) {
         console.log('[HomeScreen] homeData fetched:', data);
         setHomeData(data);
       } catch (err) {
-        console.error('[HomeScreen] Error fetching home data:', err);
+        console.log('[HomeScreen] Error fetching home data:', err);
         setError(err.message);
       } finally {
         setLoading(false);
