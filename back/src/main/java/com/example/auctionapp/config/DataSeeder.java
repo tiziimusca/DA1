@@ -240,7 +240,7 @@ public class DataSeeder implements CommandLineRunner {
                                 50,
                                 "SI",
                                 "NO",
-                                "general",
+                                "Comun",
                                 "Catalogo futuro uno",
                                 responsableDosId,
                                 new ProductSpec(
@@ -267,7 +267,7 @@ public class DataSeeder implements CommandLineRunner {
                                 60,
                                 "SI",
                                 "NO",
-                                "coleccion",
+                                "Plata",
                                 "Catalogo futuro dos",
                                 responsableTresId,
                                 new ProductSpec(
@@ -307,21 +307,24 @@ public class DataSeeder implements CommandLineRunner {
                                 clienteUnoId, "Cliente Demo 1", 4111111111111111L, "12/28", "123", "aprobado",
                                 System.currentTimeMillis());
 
-                // --- Agregar producto "Reloj de mano importante" al Catalogo 2 ("Catalogo futuro uno") ---
-                Integer catalogo2Id = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?", "Catalogo futuro uno");
+                // --- Agregar producto "Reloj de mano importante" al Catalogo 2 ("Catalogo
+                // futuro uno") ---
+                Integer catalogo2Id = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
+                                "Catalogo futuro uno");
 
                 jdbcTemplate.update(
                                 "INSERT INTO productos (fecha, disponible, descripcion_catalogo, descripcion_completa, revisor, duenio, seguro) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                LocalDate.now(), "SI", "Reloj Rolex Daytona", 
+                                LocalDate.now(), "SI", "Reloj Rolex Daytona",
                                 "Importante reloj de mano Rolex Daytona en oro de 18k, cronógrafo automático, modelo 2021 en estado de colección.",
                                 empleadoVerificadorId, duenoDosId, "POL-0002");
 
-                Integer relojId = getInteger("SELECT identificador FROM productos WHERE descripcion_completa = ?", 
+                Integer relojId = getInteger("SELECT identificador FROM productos WHERE descripcion_completa = ?",
                                 "Importante reloj de mano Rolex Daytona en oro de 18k, cronógrafo automático, modelo 2021 en estado de colección.");
 
-                // Simulamos el archivo físico decodificando un string Base64 (imagen JPEG válida) a bytes
-                String relojBase64 = "68747470733a2f2f696d616765732e756e73706c6173682e636f6d2f70686f746f2d4d305a5465664371616b6f3f6175746f3d666f726d6174266669743d63726f7026773d39303026713d3830";
-                byte[] fotoRelojBytes = java.util.Base64.getDecoder().decode(relojBase64);
+                // Guardamos la URL directamente como bytes UTF-8 para que se use como imagen
+                // remota
+                String relojUrl = "https://images.unsplash.com/photo-1639006570490-79c0c53f1080?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+                byte[] fotoRelojBytes = relojUrl.getBytes(StandardCharsets.UTF_8);
                 jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes);
 
                 jdbcTemplate.update(

@@ -3,7 +3,6 @@ import { Image, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, Vie
 import { useAppTheme } from '../theme/AppTheme';
 import { getToken, getUser, isAuthenticated } from '../auth/authManager';
 import { fetchCatalogo } from '../api/auctionApi';
-import AppFooterNav from '../components/AppFooterNav';
 
 const HOST_URL = Platform.OS === 'web'
   ? 'http://localhost:8080'
@@ -105,14 +104,55 @@ export default function CatalogScreen({ route, navigation }) {
             renderItem={({ item }) => {
               let imageUri = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
               if (item.fotos && item.fotos.length > 0) {
-                const foto = item.fotos[0];
+                const foto = item.fotos[0] || '';
+
                 if (foto.startsWith('http')) {
                   imageUri = foto;
                 } else if (foto.startsWith('/api/')) {
                   imageUri = `${HOST_URL}${foto}`;
                 } else {
-                  imageUri = `data:image/jpeg;base64,${foto}`;
+                  try {
+                    const maybeUrl = decodeURIComponent(foto);
+                    if (maybeUrl.startsWith('http')) {
+                      imageUri = maybeUrl;
+                    }
+                  } catch (e) {
+                  }
+
+                  if (!imageUri || imageUri === 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80') {
+                    const hexToAscii = (hex) => {
+                      try {
+                        const prefix = hex.match(/^[0-9a-fA-F]+/);
+                        if (!prefix || !prefix[0] || prefix[0].length < 8) return null;
+                        const cleaned = prefix[0];
+                        const even = cleaned.length % 2 === 1 ? cleaned + '0' : cleaned;
+                        let out = '';
+                        for (let i = 0; i < even.length; i += 2) {
+                          out += String.fromCharCode(parseInt(even.substr(i, 2), 16));
+                        }
+                        return out;
+                      } catch (e) {
+                        return null;
+                      }
+                    };
+
+                    const decoded = hexToAscii(foto);
+                    if (decoded && decoded.startsWith('http')) {
+                      imageUri = decoded;
+                    }
+                  }
+
+                  if (!imageUri || imageUri === 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80') {
+                    const looksLikeBase64 = /^[A-Za-z0-9+/]+=*$/.test(foto.replace(/\s+/g, ''));
+                    if (looksLikeBase64) {
+                      imageUri = `data:image/jpeg;base64,${foto}`;
+                    }
+                  }
                 }
+
+                try {
+                  console.log('Error con la imagen: ', { id: item.id, foto: foto.slice(0, 80) + (foto.length > 80 ? '...' : ''), imageUri });
+                } catch (e) {}
               }
 
               return (
@@ -143,10 +183,6 @@ export default function CatalogScreen({ route, navigation }) {
             }}
           />
         )}
-      </View>
-      
-      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
-        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Catalog" />
       </View>
     </SafeAreaView>
   );

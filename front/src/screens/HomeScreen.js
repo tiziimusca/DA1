@@ -122,9 +122,11 @@ export default function HomeScreen({ navigation, route }) {
 
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Subastas activas</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Auctions')}>
-                  <Text style={{ color: colors.primary, fontSize: 12 }}>Ver todas</Text>
-                </TouchableOpacity>
+                {!isGuest && (
+                  <TouchableOpacity onPress={() => navigation.navigate('Auctions')}>
+                    <Text style={{ color: colors.primary, fontSize: 12 }}>Ver todas</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           }
