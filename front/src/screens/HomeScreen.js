@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import { getUser, getToken } from '../auth/authManager';
-import { fetchHomeDashboard } from '../api/auctionApi';
+import { fetchHomeDashboard, fetchCatalogo } from '../api/auctionApi';
 import AppFooterNav from '../components/AppFooterNav';
+
+const HOST_URL = Platform.OS === 'web'
+  ? 'http://localhost:8080'
+  : 'http://192.168.0.181:8080';
 
 const quickActions = [
   { id: 'metrics', title: 'Métricas', direccion: 'metricas', icon: '◔' },
@@ -150,7 +154,9 @@ export default function HomeScreen({ navigation, route }) {
         />
       )}
       </View>
-      <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
+      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
+      </View>
     </SafeAreaView>
   );
 }
@@ -165,6 +171,8 @@ function StatCard({ title, value, colors, radius }) {
 }
 
 function AuctionCard({ item, colors, radius, onPress, isGuest }) {
+  const [photoUri, setPhotoUri] = useState(null);
+
   const defaultImages = [
     'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80',
     'https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=900&q=80',
@@ -173,8 +181,39 @@ function AuctionCard({ item, colors, radius, onPress, isGuest }) {
   ];
   
   // Use a consistent image based on item id for each auction
-  const imageIndex = (item.identificador?.charCodeAt(0) || 0) % defaultImages.length;
-  const image = defaultImages[imageIndex];
+  const imageIndex = (String(item.identificador || '').charCodeAt(0) || 0) % defaultImages.length;
+  const fallbackImage = defaultImages[imageIndex];
+
+  useEffect(() => {
+    let mounted = true;
+    const loadCatalogPhoto = async () => {
+      try {
+        const subastaId = item.identificador || item.id;
+        if (!subastaId) return;
+        
+        const data = await fetchCatalogo(subastaId, null);
+        if (mounted && data?.items?.length > 0) {
+          const firstItem = data.items[0];
+          if (firstItem.fotos && firstItem.fotos.length > 0) {
+            const foto = firstItem.fotos[0];
+            if (foto.startsWith('http')) {
+              setPhotoUri(foto);
+            } else if (foto.startsWith('/api/')) {
+              setPhotoUri(`${HOST_URL}${foto}`);
+            } else {
+              setPhotoUri(`data:image/jpeg;base64,${foto}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.log('[AuctionCard] Error fetching catalog photo for subasta', item.identificador, err.message);
+      }
+    };
+    loadCatalogPhoto();
+    return () => { mounted = false; };
+  }, [item]);
+
+  const image = photoUri || fallbackImage;
   
   // Format date
   const formatDate = (dateStr) => {

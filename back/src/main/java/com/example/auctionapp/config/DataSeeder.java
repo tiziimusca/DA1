@@ -307,6 +307,27 @@ public class DataSeeder implements CommandLineRunner {
                                 clienteUnoId, "Cliente Demo 1", 4111111111111111L, "12/28", "123", "aprobado",
                                 System.currentTimeMillis());
 
+                // --- Agregar producto "Reloj de mano importante" al Catalogo 2 ("Catalogo futuro uno") ---
+                Integer catalogo2Id = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?", "Catalogo futuro uno");
+
+                jdbcTemplate.update(
+                                "INSERT INTO productos (fecha, disponible, descripcion_catalogo, descripcion_completa, revisor, duenio, seguro) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                LocalDate.now(), "SI", "Reloj Rolex Daytona", 
+                                "Importante reloj de mano Rolex Daytona en oro de 18k, cronógrafo automático, modelo 2021 en estado de colección.",
+                                empleadoVerificadorId, duenoDosId, "POL-0002");
+
+                Integer relojId = getInteger("SELECT identificador FROM productos WHERE descripcion_completa = ?", 
+                                "Importante reloj de mano Rolex Daytona en oro de 18k, cronógrafo automático, modelo 2021 en estado de colección.");
+
+                // Simulamos el archivo físico decodificando un string Base64 (imagen JPEG válida) a bytes
+                String relojBase64 = "68747470733a2f2f696d616765732e756e73706c6173682e636f6d2f70686f746f2d4d305a5465664371616b6f3f6175746f3d666f726d6174266669743d63726f7026773d39303026713d3830";
+                byte[] fotoRelojBytes = java.util.Base64.getDecoder().decode(relojBase64);
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes);
+
+                jdbcTemplate.update(
+                                "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
+                                catalogo2Id, relojId, new BigDecimal("25000.00"), new BigDecimal("2500.00"), "NO");
+
                 log.info("Datos iniciales creados correctamente");
         }
 

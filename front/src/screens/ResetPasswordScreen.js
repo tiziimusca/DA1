@@ -55,12 +55,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
       navigation.replace('Login');
     } catch (error) {
       console.error('[ResetPasswordScreen] error in submit', error);
-      const message = error?.message || 'No se pudo actualizar la contraseña.';
-      if (message.toLowerCase().includes('código inválido') || message.toLowerCase().includes('codigo inválido') || message.toLowerCase().includes('código no válido') || message.toLowerCase().includes('codigo no valido') || message.toLowerCase().includes('no se pudo validar') || message.toLowerCase().includes('no existe')) {
-        setCodeError('Código inválido');
-      } else {
-        setCodeError(message);
-      }
+      setCodeError('Código inválido o expirado');
     } finally {
       setIsSubmitting(false);
     }

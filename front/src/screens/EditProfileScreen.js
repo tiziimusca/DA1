@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   FlatList,
+  Platform,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
@@ -246,11 +247,9 @@ export default function EditProfileScreen({ navigation, route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-      <AppFooterNav
-        navigation={navigation}
-        colors={colors}
-        activeRouteName="Profile"
-      />
+<View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20}}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Profile" />
+      </View>
     </SafeAreaView>
   );
 }

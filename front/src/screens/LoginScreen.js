@@ -65,7 +65,12 @@ export default function LoginScreen({ navigation }) {
       });
       navigation.replace('Home', { accessMode: 'authenticated' });
     } catch (error) {
-      Alert.alert('Error de inicio de sesión', error.message || 'No se pudo iniciar sesión.');
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('401') || msg.includes('credenciales') || msg.includes('incorrecta')) {
+        setPasswordError('Contraseña incorrecta');
+      } else {
+        Alert.alert('Error de inicio de sesión', error.message || 'No se pudo iniciar sesión.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -270,4 +275,3 @@ const styles = StyleSheet.create({
   errorInput: { borderColor: '#D32F2F' },
   errorText: { color: '#D32F2F', fontSize: 12, marginTop: 6, marginBottom: -4 },
 });
-

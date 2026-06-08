@@ -3,6 +3,7 @@ import { Image, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, Vie
 import { useAppTheme } from '../theme/AppTheme';
 import { getToken, getUser, isAuthenticated } from '../auth/authManager';
 import { fetchCatalogo } from '../api/auctionApi';
+import AppFooterNav from '../components/AppFooterNav';
 
 const HOST_URL = Platform.OS === 'web'
   ? 'http://localhost:8080'
@@ -144,6 +145,9 @@ export default function CatalogScreen({ route, navigation }) {
         )}
       </View>
       
+      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Catalog" />
+      </View>
     </SafeAreaView>
   );
 }
