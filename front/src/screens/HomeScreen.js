@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import { getUser, getToken } from '../auth/authManager';
 import { fetchHomeDashboard } from '../api/auctionApi';
+import AppFooterNav from '../components/AppFooterNav';
 
 const quickActions = [
   { id: 'metrics', title: 'Métricas', direccion: 'metricas', icon: '◔' },
@@ -51,6 +52,7 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <View style={{ flex: 1 }}>
       {loading ? (
         <View style={[styles.safe, { justifyContent: 'center', alignItems: 'center' }]}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -127,7 +129,7 @@ export default function HomeScreen({ navigation, route }) {
               item={item}
               colors={colors}
               radius={radius}
-              onPress={() => (isGuest ? navigation.navigate('Catalog', { product: item }) : navigation.navigate('Auctions'))}
+            onPress={() => navigation.navigate('Catalog', { product: item })}
               isGuest={isGuest}
             />
           )}
@@ -147,6 +149,8 @@ export default function HomeScreen({ navigation, route }) {
           }
         />
       )}
+      </View>
+      <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
     </SafeAreaView>
   );
 }

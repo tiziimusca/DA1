@@ -1,8 +1,10 @@
 package com.example.auctionapp.controller;
 
+import com.example.auctionapp.dto.CatalogoResponseDTO;
 import com.example.auctionapp.dto.SubastaActivaDTO;
 import com.example.auctionapp.dto.SubastaDTO;
 import com.example.auctionapp.model.Subasta;
+import com.example.auctionapp.service.CatalogoService;
 import com.example.auctionapp.service.SubastaService;
 import com.example.auctionapp.util.MapperUtil;
 import jakarta.validation.Valid;
@@ -17,9 +19,11 @@ import java.util.stream.Collectors;
 public class SubastaController {
 
     private final SubastaService subastaService;
+    private final CatalogoService catalogoService;
 
-    public SubastaController(SubastaService subastaService) {
+    public SubastaController(SubastaService subastaService, CatalogoService catalogoService) {
         this.subastaService = subastaService;
+        this.catalogoService = catalogoService;
     }
 
     @GetMapping
@@ -70,5 +74,20 @@ public class SubastaController {
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         subastaService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/catalogo")
+    public ResponseEntity<CatalogoResponseDTO> getCatalogoPorSubasta(
+            @PathVariable Integer id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        try {
+            CatalogoResponseDTO response = catalogoService.obtenerCatalogoPorSubasta(id, authorizationHeader);
+            if (response.getItems() == null || response.getItems().isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

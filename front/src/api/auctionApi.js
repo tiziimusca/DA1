@@ -32,6 +32,19 @@ export async function fetchProducto(id) {
   return response.json();
 }
 
+export async function fetchCatalogo(subastaId, authHeader) {
+  const response = await fetch(`${BASE_URL}/subastas/${subastaId}/catalogo`, {
+    headers: authHeader ? { Authorization: authHeader } : undefined,
+  });
+  if (response.status === 204) {
+    return { items: [] };
+  }
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
 export async function fetchHomeDashboard(authToken) {
   const response = await fetch(`${BASE_URL}/home`, {
     headers: authToken ? { Authorization: authToken } : undefined,
