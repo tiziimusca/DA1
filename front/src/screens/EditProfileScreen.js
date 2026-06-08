@@ -28,6 +28,7 @@ export default function EditProfileScreen({ navigation, route }) {
   const [pais, setPais] = useState('');
   const [direccion, setDireccion] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -216,14 +217,26 @@ export default function EditProfileScreen({ navigation, route }) {
 
         <Text>Contraseña</Text>
 
-        <TextInput
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          style={[styles.input, fieldErrors.password ? styles.errorInput : null]}
-          placeholder="Nueva contraseña (opcional)"
-          placeholderTextColor={colors.muted}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={setPassword}
+            style={[styles.input, styles.passwordInput, fieldErrors.password ? styles.errorInput : null]}
+            placeholder="Nueva contraseña (opcional)"
+            placeholderTextColor={colors.muted}
+          />
+          <TouchableOpacity
+            style={styles.passwordToggleInside}
+            onPress={() => setPasswordVisible(!passwordVisible)}
+          >
+            <Icon
+              name={passwordVisible ? 'eye' : 'eye-off'}
+              size={20}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
         {fieldErrors.password ? <Text style={styles.errorText}>{fieldErrors.password}</Text> : null}
 
         {formError ? <Text style={styles.formError}>{formError}</Text> : null}
@@ -233,11 +246,11 @@ export default function EditProfileScreen({ navigation, route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-              <AppFooterNav
-                navigation={navigation}
-                colors={colors}
-                activeRouteName="Profile"
-              />
+      <AppFooterNav
+        navigation={navigation}
+        colors={colors}
+        activeRouteName="Profile"
+      />
     </SafeAreaView>
   );
 }
@@ -312,6 +325,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginTop: 6,
     marginBottom: 16,
+  },
+
+  passwordContainer: {
+    position: 'relative',
+    marginTop: 6,
+    marginBottom: 16,
+  },
+
+  passwordInput: {
+    paddingRight: 45,
+  },
+
+  passwordToggleInside: {
+    position: 'absolute',
+    right: 12,
+    height: 46,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   saveBtn: {
