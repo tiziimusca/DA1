@@ -217,7 +217,7 @@ export default function LoginScreen({ navigation }) {
               </View>
 
               <TouchableOpacity onPress={handleContinueAnon} style={styles.anonBtn}>
-                <Text style={{ color: colors.text }}>Continuar sin iniciar sesión</Text>
+                <Text style={{ color: '#fff' }}>Continuar sin iniciar sesión</Text>
               </TouchableOpacity>
 
               <View style={styles.footerTextRow}>
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
   line: { flex: 1, height: 1 },
   circle: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDD', marginHorizontal: 12 },
-  anonBtn: { alignSelf: 'center', backgroundColor: '#EFEFEF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+  anonBtn: { alignSelf: 'center', backgroundColor: '#3E4148', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
   footerTextRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 16 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalContainer: { width: '86%', padding: 18, borderRadius: 12, borderWidth: 1 },

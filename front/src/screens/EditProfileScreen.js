@@ -17,6 +17,7 @@ import { useAppTheme } from '../theme/AppTheme';
 import countries from '../data/countries';
 import { getToken } from '../auth/authManager';
 import { updateProfile } from '../api/authApi';
+import AppFooterNav from '../components/AppFooterNav';
 
 export default function EditProfileScreen({ navigation, route }) {
   const { colors } = useAppTheme();
@@ -223,7 +224,6 @@ export default function EditProfileScreen({ navigation, route }) {
           placeholder="Nueva contraseña (opcional)"
           placeholderTextColor={colors.muted}
         />
-        <Text style={[{ color: colors.muted, marginBottom: 12 }]}>Deja en blanco para mantener la contraseña actual.</Text>
         {fieldErrors.password ? <Text style={styles.errorText}>{fieldErrors.password}</Text> : null}
 
         {formError ? <Text style={styles.formError}>{formError}</Text> : null}
@@ -233,6 +233,11 @@ export default function EditProfileScreen({ navigation, route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+              <AppFooterNav
+                navigation={navigation}
+                colors={colors}
+                activeRouteName="Profile"
+              />
     </SafeAreaView>
   );
 }
@@ -244,6 +249,7 @@ const styles = StyleSheet.create({
 
   container: {
     padding: 20,
+    marginTop: 40,
   },
 
   header: {

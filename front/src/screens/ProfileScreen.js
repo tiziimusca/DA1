@@ -16,6 +16,7 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchProfile } from '../api/authApi';
 import { clearSession, getToken } from '../auth/authManager';
+import AppFooterNav from '../components/AppFooterNav';
 
 export default function ProfileScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -105,8 +106,9 @@ export default function ProfileScreen({ navigation }) {
     >
       <StatusBar barStyle="dark-content" />
 
-      <ScrollView>
-        <View style={styles.container}>
+      <View style={styles.layout}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.container}>
 
           {/* Header */}
 
@@ -268,19 +270,26 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity
-            style={[
-              styles.logoutBtn,
-              { backgroundColor: '#E8C6CC' },
-            ]}
-            onPress={() => setLogoutModalVisible(true)}
-          >
-            <Text style={styles.logoutText}>
-              Cerrar Sesión
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <TouchableOpacity
+              style={[
+                styles.logoutBtn,
+                { backgroundColor: '#E8C6CC' },
+              ]}
+              onPress={() => setLogoutModalVisible(true)}
+            >
+              <Text style={styles.logoutText}>
+                Cerrar Sesión
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        <AppFooterNav
+          navigation={navigation}
+          colors={colors}
+          activeRouteName="Profile"
+        />
+      </View>
 
       <Modal
         visible={logoutModalVisible}
@@ -326,8 +335,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  layout: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
+  },
+
   container: {
     padding: 20,
+    marginTop: 40,
+    paddingBottom: 12,
   },
 
   header: {
