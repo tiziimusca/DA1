@@ -318,6 +318,7 @@ export default function RegisterScreen({ navigation }) {
           >
             <Text style={{ color: pais ? colors.text : colors.muted }}>{pais || 'Selecciona'}</Text>
           </TouchableOpacity>
+          {fieldErrors.pais ? <Text style={styles.errorText}>{fieldErrors.pais}</Text> : null}
 
           <Modal visible={countryModalVisible} animationType="slide">
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -366,13 +367,14 @@ export default function RegisterScreen({ navigation }) {
           />
           {fieldErrors.email ? <Text style={styles.errorText}>{fieldErrors.email}</Text> : null}
 
-          <Text style={[styles.helpText, { color: colors.muted, marginBottom: 10 }]}>No se solicita contraseña en este paso. Recibirás un código por correo para definirla después.</Text>
 
           <Text style={[styles.label, { color: colors.text }]}>Domicilio *</Text>
           <TextInput value={domicilio} onChangeText={setDomicilio} placeholder="Ingrese su domicilio" placeholderTextColor={colors.muted} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} />
+          {fieldErrors.domicilio ? <Text style={styles.errorText}>{fieldErrors.domicilio}</Text> : null}
 
           <Text style={[styles.label, { color: colors.text }]}>Número de documento *</Text>
           <TextInput value={documento} onChangeText={setDocumento} placeholder="Solo dígitos" placeholderTextColor={colors.muted} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} keyboardType="numeric" />
+          {fieldErrors.documento ? <Text style={styles.errorText}>{fieldErrors.documento}</Text> : null}
 
           <Text style={[styles.label, { color: colors.text }]}>Fotos del documento (Frente / Dorso) *</Text>
           <View style={styles.uploadRow}>
@@ -407,6 +409,7 @@ export default function RegisterScreen({ navigation }) {
               )}
             </TouchableOpacity>
           </View>
+          {fieldErrors.documentos ? <Text style={styles.errorText}>{fieldErrors.documentos}</Text> : null}
           <Text style={[styles.small, { color: colors.muted }]}>Tamaño máximo de archivo 6MB. Formatos: JPG, PNG, PDF.</Text>
 
           <TouchableOpacity style={styles.declarationRow} onPress={() => setDeclaracion(!declaracion)}>
@@ -415,6 +418,7 @@ export default function RegisterScreen({ navigation }) {
             </View>
             <Text style={{ color: colors.muted, flex: 1, marginLeft: 8 }}>Declaro que todos los fondos utilizados para las subastas son de origen lícito</Text>
           </TouchableOpacity>
+          {fieldErrors.declaracion ? <Text style={styles.errorText}>{fieldErrors.declaracion}</Text> : null}
 
           {generalError ? <Text style={styles.errorText}>{generalError}</Text> : null}
           <TouchableOpacity

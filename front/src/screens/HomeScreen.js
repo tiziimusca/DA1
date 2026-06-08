@@ -68,12 +68,21 @@ export default function HomeScreen({ navigation, route }) {
           ListHeaderComponent={
             <View style={styles.headerWrap}>
               <View style={styles.topRow}>
-                <View style={styles.profileRow}>
+                <TouchableOpacity
+                  style={styles.profileRow}
+                  activeOpacity={0.8}
+                  disabled={!isGuest}
+                  onPress={() => {
+                    if (isGuest) {
+                      navigation.navigate('Login');
+                    }
+                  }}
+                >
                   <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
                     <Text style={{ color: colors.primary, fontWeight: '700' }}>{isGuest ? 'i' : 'LG'}</Text>
                   </View>
                   <Text style={[styles.userName, { color: colors.text }]}>{isGuest ? 'Inicie Sesión' : userName}</Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               {!isGuest && metricas ? (
@@ -103,13 +112,6 @@ export default function HomeScreen({ navigation, route }) {
                     ))}
                   </View>
                 </>
-              ) : isGuest ? (
-                <View style={[styles.guestBanner, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
-                  <Text style={[styles.guestBannerText, { color: colors.text }]}>Inicie sesión para acceder a todas las funcionalidades</Text>
-                  <TouchableOpacity style={[styles.guestBannerBtn, { backgroundColor: colors.primary, borderRadius: radius.round }]} onPress={() => navigation.navigate('Login')}>
-                    <Text style={{ color: '#fff', fontWeight: '600' }}>Iniciar sesión</Text>
-                  </TouchableOpacity>
-                </View>
               ) : null}
 
               <View style={styles.sectionHeaderRow}>
@@ -129,7 +131,20 @@ export default function HomeScreen({ navigation, route }) {
               isGuest={isGuest}
             />
           )}
-          ListFooterComponent={<View style={{ height: 16 }} />}
+          ListFooterComponent={
+            isGuest ? (
+              <View>
+                <View style={[styles.guestBanner, { borderColor: colors.border }]}> 
+                  <TouchableOpacity style={[styles.guestBannerBtn, { backgroundColor: colors.primary, borderRadius: radius.round }]} onPress={() => navigation.navigate('Login')}>
+                    <Text style={styles.guestBannerBtnText}>Inicie sesión para acceder{`\n`}a todas las funcionalidades</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={{ height: 16 }} />
+              </View>
+            ) : (
+              <View style={{ height: 16 }} />
+            )
+          }
         />
       )}
     </SafeAreaView>
@@ -210,9 +225,17 @@ const styles = StyleSheet.create({
   quickCard: { width: '48.5%', minHeight: 74, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
   quickIcon: { fontSize: 24, marginBottom: 4 },
   quickText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
-  guestBanner: { borderWidth: 1, padding: 16, marginBottom: 14, alignItems: 'center' },
-  guestBannerText: { textAlign: 'center', fontSize: 13, marginBottom: 10 },
-  guestBannerBtn: { paddingHorizontal: 18, paddingVertical: 10 },
+  guestBanner: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    marginHorizontal: -14,
+    marginBottom: 14,
+    paddingVertical: 6,
+    alignItems: 'center',
+    backgroundColor: '#E5E5E5',
+  },
+  guestBannerBtn: { paddingHorizontal: 22, paddingVertical: 8, minWidth: 175, alignItems: 'center' },
+  guestBannerBtnText: { color: '#fff', fontWeight: '600', fontSize: 11, textAlign: 'center', lineHeight: 14 },
   card: { borderWidth: 1, overflow: 'hidden', marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
   imageWrap: { height: 128, position: 'relative', backgroundColor: '#ddd' },
   image: { width: '100%', height: '100%' },

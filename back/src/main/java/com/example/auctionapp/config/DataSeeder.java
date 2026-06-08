@@ -134,7 +134,7 @@ public class DataSeeder implements CommandLineRunner {
                                 "DNI-4003");
 
                 jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
-                                "demo@abast.com", passwordEncoder.encode("demo123!"), personaUsuarioId);
+                                "demo@gmail.com", passwordEncoder.encode("demo123"), personaUsuarioId);
 
                 jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Verificador Demo", 100);
                 jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 1",
@@ -231,59 +231,59 @@ public class DataSeeder implements CommandLineRunner {
                                                 }),
                                 new BidSpec(clienteUnoId, 1, new BigDecimal("3550.00"), "SI"));
 
-        seedAuction(
-                LocalDate.now().plusDays(2),
-                LocalTime.of(18, 30),
-                "abierta",
-                subastadorDosId,
-                "Salon principal",
-                50,
-                "SI",
-                "NO",
-                "general",
-                "Catalogo futuro uno",
-                responsableDosId,
-                new ProductSpec(
-                        "Reloj de pared",
-                        "Reloj antiguo de pared",
-                        empleadoVerificadorId,
-                        duenoDosId,
-                        "POL-0002",
-                        new BigDecimal("5000.00"),
-                        new BigDecimal("500.00"),
-                        "NO",
-                        new String[] {
-                                "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=900&q=80",
-                                "https://images.unsplash.com/photo-1507646227500-4d389b0012be?auto=format&fit=crop&w=900&q=80"
-                        }),
-                new BidSpec(clienteDosId, 2, new BigDecimal("6200.00"), "SI"));
+                seedAuction(
+                                LocalDate.now().plusDays(2),
+                                LocalTime.of(18, 30),
+                                "abierta",
+                                subastadorDosId,
+                                "Salon principal",
+                                50,
+                                "SI",
+                                "NO",
+                                "general",
+                                "Catalogo futuro uno",
+                                responsableDosId,
+                                new ProductSpec(
+                                                "Reloj de pared",
+                                                "Reloj antiguo de pared",
+                                                empleadoVerificadorId,
+                                                duenoDosId,
+                                                "POL-0002",
+                                                new BigDecimal("5000.00"),
+                                                new BigDecimal("500.00"),
+                                                "NO",
+                                                new String[] {
+                                                                "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=900&q=80",
+                                                                "https://images.unsplash.com/photo-1507646227500-4d389b0012be?auto=format&fit=crop&w=900&q=80"
+                                                }),
+                                new BidSpec(clienteDosId, 2, new BigDecimal("6200.00"), "SI"));
 
-        seedAuction(
-                LocalDate.now().plusDays(14),
-                LocalTime.of(20, 0),
-                "abierta",
-                subastadorTresId,
-                "Galeria norte",
-                60,
-                "SI",
-                "NO",
-                "coleccion",
-                "Catalogo futuro dos",
-                responsableTresId,
-                new ProductSpec(
-                        "Bicicleta clasica",
-                        "Bicicleta restaurada",
-                        empleadoVerificadorId,
-                        duenoTresId,
-                        "POL-0003",
-                        new BigDecimal("900.00"),
-                        new BigDecimal("100.00"),
-                        "NO",
-                        new String[] {
-                                "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=80",
-                                "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=80"
-                        }),
-                new BidSpec(clienteTresId, 3, new BigDecimal("1250.00"), "SI"));
+                seedAuction(
+                                LocalDate.now().plusDays(14),
+                                LocalTime.of(20, 0),
+                                "abierta",
+                                subastadorTresId,
+                                "Galeria norte",
+                                60,
+                                "SI",
+                                "NO",
+                                "coleccion",
+                                "Catalogo futuro dos",
+                                responsableTresId,
+                                new ProductSpec(
+                                                "Bicicleta clasica",
+                                                "Bicicleta restaurada",
+                                                empleadoVerificadorId,
+                                                duenoTresId,
+                                                "POL-0003",
+                                                new BigDecimal("900.00"),
+                                                new BigDecimal("100.00"),
+                                                "NO",
+                                                new String[] {
+                                                                "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=80",
+                                                                "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=80"
+                                                }),
+                                new BidSpec(clienteTresId, 3, new BigDecimal("1250.00"), "SI"));
 
                 jdbcTemplate.update(
                                 "INSERT INTO metodos_pago_banco (cliente_id, nombre_titular, dni_titular, nombre_banco, numero_cuenta, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",

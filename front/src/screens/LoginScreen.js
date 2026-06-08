@@ -237,7 +237,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flexGrow: 1 },
-  container: { flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 24 },
+  container: { flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 24, marginTop: 50 },
   logo: { width: 96, height: 96, marginBottom: 16 },
   title: { fontWeight: '600', fontSize: 20, marginBottom: 12 },
   form: { width: '100%', marginTop: 8 },
