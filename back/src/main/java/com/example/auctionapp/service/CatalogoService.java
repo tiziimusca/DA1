@@ -74,7 +74,15 @@ public class CatalogoService {
                 .orElseThrow(() -> new RuntimeException("Subasta no encontrada"));
 
         Catalogo catalogo = catalogoRepository.findBySubasta_Identificador(subastaId)
-                .orElseThrow(() -> new RuntimeException("Catalogo no encontrado para la subasta"));
+                .orElse(null);
+
+        if (catalogo == null) {
+            return new CatalogoResponseDTO(
+                    subasta.getIdentificador(),
+                    formatFecha(subasta),
+                    null,
+                    List.of());
+        }
 
         List<ItemCatalogo> itemsCatalogo = itemCatalogoRepository
                 .findByCatalogo_IdentificadorOrderByIdentificadorAsc(catalogo.getIdentificador());

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { isAuthenticated } from '../auth/authManager';
 
 const defaultItems = [
   { key: 'Home', label: 'Inicio', icon: 'home-outline', routeName: 'Home' },
@@ -10,6 +11,8 @@ const defaultItems = [
 ];
 
 export default function AppFooterNav({ navigation, colors, activeRouteName, items = defaultItems }) {
+  if (!isAuthenticated()) return null;
+
   return (
     <View style={[styles.container, { backgroundColor: colors?.surface ?? '#F5F5F5', borderTopColor: colors?.border ?? '#D1D5DB' }]}>
       {items.map((item) => {

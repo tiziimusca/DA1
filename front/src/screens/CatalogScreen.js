@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Platform, ActivityIndicator, FlatList } from 'react-native';
+import { Image, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Platform, ActivityIndicator, FlatList } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
-import { getToken } from '../auth/authManager';
+import { getToken, getUser, isAuthenticated } from '../auth/authManager';
 import { fetchCatalogo } from '../api/auctionApi';
-import AppFooterNav from '../components/AppFooterNav';
 
 const HOST_URL = Platform.OS === 'web'
   ? 'http://localhost:8080'
@@ -12,6 +11,8 @@ const HOST_URL = Platform.OS === 'web'
 export default function CatalogScreen({ route, navigation }) {
   const { colors, radius } = useAppTheme();
   const subasta = route?.params?.product;
+  const loggedIn = isAuthenticated();
+  const user = getUser();
 
   const subastaId = subasta?.id || subasta?.identificador;
 
@@ -33,7 +34,7 @@ export default function CatalogScreen({ route, navigation }) {
         
         const authHeader = token ? `Bearer ${token}` : null;
         const data = await fetchCatalogo(subastaId, authHeader);
-        
+
         setCatalogoData(data);
       } catch (err) {
         setError(err.message);
@@ -55,22 +56,24 @@ export default function CatalogScreen({ route, navigation }) {
             <Text style={{ color: '#fff' }}>Volver</Text>
           </TouchableOpacity>
         </View>
-        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Catalog" />
       </SafeAreaView>
     );
   }
 
   const items = catalogoData?.items || [];
-
+  const actionLabel = loggedIn ? 'Volver a la subasta' : 'Inicie sesión para acceder a todas las funcionalidades';
+  const handleAction = () => {
+    if (loggedIn) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Login');
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <View style={{ flex: 1 }}>
-        <View style={styles.headerContainer}>
-          <View style={{ width: 40 }} />
-        </View>
-        
         {loading ? (
           <View style={styles.centerWrap}>
             <ActivityIndicator size="large" color={colors.primary} />
@@ -88,6 +91,16 @@ export default function CatalogScreen({ route, navigation }) {
             data={items}
             keyExtractor={(item) => String(item.id)}
             contentContainerStyle={styles.content}
+            ListFooterComponent={
+              <View>
+                <View style={[styles.guestBanner, { borderColor: colors.border }]}> 
+                  <TouchableOpacity style={[styles.guestBannerBtn, { backgroundColor: colors.primary, borderRadius: radius.round }]} onPress={handleAction}>
+                    <Text style={styles.guestBannerBtnText}>{actionLabel}</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={{ height: 16 }} />
+              </View>
+            }
             renderItem={({ item }) => {
               let imageUri = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80';
               if (item.fotos && item.fotos.length > 0) {
@@ -102,28 +115,27 @@ export default function CatalogScreen({ route, navigation }) {
               }
 
               return (
-                <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg, marginBottom: 16 }]}>
+                <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
                   <View style={styles.imageWrap}>
                     <Image 
                       source={{ uri: imageUri }} 
                       style={styles.image} 
                     />
                     <View style={styles.tag}>
-                      <Text style={styles.tagText}>{item.categoria || 'GENERAL'}</Text>
+                      <Text style={styles.tagText}>{item.categoria || 'PLATINO'}</Text>
                     </View>
                   </View>
 
                   <View style={styles.body}>
-                    <Text style={[styles.title, { color: colors.text }]}>{item.titulo}</Text>
+                    <View style={styles.titleRow}>
+                      <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.titulo}</Text>
+                      {loggedIn && item.precioBase !== null && item.precioBase !== undefined ? (
+                        <Text style={[styles.price, { color: colors.primary }]}>{item.moneda || 'USD'} {item.precioBase.toFixed(2)}</Text>
+                      ) : null}
+                    </View>
+                    <Text style={[styles.subTitle, { color: colors.muted }]} numberOfLines={1}>{item.categoria ? item.categoria.toUpperCase() : 'Colección exclusiva'}</Text>
                     <Text style={[styles.description, { color: colors.text }]} numberOfLines={3}>{item.descripcion}</Text>
-                    
-                    <Text style={[styles.startDate, { color: colors.muted }]}>
-                      Empieza: {catalogoData?.fecha || 'Próximamente'}
-                    </Text>
-                    
-                    {item.precioBase !== null && item.precioBase !== undefined ? (
-                      <Text style={[styles.price, { color: colors.primary }]}>{item.moneda || 'USD'} {item.precioBase.toFixed(2)}</Text>
-                    ) : null}
+                    <Text style={[styles.startDate, { color: colors.muted }]}>Termina: {catalogoData?.fecha || 'hoy, 20:00'}</Text>
                   </View>
                 </View>
               );
@@ -131,7 +143,7 @@ export default function CatalogScreen({ route, navigation }) {
           />
         )}
       </View>
-      <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Catalog" />
+      
     </SafeAreaView>
   );
 }
@@ -141,18 +153,43 @@ const styles = StyleSheet.create({
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   backButton: { width: 40, height: 40, justifyContent: 'center' },
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  content: { padding: 16, paddingBottom: 24 },
+  content: { paddingHorizontal: 16, paddingBottom: 24 },
+  guestBanner: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#fff',
+  },
+  guestBannerBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestBannerBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   header: { textAlign: 'center', fontSize: 18, fontWeight: '600' },
-  card: { borderWidth: 1, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
+  card: { borderWidth: 1, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 4, marginBottom: 18 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  cardImage: { width: 120, height: 120, borderRadius: 16, backgroundColor: '#ddd' },
+  cardDetails: { flex: 1, paddingLeft: 14, justifyContent: 'space-between' },
   imageWrap: { height: 220, position: 'relative', backgroundColor: '#ddd' },
   image: { width: '100%', height: '100%' },
   tag: { position: 'absolute', top: 10, right: 10, backgroundColor: '#111', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 18 },
   tagText: { color: '#F8D66D', fontSize: 11, fontWeight: '700' },
   body: { padding: 14 },
-  title: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
-  description: { fontSize: 14, lineHeight: 20, marginTop: 4 },
-  startDate: { fontSize: 12, marginTop: 8, fontWeight: '600' },
-  price: { fontSize: 16, fontWeight: '700', marginTop: 10 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  title: { fontSize: 18, fontWeight: '600', flex: 1, marginRight: 10 },
+  subTitle: { fontSize: 13, marginBottom: 10 },
+  description: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
+  startDate: { fontSize: 12, marginTop: 4, fontWeight: '600' },
+  price: { fontSize: 16, fontWeight: '700' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
   emptyTitle: { fontSize: 16, marginBottom: 12 },
   backBtn: { paddingHorizontal: 18, paddingVertical: 10 },
