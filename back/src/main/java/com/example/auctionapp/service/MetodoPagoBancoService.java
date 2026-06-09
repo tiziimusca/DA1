@@ -58,18 +58,49 @@ public class MetodoPagoBancoService {
     }
 
     public MetodoPagoBancoResponseDTO actualizar(Integer id, Integer clienteId, MetodoPagoBancoDTO dto) {
-        validarDatos(dto);
+        validarDatosParciales(dto);
 
         MetodoPagoBanco banco = repository.findByIdAndClienteId(id, clienteId)
                 .orElseThrow(() -> new RuntimeException("Método de pago banco no encontrado"));
 
-        banco.setNombreTitular(dto.getNombreTitular());
-        banco.setDniTitular(dto.getDniTitular());
-        banco.setNombreBanco(dto.getNombreBanco());
-        banco.setNumeroCuenta(dto.getNumeroCuenta());
+        if (dto.getNombreTitular() != null && !dto.getNombreTitular().isEmpty()) {
+            banco.setNombreTitular(dto.getNombreTitular());
+        }
+        if (dto.getDniTitular() != null) {
+            banco.setDniTitular(dto.getDniTitular());
+        }
+        if (dto.getNombreBanco() != null && !dto.getNombreBanco().isEmpty()) {
+            banco.setNombreBanco(dto.getNombreBanco());
+        }
+        if (dto.getNumeroCuenta() != null && !dto.getNumeroCuenta().isEmpty()) {
+            banco.setNumeroCuenta(dto.getNumeroCuenta());
+        }
 
         MetodoPagoBanco actualizado = repository.save(banco);
         return mapearAResponseDTO(actualizado);
+    }
+
+    private void validarDatosParciales(MetodoPagoBancoDTO dto) {
+        boolean hasAnyField = (dto.getNombreTitular() != null && !dto.getNombreTitular().isEmpty())
+                || dto.getDniTitular() != null
+                || (dto.getNombreBanco() != null && !dto.getNombreBanco().isEmpty())
+                || (dto.getNumeroCuenta() != null && !dto.getNumeroCuenta().isEmpty());
+
+        if (!hasAnyField) {
+            throw new IllegalArgumentException("Debe indicar al menos un campo para actualizar");
+        }
+        if (dto.getNombreTitular() != null && dto.getNombreTitular().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del titular no puede estar vacío");
+        }
+        if (dto.getDniTitular() != null && dto.getDniTitular() <= 0) {
+            throw new IllegalArgumentException("El DNI debe ser un número válido");
+        }
+        if (dto.getNombreBanco() != null && dto.getNombreBanco().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del banco no puede estar vacío");
+        }
+        if (dto.getNumeroCuenta() != null && dto.getNumeroCuenta().isEmpty()) {
+            throw new IllegalArgumentException("El número de cuenta no puede estar vacío");
+        }
     }
 
     public void eliminar(Integer id, Integer clienteId) {

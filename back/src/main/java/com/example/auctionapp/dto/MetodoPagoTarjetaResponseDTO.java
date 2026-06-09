@@ -24,5 +24,6 @@ public class MetodoPagoTarjetaResponseDTO {
         private String nombreTitular;
         private String numeroTarjeta; // Enmascarado: **** **** **** 5421
         private String fechaVencimiento; // MM/YY
+        private String tipoTarjeta; // visa, mastercard, etc.
     }
 }

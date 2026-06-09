@@ -65,17 +65,42 @@ public class MetodoPagoChequeService {
     }
 
     public MetodoPagoChequeResponseDTO actualizar(Integer id, Integer clienteId, MetodoPagoChequeDTO dto) {
-        validarDatos(dto);
+        validarDatosParciales(dto);
 
         MetodoPagoCheque cheque = repository.findByIdAndClienteId(id, clienteId)
                 .orElseThrow(() -> new RuntimeException("Método de pago cheque no encontrado"));
 
-        cheque.setNumeroCheque(dto.getNumeroCheque());
-        cheque.setFotoFrente(decodificarBase64(dto.getFotoFrente()));
-        cheque.setFotoDorso(decodificarBase64(dto.getFotoDorso()));
+        if (dto.getNumeroCheque() != null) {
+            cheque.setNumeroCheque(dto.getNumeroCheque());
+        }
+        if (dto.getFotoFrente() != null && !dto.getFotoFrente().isEmpty()) {
+            cheque.setFotoFrente(decodificarBase64(dto.getFotoFrente()));
+        }
+        if (dto.getFotoDorso() != null && !dto.getFotoDorso().isEmpty()) {
+            cheque.setFotoDorso(decodificarBase64(dto.getFotoDorso()));
+        }
 
         MetodoPagoCheque actualizado = repository.save(cheque);
         return mapearAResponseDTO(actualizado);
+    }
+
+    private void validarDatosParciales(MetodoPagoChequeDTO dto) {
+        boolean hasAnyField = dto.getNumeroCheque() != null
+                || (dto.getFotoFrente() != null && !dto.getFotoFrente().isEmpty())
+                || (dto.getFotoDorso() != null && !dto.getFotoDorso().isEmpty());
+
+        if (!hasAnyField) {
+            throw new IllegalArgumentException("Debe indicar al menos un campo para actualizar");
+        }
+        if (dto.getNumeroCheque() != null && dto.getNumeroCheque() <= 0) {
+            throw new IllegalArgumentException("El número de cheque debe ser válido");
+        }
+        if (dto.getFotoFrente() != null && dto.getFotoFrente().isEmpty()) {
+            throw new IllegalArgumentException("La foto del frente no puede estar vacía");
+        }
+        if (dto.getFotoDorso() != null && dto.getFotoDorso().isEmpty()) {
+            throw new IllegalArgumentException("La foto del dorso no puede estar vacía");
+        }
     }
 
     public void eliminar(Integer id, Integer clienteId) {

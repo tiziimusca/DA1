@@ -17,6 +17,8 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import { AppThemeProvider, useAppTheme } from './src/theme/AppTheme';
 import MisPropuestasScreen from './src/screens/MisPropuestasScreen';
+import AgregarMetodoPagoScreen from './src/screens/AgregarMetodoPagoScreen';
+import MetodosDePagoScreen from './src/screens/MetodosPagoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,8 +47,9 @@ function RootNavigator() {
         <Stack.Screen name="Bid" component={BidScreen} options={{ title: 'Pujar' }} />
         <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }}/>
-
         <Stack.Screen name="MisPropuestas" component={MisPropuestasScreen} options={{ title: 'Mis Propuestas', headerShown: false}} />
+        <Stack.Screen name="AgregarMetodoPago" component={AgregarMetodoPagoScreen} options={{ title: 'Agregar Método de Pago', headerShown: false}} />
+        <Stack.Screen name="MetodosDePago" component={MetodosDePagoScreen} options={{ title: 'Métodos de Pago', headerShown: false}} />
 
       </Stack.Navigator>
     </NavigationContainer>

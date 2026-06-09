@@ -91,27 +91,28 @@ public class MetodoPagoController {
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerMetodoPago(
             @PathVariable Integer id,
-            @RequestParam Integer clienteId) {
+            @RequestParam Integer clienteId,
+            @RequestParam String tipo) {
 
-        // Buscar en banco
-        var banco = bancoService.obtenerPorIdYCliente(id, clienteId);
-        if (banco.isPresent()) {
-            return ResponseEntity.ok(banco.get());
+        // El id NO es único entre tablas: cada tipo tiene su propio autoincremental.
+        // Por eso necesitamos el 'tipo' para saber en qué tabla buscar.
+        switch (tipo) {
+            case "banco":
+                return bancoService.obtenerPorIdYCliente(id, clienteId)
+                        .<ResponseEntity<?>>map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.notFound().build());
+            case "tarjeta":
+                return tarjetaService.obtenerPorIdYCliente(id, clienteId)
+                        .<ResponseEntity<?>>map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.notFound().build());
+            case "cheque":
+                return chequeService.obtenerPorIdYCliente(id, clienteId)
+                        .<ResponseEntity<?>>map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.notFound().build());
+            default:
+                return ResponseEntity.badRequest()
+                        .body("Tipo de método de pago inválido. Debe ser 'banco', 'tarjeta' o 'cheque'");
         }
-
-        // Buscar en tarjeta
-        var tarjeta = tarjetaService.obtenerPorIdYCliente(id, clienteId);
-        if (tarjeta.isPresent()) {
-            return ResponseEntity.ok(tarjeta.get());
-        }
-
-        // Buscar en cheque
-        var cheque = chequeService.obtenerPorIdYCliente(id, clienteId);
-        if (cheque.isPresent()) {
-            return ResponseEntity.ok(cheque.get());
-        }
-
-        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/tipo/banco")
@@ -136,38 +137,32 @@ public class MetodoPagoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarMetodoPago(
+    public ResponseEntity<?> eliminarMetodoPago(
             @PathVariable Integer id,
-            @RequestParam Integer clienteId) {
+            @RequestParam Integer clienteId,
+            @RequestParam String tipo) {
 
+        // Sin 'tipo' este borrado era ambiguo: con ids repetidos entre tablas
+        // podía borrar el método equivocado (ej: borrar el banco id 2 al pedir la tarjeta id 2).
         try {
-            // Intentar eliminar de banco
-            bancoService.obtenerPorIdYCliente(id, clienteId);
-            bancoService.eliminar(id, clienteId);
+            switch (tipo) {
+                case "banco":
+                    bancoService.eliminar(id, clienteId);
+                    break;
+                case "tarjeta":
+                    tarjetaService.eliminar(id, clienteId);
+                    break;
+                case "cheque":
+                    chequeService.eliminar(id, clienteId);
+                    break;
+                default:
+                    return ResponseEntity.badRequest()
+                            .body("Tipo de método de pago inválido. Debe ser 'banco', 'tarjeta' o 'cheque'");
+            }
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            // Continuar
+            return ResponseEntity.notFound().build();
         }
-
-        try {
-            // Intentar eliminar de tarjeta
-            tarjetaService.obtenerPorIdYCliente(id, clienteId);
-            tarjetaService.eliminar(id, clienteId);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            // Continuar
-        }
-
-        try {
-            // Intentar eliminar de cheque
-            chequeService.obtenerPorIdYCliente(id, clienteId);
-            chequeService.eliminar(id, clienteId);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            // No encontrado
-        }
-
-        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")

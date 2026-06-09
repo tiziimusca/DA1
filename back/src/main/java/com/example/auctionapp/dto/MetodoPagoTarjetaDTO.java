@@ -24,4 +24,7 @@ public class MetodoPagoTarjetaDTO {
 
     @NotBlank(message = "El CVV es obligatorio")
     private String cvv;
+
+    @NotBlank(message = "El tipo de tarjeta es obligatorio")
+    private String tipoTarjeta; // visa, mastercard, etc.
 }
