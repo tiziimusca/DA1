@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
+const baseUrl = 'http://10.0.2.2:8080/api/productos';
+
 export const fetchProductos = createAsyncThunk(
   'productos/fetchProductos',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://10.0.2.2:8080/api/productos');
+      const response = await fetch(`${baseUrl}`);
       return response.json();
     } catch (error) {
       return rejectWithValue(error.message);
@@ -16,7 +18,7 @@ export const fetchProductoPorId = createAsyncThunk(
   'productos/fetchProductoPorId',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://10.0.2.2:8080/api/productos/${id}`);
+      const response = await fetch(`${baseUrl}/${id}`);
       return response.json();
     } catch (error) {
       return rejectWithValue(error.message);
@@ -28,7 +30,7 @@ export const fetchDisponibles = createAsyncThunk(
   'productos/fetchDisponibles',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://10.0.2.2:8080/api/productos/disponibles');
+      const response = await fetch(`${baseUrl}/disponibles`);
       return response.json();
     } catch (error) {
       return rejectWithValue(error.message);

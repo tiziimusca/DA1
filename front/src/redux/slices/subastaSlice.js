@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
+const baseUrl = 'http://10.0.2.2:8080/api/subastas';
+
 export const fetchSubastas = createAsyncThunk(
   'subastas/fetchSubastas',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://10.0.2.2:8080/api/subastas');
+      const response = await fetch(`${baseUrl}`);
       return response.json();
     } catch (error) {
       return rejectWithValue(error.message);
@@ -16,7 +18,7 @@ export const fetchAbiertas = createAsyncThunk(
   'subastas/fetchAbiertas',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://10.0.2.2:8080/api/subastas/abiertas');
+      const response = await fetch(`${baseUrl}/abiertas`);
       return response.json();
     } catch (error) {
       return rejectWithValue(error.message);
@@ -28,7 +30,7 @@ export const fetchProximas = createAsyncThunk(
   'subastas/fetchProximas',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://10.0.2.2:8080/api/subastas/proximas');
+      const response = await fetch(`${baseUrl}/proximas`);
       return response.json();
     } catch (error) {
       return rejectWithValue(error.message);
