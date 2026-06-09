@@ -10,18 +10,20 @@ public class HomeSubastaDTO {
     private String categoria;
     private BigDecimal precioBase;
     private LocalDate fecha;
+    private byte[] foto;
 
     public HomeSubastaDTO() {
     }
 
     public HomeSubastaDTO(Integer id, String titulo, String moneda, String categoria, BigDecimal precioBase,
-            LocalDate fecha) {
+            LocalDate fecha, byte[] foto) {
         this.id = id;
         this.titulo = titulo;
         this.moneda = moneda;
         this.categoria = categoria;
         this.precioBase = precioBase;
         this.fecha = fecha;
+        this.foto = foto;
     }
 
     public Integer getId() {
@@ -71,4 +73,13 @@ public class HomeSubastaDTO {
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
+
+        public byte[] getFoto() {
+        return foto;
+    }
+
+    public void setFoto(byte[] foto) {
+        this.foto = foto;
+    }
+
 }

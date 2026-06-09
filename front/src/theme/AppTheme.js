@@ -2,11 +2,12 @@ import React, { createContext, useContext } from 'react';
 import { DefaultTheme } from '@react-navigation/native';
 
 const colors = {
-  background: '#F4F1EA',
+  background: '#EDEDE8',
   surface: '#FFFDF9',
+  metricsBackground: '#E3DED6',
   text: '#1E2A4A',
   muted: '#667085',
-  primary: '#183B70',
+  primary: '#0C2D75',
   primarySoft: '#DCE7F6',
   accent: '#79AEEB',
   border: '#D8E1EE',

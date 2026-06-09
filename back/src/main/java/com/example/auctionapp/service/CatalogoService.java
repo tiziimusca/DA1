@@ -1,20 +1,45 @@
 package com.example.auctionapp.service;
 
+import com.example.auctionapp.dto.CatalogoItemDTO;
+import com.example.auctionapp.dto.CatalogoResponseDTO;
 import com.example.auctionapp.model.Catalogo;
+import com.example.auctionapp.model.ItemCatalogo;
+import com.example.auctionapp.model.Producto;
+import com.example.auctionapp.model.Subasta;
 import com.example.auctionapp.repository.CatalogoRepository;
+import com.example.auctionapp.repository.FotoRepository;
+import com.example.auctionapp.repository.ItemCatalogoRepository;
+import com.example.auctionapp.repository.SubastaRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CatalogoService {
 
     private final CatalogoRepository catalogoRepository;
+    private final SubastaRepository subastaRepository;
+    private final ItemCatalogoRepository itemCatalogoRepository;
+    private final FotoRepository fotoRepository;
+    private final JwtService jwtService;
 
-    public CatalogoService(CatalogoRepository catalogoRepository) {
+    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
+    public CatalogoService(CatalogoRepository catalogoRepository,
+            SubastaRepository subastaRepository,
+            ItemCatalogoRepository itemCatalogoRepository,
+            FotoRepository fotoRepository,
+            JwtService jwtService) {
         this.catalogoRepository = catalogoRepository;
+        this.subastaRepository = subastaRepository;
+        this.itemCatalogoRepository = itemCatalogoRepository;
+        this.fotoRepository = fotoRepository;
+        this.jwtService = jwtService;
     }
 
     public List<Catalogo> obtenerTodos() {
@@ -40,5 +65,90 @@ public class CatalogoService {
 
     public void eliminar(Integer id) {
         catalogoRepository.deleteById(id);
+    }
+
+    public CatalogoResponseDTO obtenerCatalogoPorSubasta(Integer subastaId, String authorizationHeader) {
+        boolean autenticado = esTokenAutenticado(authorizationHeader);
+
+        Subasta subasta = subastaRepository.findById(subastaId)
+                .orElseThrow(() -> new RuntimeException("Subasta no encontrada"));
+
+        Catalogo catalogo = catalogoRepository.findBySubasta_Identificador(subastaId)
+                .orElse(null);
+
+        if (catalogo == null) {
+            return new CatalogoResponseDTO(
+                    subasta.getIdentificador(),
+                    formatFecha(subasta),
+                    null,
+                    List.of());
+        }
+
+        List<ItemCatalogo> itemsCatalogo = itemCatalogoRepository
+                .findByCatalogo_IdentificadorOrderByIdentificadorAsc(catalogo.getIdentificador());
+
+        List<CatalogoItemDTO> itemDTOs = itemsCatalogo.stream()
+                .map(item -> toCatalogoItemDTO(item, subasta, autenticado))
+                .collect(Collectors.toList());
+
+        return new CatalogoResponseDTO(
+                subasta.getIdentificador(),
+                formatFecha(subasta),
+                catalogo.getIdentificador(),
+                itemDTOs);
+    }
+
+    private CatalogoItemDTO toCatalogoItemDTO(ItemCatalogo item, Subasta subasta, boolean autenticado) {
+        Producto producto = item.getProducto();
+
+        List<String> fotosData = fotoRepository
+                .findByProducto_IdentificadorOrderByIdentificadorAsc(producto.getIdentificador())
+                .stream()
+                .limit(1)
+                .map(foto -> {
+                    byte[] bytes = foto.getFoto();
+                    String str = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                    if (str.startsWith("http")) {
+                        return str;
+                    }
+                    return java.util.Base64.getEncoder().encodeToString(bytes);
+                })
+                .collect(Collectors.toList());
+
+        CatalogoItemDTO dto = new CatalogoItemDTO();
+        dto.setId(item.getIdentificador());
+        dto.setTitulo(producto.getDescripcionCatalogo());
+        dto.setDescripcion(producto.getDescripcionCompleta());
+        dto.setCategoria(subasta.getCategoria());
+        dto.setFotos(fotosData);
+
+        if (autenticado) {
+            dto.setPrecioBase(item.getPrecioBase());
+            dto.setMoneda("USD");
+        }
+
+        return dto;
+    }
+
+    private boolean esTokenAutenticado(String authorizationHeader) {
+        try {
+            String token = jwtService.extraerToken(authorizationHeader);
+            if (token == null || token.isBlank()) {
+                return false;
+            }
+            jwtService.validarTokenAutenticacion(token);
+            return true;
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private String formatFecha(Subasta subasta) {
+        if (subasta.getFecha() == null) {
+            return null;
+        }
+        LocalDateTime fechaHora = subasta.getHora() == null ? subasta.getFecha().atStartOfDay()
+                : subasta.getFecha().atTime(subasta.getHora());
+        return fechaHora.format(FECHA_FORMATTER);
     }
 }

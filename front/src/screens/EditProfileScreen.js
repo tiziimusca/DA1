@@ -11,14 +11,14 @@ import {
   Alert,
   Modal,
   FlatList,
+  Platform,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import countries from '../data/countries';
 import { getToken } from '../auth/authManager';
 import { updateProfile } from '../api/authApi';
-
-
+import AppFooterNav from '../components/AppFooterNav';
 
 export default function EditProfileScreen({ navigation, route }) {
   const { colors } = useAppTheme();
@@ -29,6 +29,7 @@ export default function EditProfileScreen({ navigation, route }) {
   const [pais, setPais] = useState('');
   const [direccion, setDireccion] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -36,8 +37,7 @@ export default function EditProfileScreen({ navigation, route }) {
 
   useEffect(() => {
     if (initialProfile) {
-      const nombreParts = [initialProfile.nombre, initialProfile.apellido].filter(Boolean);
-      setFullName(nombreParts.join(' ').trim());
+      setFullName(initialProfile.nombre || '');
       setPais(initialProfile.pais || '');
       setDireccion(initialProfile.direccion || '');
     }
@@ -66,12 +66,12 @@ export default function EditProfileScreen({ navigation, route }) {
       errors.direccion = 'Domicilio obligatorio';
     }
 
-    if (!password) {
-      errors.password = 'Contraseña obligatoria';
-    } else if (password.length < 8) {
-      errors.password = 'La contraseña debe tener al menos 8 caracteres.';
-    } else if (!/[!@#$%^&*()_+\-={}\[\]:;"'<>.,?/\\|]/.test(password)) {
-      errors.password = 'Debe incluir al menos un carácter especial.';
+    if (password) {
+      if (password.length < 8) {
+        errors.password = 'La contraseña debe tener al menos 8 caracteres.';
+      } else if (!/[!@#$%^&*()_+\-={}\[\]:;"'<>.,?/\\|]/.test(password)) {
+        errors.password = 'Debe incluir al menos un carácter especial.';
+      }
     }
 
     const nameParts = trimmedFullName.split(' ').filter(Boolean);
@@ -92,8 +92,11 @@ export default function EditProfileScreen({ navigation, route }) {
       apellido,
       idPaisNacimiento: findCountryIdByName(pais),
       direccion: direccion,
-      password: password,
     };
+
+    if (password) {
+      payload.password = password;
+    }
 
     try {
       setIsSaving(true);
@@ -167,6 +170,7 @@ export default function EditProfileScreen({ navigation, route }) {
         <TouchableOpacity
           style={[
             styles.select,
+            { borderColor: colors.border, backgroundColor: colors.surface },
             fieldErrors.country ? styles.errorInput : null,
           ]}
           onPress={() => setCountryModalVisible(true)}
@@ -214,14 +218,26 @@ export default function EditProfileScreen({ navigation, route }) {
 
         <Text>Contraseña</Text>
 
-        <TextInput
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          style={[styles.input, fieldErrors.password ? styles.errorInput : null]}
-          placeholder="Nueva contraseña"
-          placeholderTextColor={colors.muted}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={setPassword}
+            style={[styles.input, styles.passwordInput, fieldErrors.password ? styles.errorInput : null]}
+            placeholder="Nueva contraseña (opcional)"
+            placeholderTextColor={colors.muted}
+          />
+          <TouchableOpacity
+            style={styles.passwordToggleInside}
+            onPress={() => setPasswordVisible(!passwordVisible)}
+          >
+            <Icon
+              name={passwordVisible ? 'eye' : 'eye-off'}
+              size={20}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
         {fieldErrors.password ? <Text style={styles.errorText}>{fieldErrors.password}</Text> : null}
 
         {formError ? <Text style={styles.formError}>{formError}</Text> : null}
@@ -231,6 +247,9 @@ export default function EditProfileScreen({ navigation, route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+<View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20}}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Profile" />
+      </View>
     </SafeAreaView>
   );
 }
@@ -242,6 +261,7 @@ const styles = StyleSheet.create({
 
   container: {
     padding: 20,
+    marginTop: 40,
   },
 
   header: {
@@ -287,6 +307,15 @@ const styles = StyleSheet.create({
     width: '48%',
   },
 
+  select: {
+    borderWidth: 1,
+    borderRadius: 8,
+    height: 46,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    marginTop: 6,
+    marginBottom: 16,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#DDD',
@@ -295,6 +324,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginTop: 6,
     marginBottom: 16,
+  },
+
+  passwordContainer: {
+    position: 'relative',
+    marginTop: 6,
+    marginBottom: 16,
+  },
+
+  passwordInput: {
+    paddingRight: 45,
+  },
+
+  passwordToggleInside: {
+    position: 'absolute',
+    right: 12,
+    height: 46,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   saveBtn: {
@@ -318,8 +365,9 @@ const styles = StyleSheet.create({
 
   errorText: {
     color: '#D00000',
+    fontSize: 12,
+    marginTop: -12,
     marginBottom: 12,
-    marginTop: -8,
   },
 
   formError: {

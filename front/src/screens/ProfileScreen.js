@@ -11,11 +11,14 @@ import {
   Modal,
   Pressable,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchProfile } from '../api/authApi';
 import { clearSession, getToken } from '../auth/authManager';
+import AppFooterNav from '../components/AppFooterNav';
+import Feather from '@expo/vector-icons/Feather'
 
 export default function ProfileScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -41,7 +44,9 @@ export default function ProfileScreen({ navigation }) {
       }
     }
 
+    const unsubscribe = navigation.addListener('focus', loadProfile);
     loadProfile();
+    return unsubscribe;
   }, [navigation]);
 
   function handleConfirmLogout() {
@@ -78,7 +83,7 @@ export default function ProfileScreen({ navigation }) {
     {
       title: 'Métricas y Actividad',
       icon: 'stats-chart-outline',
-      onPress: () => {},
+      onPress: () => navigation.navigate('Metrics'),
     },
     {
       title: 'Artículos Propuestos',
@@ -103,8 +108,9 @@ export default function ProfileScreen({ navigation }) {
     >
       <StatusBar barStyle="dark-content" />
 
-      <ScrollView>
-        <View style={styles.container}>
+      <View style={styles.layout}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.container}>
 
           {/* Header */}
 
@@ -206,7 +212,12 @@ export default function ProfileScreen({ navigation }) {
             ]}
           >
             <Text style={styles.infoLabel}>DIRECCIÓN</Text>
-            <Text>{user.direccion}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <TouchableOpacity onPress={() => {}} style={{ marginRight: 12 }}>
+                <Feather name="map-pin" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={{ flex: 1 }}>{user.direccion}</Text>
+            </View>
           </View>
 
           {/* Menú */}
@@ -266,19 +277,24 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity
-            style={[
-              styles.logoutBtn,
-              { backgroundColor: '#E8C6CC' },
-            ]}
-            onPress={() => setLogoutModalVisible(true)}
-          >
-            <Text style={styles.logoutText}>
-              Cerrar Sesión
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <TouchableOpacity
+              style={[
+                styles.logoutBtn,
+                { backgroundColor: '#E8C6CC' },
+              ]}
+              onPress={() => setLogoutModalVisible(true)}
+            >
+              <Text style={styles.logoutText}>
+                Cerrar Sesión
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+<View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20}}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Profile" />
+      </View>
+      </View>
 
       <Modal
         visible={logoutModalVisible}
@@ -324,8 +340,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  layout: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
+  },
+
   container: {
     padding: 20,
+    marginTop: 40,
+    paddingBottom: 12,
   },
 
   header: {

@@ -5,17 +5,15 @@ import com.example.auctionapp.dto.ErrorResponseDTO;
 import com.example.auctionapp.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {
-    "http://localhost:8081",
-    "http://127.0.0.1:8081",
-    "http://localhost:19006",
-    "http://127.0.0.1:19006"
-})
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final AuthService authService;
@@ -34,8 +32,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 Unauthorized
         }
     }
-
-    @PostMapping("/registrar")
+/* 
+    @PostMapping(value = "/registrar", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> registrar(@Valid @RequestBody RegistroRequestDTO request) {
         try {
             RegistroResponseDTO response = authService.registrarUsuario(request);
@@ -44,6 +42,37 @@ public class AuthController {
             // Retornamos un JSON con código y mensaje para facilitar el manejo en el front
             ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
             return ResponseEntity.badRequest().body(error); // 400 Bad Request
+        }
+    }
+        */
+
+    @PostMapping(value = "/registrar")
+    public ResponseEntity<Object> registrarMultipart(
+            @RequestParam("documento") String documento,
+            @RequestParam("nombre") String nombre,
+            @RequestParam("direccion") String direccion,
+            @RequestParam("numeroPais") Integer numeroPais,
+            @RequestParam("email") String email,
+            @RequestParam("fotoDocumentoFrente") MultipartFile fotoDocumentoFrente,
+            @RequestParam("fotoDocumentoDorso") MultipartFile fotoDocumentoDorso) {
+        try {
+            RegistroRequestDTO request = new RegistroRequestDTO();
+            request.setDocumento(documento);
+            request.setNombre(nombre);
+            request.setDireccion(direccion);
+            request.setNumeroPais(numeroPais);
+            request.setEmail(email);
+            request.setFotoDocumentoFrente(fotoDocumentoFrente.getBytes());
+            request.setFotoDocumentoDorso(fotoDocumentoDorso.getBytes());
+
+            RegistroResponseDTO response = authService.registrarUsuario(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        } catch (IOException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("bad_request", "No se pudo procesar las fotos del documento.");
+            return ResponseEntity.badRequest().body(error);
         }
     }
 

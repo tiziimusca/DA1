@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 const BASE_URL = Platform.OS === 'web'
   ? 'http://localhost:8080/api'
-  : 'http://10.0.2.2:8080/api';
+  : 'http://10.42.194.57:8080/api';
 
 async function parseError(response) {
   const raw = await response.text();
@@ -56,7 +56,7 @@ export async function solicitarCodigo(email) {
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.error('[authApi] solicitarCodigo error:', response.status, error);
+    console.log('[authApi] solicitarCodigo error:', response.status);
     throw new Error(error);
   }
 
@@ -73,7 +73,7 @@ export async function verificarCodigo(codigo) {
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.error('[authApi] verificarCodigo error:', response.status, error);
+    console.log('[authApi] verificarCodigo error:',  error);
     throw new Error(error);
   }
 
@@ -95,7 +95,7 @@ export async function resetPassword(tokenReseteo, nuevaPassword, confirmarPasswo
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.error('[authApi] resetPassword error:', response.status, error);
+    console.log('[authApi] resetPassword error:', response.status, error);
     throw new Error(error);
   }
 
@@ -116,7 +116,7 @@ export async function updateProfile(token, payload) {
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.error('[authApi] updateProfile error:', response.status, error);
+    console.log('[authApi] updateProfile error:', response.status, error);
     throw new Error(error);
   }
 

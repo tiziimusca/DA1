@@ -11,6 +11,8 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
+import AppFooterNav from '../components/AppFooterNav';
+
  
 // ─── Datos de ejemplo ──────────────────────────────────────────────────────────
 const ARTICULOS = [
@@ -198,7 +200,7 @@ const cardStyles = StyleSheet.create({
 });
  
 // ─── Pantalla principal ────────────────────────────────────────────────────────
-export default function ArticulosPropuestos() {
+export default function ArticulosPropuestos({ navigation }) {
   const theme = useAppTheme();
   const { colors, spacing, radius } = theme;
   const [tabActivo, setTabActivo] = useState('todos');
@@ -207,7 +209,7 @@ export default function ArticulosPropuestos() {
     tabActivo === 'todos' ? ARTICULOS : ARTICULOS.filter(a => a.estado === tabActivo);
  
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, marginTop: 40 }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
  
       {/* ── Header ── */}
@@ -277,28 +279,17 @@ export default function ArticulosPropuestos() {
         <TouchableOpacity
           activeOpacity={0.85}
           style={[fabStyles.btn, { backgroundColor: colors.primary, borderRadius: radius.lg }]}
+          onPress={() => navigation.navigate('ProponerProducto')}
         >
           <Text style={[fabStyles.icon, { color: colors.accent }]}>+</Text>
           <Text style={[fabStyles.label, { color: '#FFFFFF' }]}>Proponer Nuevo Artículo</Text>
         </TouchableOpacity>
       </View>
- 
-      {/* ── Bottom Nav ── */}
-      <View style={[navStyles.bar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-        {[
-          { icon: '⌂', label: 'Inicio' },
-          { icon: '◈', label: 'Subastas' },
-          { icon: '◎', label: 'Vender', active: true },
-          { icon: '◉', label: 'Perfil' },
-        ].map(item => (
-          <TouchableOpacity key={item.label} style={navStyles.item}>
-            <Text style={[navStyles.icon, { color: item.active ? colors.primary : colors.muted }]}>{item.icon}</Text>
-            <Text style={[navStyles.label, { color: item.active ? colors.primary : colors.muted, fontWeight: item.active ? '700' : '400' }]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <AppFooterNav
+        navigation={navigation}
+        colors={colors}
+        activeRouteName="Profile"
+      />
     </SafeAreaView>
   );
 }

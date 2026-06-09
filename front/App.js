@@ -10,6 +10,7 @@ import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import TermsAndConditionsScreen from './src/screens/TermsAndConditionsScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CatalogScreen from './src/screens/CatalogScreen';
+import MetricsScreen from './src/screens/MetricsScreen';
 import AuctionListScreen from './src/screens/AuctionListScreen';
 import ProductDetailsScreen from './src/screens/ProductDetailsScreen';
 import BidScreen from './src/screens/BidScreen';
@@ -17,6 +18,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import { AppThemeProvider, useAppTheme } from './src/theme/AppTheme';
 import MisPropuestasScreen from './src/screens/MisPropuestasScreen';
+import ProponerProductoScreen from './src/screens/ProponerProductoScreen';
 import AgregarMetodoPagoScreen from './src/screens/AgregarMetodoPagoScreen';
 import MetodosDePagoScreen from './src/screens/MetodosPagoScreen';
 
@@ -42,11 +44,13 @@ function RootNavigator() {
         <Stack.Screen name="TermsAndConditions" component={TermsAndConditionsScreen} options={{ title: 'Terminos y Condiciones' }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
         <Stack.Screen name="Catalog" component={CatalogScreen} options={{ title: 'Catalogo' }} />
+        <Stack.Screen name="Metrics" component={MetricsScreen} options={{ title: 'Métricas de Subastas' }} />
         <Stack.Screen name="Auctions" component={AuctionListScreen} options={{ title: 'Subastas' }} />
         <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} options={{ title: 'Detalle' }} />
         <Stack.Screen name="Bid" component={BidScreen} options={{ title: 'Pujar' }} />
         <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="ProponerProducto" component={ProponerProductoScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="MisPropuestas" component={MisPropuestasScreen} options={{ title: 'Mis Propuestas', headerShown: false}} />
         <Stack.Screen name="AgregarMetodoPago" component={AgregarMetodoPagoScreen} options={{ title: 'Agregar Método de Pago', headerShown: false}} />
         <Stack.Screen name="MetodosDePago" component={MetodosDePagoScreen} options={{ title: 'Métodos de Pago', headerShown: false}} />

@@ -7,8 +7,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 
 @Entity
 @Getter
@@ -17,10 +15,7 @@ import jakarta.persistence.GenerationType;
 public class Seguro {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer identificador;
-
-    @Column(length = 30)
+    @Column(name = "nro_poliza", length = 30, nullable = false)
     private String nroPoliza;
 
     @Column(nullable = false, length = 150)

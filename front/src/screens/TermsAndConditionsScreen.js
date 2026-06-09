@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 
 const sections = [
@@ -87,6 +87,7 @@ export default function TermsAndConditionsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topSpacer} />
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
         <Text style={[styles.title, { color: colors.text }]}>Terminos y Condiciones</Text>
 
         {sections.map((section) => (
@@ -107,6 +108,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { paddingHorizontal: 18, paddingBottom: 24 },
   topSpacer: { height: 8 },
+  logo: { width: 90, height: 90, resizeMode: 'contain', alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '500', marginTop: 8, marginBottom: 16 },
   section: { marginBottom: 14 },
   sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 6 },

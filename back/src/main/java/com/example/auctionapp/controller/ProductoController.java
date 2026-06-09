@@ -58,30 +58,6 @@ public class ProductoController {
         this.fotoRepository = fotoRepository;
     }
 
-    @GetMapping
-    public List<ProductoDTO> listar() {
-        return productoService.obtenerTodos()
-                .stream()
-                .map(MapperUtil::toProductoDTO)
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/disponibles")
-    public List<ProductoDTO> obtenerDisponibles() {
-        return productoService.obtenerDisponibles()
-                .stream()
-                .map(MapperUtil::toProductoDTO)
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductoDTO> buscar(@PathVariable Integer id) {
-        return productoService.obtenerPorId(id)
-                .map(MapperUtil::toProductoDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
     @PostMapping("/proponer")
     public ResponseEntity<?> crear(@Valid @RequestBody ProponerProductoDTO requestDto, Authentication authentication) {
         try {
@@ -106,7 +82,6 @@ public class ProductoController {
         }
     }
 
-
     @PutMapping("/{id}")
     public ResponseEntity<ProductoDTO> actualizar(@PathVariable Integer id,
             @Valid @RequestBody ProductoDTO productoDto) {
@@ -119,34 +94,6 @@ public class ProductoController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        productoService.eliminar(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/{id}/foto")
-    public ResponseEntity<byte[]> obtenerFotoPortada(@PathVariable Integer id) {
-        try {
-            
-            List<Foto> fotos = fotoRepository.findByProducto_IdentificadorOrderByIdentificadorAsc(id);
-
-            if (fotos == null || fotos.isEmpty()) {
-                return ResponseEntity.notFound().build(); 
-            }
-
-            Foto fotoPortada = fotos.get(0);
-
-          
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.IMAGE_JPEG); 
-
-            return new ResponseEntity<>(fotoPortada.getFoto(), headers, HttpStatus.OK);
-            
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
 
     @GetMapping("/mis-propuestos")
     public ResponseEntity<MisPropuestosResponseDTO> obtenerMisProductos(Authentication authentication) {

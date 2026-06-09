@@ -16,17 +16,11 @@ spring:
     console:
       enabled: true
       path: /h2-console
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: tu_correo@gmail.com
-    password: tu_contraseña_de_aplicacion
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 40MB
 
   # --- Configuración de Mailtrap (Agrupada dentro de spring) ---
   mail:
@@ -41,6 +35,10 @@ spring:
           starttls:
             enable: ${SMTP_STARTTLS:true}
           from: ${SMTP_FROM:abast.no.responda@gmail.com}
+
+app:
+  jwt:
+    auth-token-ttl-minutes: 1440
 
 logging:
   level:

@@ -17,8 +17,8 @@ import {
 import { useAppTheme } from '../theme/AppTheme';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import countries from '../data/countries';
+import { isValidEmail, isValidName } from '../utils/validation';
 
 export default function RegisterScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -33,6 +33,8 @@ export default function RegisterScreen({ navigation }) {
   const [domicilio, setDomicilio] = useState('');
   const [declaracion, setDeclaracion] = useState(false);
   const [frontUri, setFrontUri] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
   const [backUri, setBackUri] = useState(null);
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [verifyModalVisible, setVerifyModalVisible] = useState(false);
@@ -49,72 +51,103 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    // basic client-side validation
-    const missingRequiredFields = !documento || !nombre || !domicilio || !pais || !email;
-    const missingPhotos = !frontUri || !backUri;
+    setFieldErrors({});
+    setGeneralError('');
 
-    if (missingRequiredFields || (missingPhotos && !isWeb)) {
-      console.log('[RegisterScreen] Validation failed', {
-        documento: !!documento,
-        nombre: !!nombre,
-        domicilio: !!domicilio,
-        pais: !!pais,
-        email: !!email,
-        frontUri: !!frontUri,
-        backUri: !!backUri,
-      });
-      Alert.alert(
-        'Faltan datos',
-        isWeb && missingPhotos
-          ? 'En web puedes probar el flujo sin fotos. Si quieres usar fotos, súbelas del frente y dorso del documento.'
-          : 'Complete todos los campos obligatorios y cargue las fotos del frente y dorso del documento.'
-      );
+    const errors = {};
+    const trimmedNombre = nombre.trim();
+    const trimmedApellido = apellido.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedNombre || !isValidName(trimmedNombre)) {
+      errors.nombre = 'Nombre invalido';
+    }
+    if (!trimmedApellido || !isValidName(trimmedApellido)) {
+      errors.apellido = 'Apellido invalido';
+    }
+    if (!trimmedEmail || !isValidEmail(trimmedEmail)) {
+      errors.email = 'Email invalido';
+    }
+    if (!domicilio.trim()) {
+      errors.domicilio = 'Domicilio obligatorio';
+    }
+    if (!documento.trim()) {
+      errors.documento = 'Documento obligatorio';
+    }
+    if (!pais) {
+      errors.pais = 'Seleccione un país';
+    }
+    if (!declaracion) {
+      errors.declaracion = 'Debe aceptar la declaración sobre el origen de los fondos.';
+    }
+    if (!frontUri || !backUri) {
+      errors.documentos = 'Debe cargar fotos del frente y dorso del documento.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      const [frontBase64, backBase64] = await Promise.all([
-        frontUri ? uriToBase64(frontUri) : Promise.resolve(placeholderPhotoBase64),
-        backUri ? uriToBase64(backUri) : Promise.resolve(placeholderPhotoBase64),
-      ]);
-
-      if (isWeb && (!frontUri || !backUri)) {
-        console.log('[RegisterScreen] Web test mode: sending placeholder photos');
-      }
-
-      // map country to a number (use index+1 as fallback)
-      const numeroPais = Math.max(1, countries.findIndex(c => c.name === pais) + 1);
-
-      const payload = {
-        documento: documento,
-        nombre: `${nombre} ${apellido}`.trim(),
-        direccion: domicilio,
-        numeroPais: numeroPais,
-        email: email,
-        fotoDocumentoFrente: frontBase64,
-        fotoDocumentoDorso: backBase64,
-      };
-
-      console.log('[RegisterScreen] payload ->', payload);
-
       const API_BASE = isWeb
         ? 'http://localhost:8080/api'
-        : 'http://10.0.2.2:8080/api';
-      const resp = await fetch(`${API_BASE}/auth/registrar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        : 'http://10.42.194.57:8080/api';
+
+      const formData = new FormData();
+      formData.append('documento', documento);
+      formData.append('nombre', `${nombre} ${apellido}`.trim());
+      formData.append('direccion', domicilio);
+      formData.append('numeroPais', String(Math.max(1, countries.findIndex(c => c.name === pais) + 1)));
+      formData.append('email', email);
+
+      const frontFile = fileInfo(frontUri, 'frente');
+      const backFile = fileInfo(backUri, 'dorso');
+
+      if (frontFile) {
+        formData.append('fotoDocumentoFrente', frontFile);
+      }
+      if (backFile) {
+        formData.append('fotoDocumentoDorso', backFile);
+      }
+
+      console.log('[RegisterScreen] formData ->', {
+        documento,
+        nombre: `${nombre} ${apellido}`.trim(),
+        direccion: domicilio,
+        numeroPais: Math.max(1, countries.findIndex(c => c.name === pais) + 1),
+        email,
+        frontSelected: !!frontUri,
+        backSelected: !!backUri,
       });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      let resp;
+      try {
+        resp = await fetch(`${API_BASE}/auth/registrar`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.log('[RegisterScreen] request aborted (timeout)');
+          throw new Error('Tiempo de conexión agotado al enviar el registro. Intente nuevamente.');
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       console.log('[RegisterScreen] registrar response status ->', resp.status);
 
       if (resp.status === 201) {
-        // success: show verify modal
-        setVerifyModalVisible(true);
-        return;
-      } else {
+          setVerifyModalVisible(true);
+          return;
+        } else {
         const rawBody = await resp.text();
         let msg = `Error ${resp.status}`;
 
@@ -131,37 +164,21 @@ export default function RegisterScreen({ navigation }) {
           status: resp.status,
           body: rawBody,
         });
-        Alert.alert('Registro fallido', msg);
+
+        const lowerMsg = String(msg).toLowerCase();
+        if (lowerMsg.includes('email ya utilizado') || lowerMsg.includes('email ya registrado') || lowerMsg.includes('already exists') || lowerMsg.includes('already in use') || lowerMsg.includes('ya existe')) {
+          setFieldErrors({ email: 'Email ya utilizado' });
+          return;
+        }
+
+        setGeneralError(msg);
       }
     } catch (e) {
-      console.error('Registration error', e);
+      console.log('[RegisterScreen] Registration error', e);
       Alert.alert('Error', 'No se pudo completar el registro. Intente nuevamente.');
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  async function uriToBase64(uri) {
-    if (!uri) {
-      return '';
-    }
-
-    if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = typeof reader.result === 'string' ? reader.result : '';
-          resolve(result.split(',')[1] || '');
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    return FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
   }
 
   function handleUpload(side) {
@@ -180,10 +197,17 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, base64: true });
-    if (!result.cancelled) {
-      if (side === 'frente') setFrontUri(result.uri);
-      else setBackUri(result.uri);
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.3, allowsEditing: true, aspect: [4, 3] });
+    let uri = null;
+    if (result && result.cancelled === false && result.uri) {
+      uri = result.uri;
+    } else if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) {
+      uri = result.assets[0].uri;
+    }
+
+    if (uri) {
+      if (side === 'frente') setFrontUri(uri);
+      else setBackUri(uri);
     }
   }
 
@@ -194,11 +218,40 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7, allowsEditing: true, base64: true });
-    if (!result.cancelled) {
-      if (side === 'frente') setFrontUri(result.uri);
-      else setBackUri(result.uri);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.3,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    let uri = null;
+    if (result && result.cancelled === false && result.uri) {
+      uri = result.uri;
+    } else if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) {
+      uri = result.assets[0].uri;
     }
+
+    if (uri) {
+      if (side === 'frente') setFrontUri(uri);
+      else setBackUri(uri);
+    }
+  }
+
+  function fileInfo(uri, side) {
+    if (!uri) return null;
+    const fileName = uri.split('/').pop() || `${side}-${Date.now()}.jpg`;
+    const lowerName = fileName.toLowerCase();
+    let type = 'image/jpeg';
+    if (lowerName.endsWith('.png')) type = 'image/png';
+    else if (lowerName.endsWith('.pdf')) type = 'application/pdf';
+    else if (lowerName.endsWith('.heic')) type = 'image/heic';
+    else if (lowerName.endsWith('.heif')) type = 'image/heif';
+
+    return {
+      uri: uri.startsWith('file://') ? uri : uri,
+      name: fileName,
+      type,
+    };
   }
 
   async function pickDocument(side) {
@@ -222,11 +275,39 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.row}>
             <View style={styles.half}>
               <Text style={[styles.label, { color: colors.text }]}>Nombre *</Text>
-              <TextInput value={nombre} onChangeText={setNombre} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} />
+              <TextInput
+                value={nombre}
+                onChangeText={(value) => {
+                  setNombre(value);
+                  if (fieldErrors.nombre) {
+                    setFieldErrors((prev) => ({ ...prev, nombre: '' }));
+                  }
+                }}
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.surface },
+                  fieldErrors.nombre ? styles.errorInput : { borderColor: colors.border },
+                ]}
+              />
+              {fieldErrors.nombre ? <Text style={styles.errorText}>{fieldErrors.nombre}</Text> : null}
             </View>
             <View style={styles.half}>
               <Text style={[styles.label, { color: colors.text }]}>Apellido *</Text>
-              <TextInput value={apellido} onChangeText={setApellido} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} />
+              <TextInput
+                value={apellido}
+                onChangeText={(value) => {
+                  setApellido(value);
+                  if (fieldErrors.apellido) {
+                    setFieldErrors((prev) => ({ ...prev, apellido: '' }));
+                  }
+                }}
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.surface },
+                  fieldErrors.apellido ? styles.errorInput : { borderColor: colors.border },
+                ]}
+              />
+              {fieldErrors.apellido ? <Text style={styles.errorText}>{fieldErrors.apellido}</Text> : null}
             </View>
           </View>
 
@@ -237,6 +318,7 @@ export default function RegisterScreen({ navigation }) {
           >
             <Text style={{ color: pais ? colors.text : colors.muted }}>{pais || 'Selecciona'}</Text>
           </TouchableOpacity>
+          {fieldErrors.pais ? <Text style={styles.errorText}>{fieldErrors.pais}</Text> : null}
 
           <Modal visible={countryModalVisible} animationType="slide">
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -265,27 +347,69 @@ export default function RegisterScreen({ navigation }) {
           </Modal>
 
           <Text style={[styles.label, { color: colors.text }]}>Email *</Text>
-          <TextInput value={email} onChangeText={setEmail} placeholder="Name@example.com" placeholderTextColor={colors.muted} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} keyboardType="email-address" />
+          <TextInput
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (fieldErrors.email) {
+                setFieldErrors((prev) => ({ ...prev, email: '' }));
+              }
+            }}
+            placeholder="Name@example.com"
+            placeholderTextColor={colors.muted}
+            style={[
+              styles.input,
+              { backgroundColor: colors.surface },
+              fieldErrors.email ? styles.errorInput : { borderColor: colors.border },
+            ]}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {fieldErrors.email ? <Text style={styles.errorText}>{fieldErrors.email}</Text> : null}
 
-          <Text style={[styles.helpText, { color: colors.muted, marginBottom: 10 }]}>No se solicita contraseña en este paso. Recibirás un código por correo para definirla después.</Text>
 
           <Text style={[styles.label, { color: colors.text }]}>Domicilio *</Text>
           <TextInput value={domicilio} onChangeText={setDomicilio} placeholder="Ingrese su domicilio" placeholderTextColor={colors.muted} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} />
+          {fieldErrors.domicilio ? <Text style={styles.errorText}>{fieldErrors.domicilio}</Text> : null}
 
           <Text style={[styles.label, { color: colors.text }]}>Número de documento *</Text>
           <TextInput value={documento} onChangeText={setDocumento} placeholder="Solo dígitos" placeholderTextColor={colors.muted} style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border }]} keyboardType="numeric" />
+          {fieldErrors.documento ? <Text style={styles.errorText}>{fieldErrors.documento}</Text> : null}
 
           <Text style={[styles.label, { color: colors.text }]}>Fotos del documento (Frente / Dorso) *</Text>
           <View style={styles.uploadRow}>
             <TouchableOpacity style={[styles.uploadBox, { borderColor: colors.border }]} onPress={() => handleUpload('frente')}>
-              <Text style={{ fontSize: 28 }}>📷</Text>
-              <Text style={{ marginTop: 8 }}>Frente</Text>
+              {frontUri ? (
+                <>
+                  <Image source={{ uri: frontUri }} style={styles.uploadImage} />
+                  <View style={styles.uploadedOverlay}>
+                    <Text style={styles.uploadedText}>Agregado</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 28 }}>📷</Text>
+                  <Text style={{ marginTop: 8 }}>Frente</Text>
+                </>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={[styles.uploadBox, { borderColor: colors.border }]} onPress={() => handleUpload('dorso')}>
-              <Text style={{ fontSize: 28 }}>📷</Text>
-              <Text style={{ marginTop: 8 }}>Dorso</Text>
+              {backUri ? (
+                <>
+                  <Image source={{ uri: backUri }} style={styles.uploadImage} />
+                  <View style={styles.uploadedOverlay}>
+                    <Text style={styles.uploadedText}>Agregado</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 28 }}>📷</Text>
+                  <Text style={{ marginTop: 8 }}>Dorso</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
+          {fieldErrors.documentos ? <Text style={styles.errorText}>{fieldErrors.documentos}</Text> : null}
           <Text style={[styles.small, { color: colors.muted }]}>Tamaño máximo de archivo 6MB. Formatos: JPG, PNG, PDF.</Text>
 
           <TouchableOpacity style={styles.declarationRow} onPress={() => setDeclaracion(!declaracion)}>
@@ -294,7 +418,9 @@ export default function RegisterScreen({ navigation }) {
             </View>
             <Text style={{ color: colors.muted, flex: 1, marginLeft: 8 }}>Declaro que todos los fondos utilizados para las subastas son de origen lícito</Text>
           </TouchableOpacity>
+          {fieldErrors.declaracion ? <Text style={styles.errorText}>{fieldErrors.declaracion}</Text> : null}
 
+          {generalError ? <Text style={styles.errorText}>{generalError}</Text> : null}
           <TouchableOpacity
             onPress={handleContinue}
             activeOpacity={0.9}
@@ -313,8 +439,8 @@ export default function RegisterScreen({ navigation }) {
             <View style={styles.verifyOverlay}>
               <View style={[styles.verifyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
                 <Text style={[styles.verifyTitle, { color: colors.text }]}>Verificando</Text>
-                <Text style={[styles.verifyText, { color: colors.muted }]}>Tu registro fue recibido. Recibirás un correo de confirmación y otro con el código para definir tu contraseña cuando la cuenta esté aprobada.</Text>
-                <TouchableOpacity style={[styles.verifyBtn, { backgroundColor: colors.primary }]} onPress={() => { setVerifyModalVisible(false); navigation.navigate('Home', { accessMode: 'authenticated', userName: nombre ? `${nombre} ${apellido}`.trim() : 'Laura Gomez' }); }}>
+                <Text style={[styles.verifyText, { color: colors.muted }]}>Su cuenta está siendo verificada. Le enviaremos un correo una vez se confirme la primera parte del registro.</Text>
+                <TouchableOpacity style={[styles.verifyBtn, { backgroundColor: colors.primary }]} onPress={() => { setVerifyModalVisible(false); navigation.replace('Home', { accessMode: 'guest', userName: nombre ? `${nombre} ${apellido}`.trim() : 'Laura Gomez' }); }}>
                   <Text style={{ color: '#fff' }}>Aceptar</Text>
                 </TouchableOpacity>
               </View>
@@ -343,10 +469,13 @@ const styles = StyleSheet.create({
   label: { marginBottom: 6, fontSize: 12 },
   input: { height: 44, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, marginBottom: 12 },
   select: { height: 44, borderWidth: 1, borderRadius: 8, justifyContent: 'center', paddingHorizontal: 12, marginBottom: 12 },
-  uploadRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  uploadRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, marginBottom: 12 },
   uploadBox: { width: '48%', height: 120, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF' },
+  uploadImage: { width: '100%', height: 120, borderRadius: 12 },
+  uploadedOverlay: { position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  uploadedText: { color: '#FFF', fontSize: 12 },
   small: { fontSize: 12, marginTop: 8 },
-  declarationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  declarationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 12 },
   checkbox: { width: 20, height: 20, borderWidth: 1, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   cta: { marginTop: 16, paddingVertical: 14, borderRadius: 24, alignItems: 'center' },
   privacy: { textAlign: 'center', marginTop: 12, fontSize: 12 },
@@ -356,4 +485,6 @@ const styles = StyleSheet.create({
   verifyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
   verifyText: { fontSize: 14, marginBottom: 12 },
   verifyBtn: { alignSelf: 'flex-end', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
+  errorInput: { borderColor: '#D32F2F' },
+  errorText: { color: '#D32F2F', fontSize: 12, marginTop: -8, marginBottom: 8 },
 });
