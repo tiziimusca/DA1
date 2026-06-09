@@ -92,9 +92,8 @@ export default function RegisterScreen({ navigation }) {
     try {
       setIsSubmitting(true);
 
-      const API_BASE = isWeb
-        ? 'http://localhost:8080/api'
-        : 'http://10.42.194.57:8080/api';
+      const { API_BASE_URL } = require('../config/apiConfig');
+      const API_BASE = API_BASE_URL;
 
       const formData = new FormData();
       formData.append('documento', documento);

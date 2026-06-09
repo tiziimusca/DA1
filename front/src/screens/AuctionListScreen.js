@@ -2,11 +2,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Image, TextInput, Platform } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchSubastas, fetchCatalogo } from '../api/auctionApi';
+import { SERVER_BASE_URL } from '../config/apiConfig';
 import AppFooterNav from '../components/AppFooterNav';
 
-const HOST_URL = Platform.OS === 'web'
-  ? 'http://localhost:8080'
-  : 'http://192.168.0.181:8080';
+const HOST_URL = SERVER_BASE_URL;
 
 export default function AuctionListScreen({ navigation }) {
   const { colors, radius } = useAppTheme();

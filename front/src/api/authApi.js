@@ -1,8 +1,7 @@
 import { Platform } from 'react-native';
+import { API_BASE_URL } from '../config/apiConfig';
 
-const BASE_URL = Platform.OS === 'web'
-  ? 'http://localhost:8080/api'
-  : 'http://10.42.194.57:8080/api';
+const BASE_URL = API_BASE_URL;
 
 async function parseError(response) {
   const raw = await response.text();

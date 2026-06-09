@@ -3,10 +3,9 @@ import { Image, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, Vie
 import { useAppTheme } from '../theme/AppTheme';
 import { getToken, getUser, isAuthenticated } from '../auth/authManager';
 import { fetchCatalogo } from '../api/auctionApi';
+import { SERVER_BASE_URL } from '../config/apiConfig';
 
-const HOST_URL = Platform.OS === 'web'
-  ? 'http://localhost:8080'
-  : 'http://10.42.194.57:8080';
+const HOST_URL = SERVER_BASE_URL;
 
 export default function CatalogScreen({ route, navigation }) {
   const { colors, radius } = useAppTheme();

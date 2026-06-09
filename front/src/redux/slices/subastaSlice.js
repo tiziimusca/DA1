@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { API_BASE_URL } from '../../config/apiConfig';
 
-const baseUrl = 'http://10.0.2.2:8080/api/subastas';
+const baseUrl = `${API_BASE_URL}/subastas`;
 
 export const fetchSubastas = createAsyncThunk(
   'subastas/fetchSubastas',

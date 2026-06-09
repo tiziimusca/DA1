@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { API_BASE_URL } from '../../config/apiConfig';
 
-const baseUrl = 'http://192.168.1.46:8080/api/clientes/me/metodos-pago';
+const baseUrl = `${API_BASE_URL}/clientes/me/metodos-pago`;
 
 // El back devuelve los errores de validación como TEXTO PLANO (no JSON),
 // así que response.json() falla y perdíamos el mensaje. Esto lee texto o JSON.

@@ -3,11 +3,10 @@ import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View
 import { useAppTheme } from '../theme/AppTheme';
 import { getUser, getToken } from '../auth/authManager';
 import { fetchHomeDashboard, fetchCatalogo } from '../api/auctionApi';
+import { SERVER_BASE_URL } from '../config/apiConfig';
 import AppFooterNav from '../components/AppFooterNav';
 
-const HOST_URL = Platform.OS === 'web'
-  ? 'http://localhost:8080'
-  : 'http://10.42.194.57:8080';
+const HOST_URL = SERVER_BASE_URL;
 
 const quickActions = [
   { id: 'metrics', title: 'Métricas', direccion: 'metricas', icon: '◔' },
