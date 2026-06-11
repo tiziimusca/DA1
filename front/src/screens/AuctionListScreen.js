@@ -4,6 +4,7 @@ import { useAppTheme } from '../theme/AppTheme';
 import { fetchSubastas, fetchCatalogo } from '../api/auctionApi';
 import { SERVER_BASE_URL } from '../config/apiConfig';
 import AppFooterNav from '../components/AppFooterNav';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 const HOST_URL = SERVER_BASE_URL;
 
@@ -83,6 +84,13 @@ export default function AuctionListScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Icon
+          name="arrow-back"
+          size={24}
+          color={colors.text}
+        />
+      </TouchableOpacity>
       <Text style={[styles.header, { color: colors.text }]}>Subastas</Text>
       <FlatList
         data={filteredSubastas}
@@ -255,6 +263,7 @@ function AuctionCard({ item, navigation, colors, radius }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginTop: 40,
   },
   listContent: {
     padding: 16,

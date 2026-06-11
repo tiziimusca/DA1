@@ -1,6 +1,7 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 const sections = [
   {
@@ -79,7 +80,7 @@ const sections = [
   },
 ];
 
-export default function TermsAndConditionsScreen() {
+export default function TermsAndConditionsScreen({ navigation }) {
   const { colors } = useAppTheme();
 
   return (
@@ -87,6 +88,13 @@ export default function TermsAndConditionsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topSpacer} />
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Icon
+                name="arrow-back"
+                size={24}
+                color={colors.text}
+              />
+            </TouchableOpacity>
         <Image source={require('../assets/logo.png')} style={styles.logo} />
         <Text style={[styles.title, { color: colors.text }]}>Terminos y Condiciones</Text>
 
@@ -105,7 +113,7 @@ export default function TermsAndConditionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, marginTop: 40 },
   content: { paddingHorizontal: 18, paddingBottom: 24 },
   topSpacer: { height: 8 },
   logo: { width: 90, height: 90, resizeMode: 'contain', alignSelf: 'center' },

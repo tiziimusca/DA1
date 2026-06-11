@@ -252,7 +252,7 @@ function AuctionCard({ item, colors, radius, onPress, isGuest }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, marginTop: 40 },
   listContent: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 18 },
   headerWrap: { marginBottom: 8 },
   topRow: { marginBottom: 12 },

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import AppFooterNav from '../components/AppFooterNav';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
  
 // ─── Datos de ejemplo ──────────────────────────────────────────────────────────
@@ -215,8 +216,14 @@ export default function ArticulosPropuestos({ navigation }) {
       {/* ── Header ── */}
       <View style={[hStyles.header, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, backgroundColor: colors.background }]}>
         <TouchableOpacity style={[hStyles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[hStyles.backArrow, { color: colors.text }]}>‹</Text>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Icon
+                name="arrow-back"
+                size={24}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+          </TouchableOpacity>
         <Text style={[hStyles.title, { color: colors.text }]}>Artículos Propuestos</Text>
         <View style={{ width: 36 }} />
       </View>

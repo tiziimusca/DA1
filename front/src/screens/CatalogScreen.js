@@ -4,6 +4,7 @@ import { useAppTheme } from '../theme/AppTheme';
 import { getToken, getUser, isAuthenticated } from '../auth/authManager';
 import { fetchCatalogo } from '../api/auctionApi';
 import { SERVER_BASE_URL } from '../config/apiConfig';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 const HOST_URL = SERVER_BASE_URL;
 
@@ -73,6 +74,13 @@ export default function CatalogScreen({ route, navigation }) {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <View style={{ flex: 1 }}>
+                  <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Icon
+                name="arrow-back"
+                size={24}
+                color={colors.text}
+              />
+            </TouchableOpacity>
         {loading ? (
           <View style={styles.centerWrap}>
             <ActivityIndicator size="large" color={colors.primary} />
@@ -188,7 +196,7 @@ export default function CatalogScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, marginTop: 60 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   backButton: { width: 40, height: 40, justifyContent: 'center' },
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
