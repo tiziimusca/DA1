@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { API_BASE_URL } from '../config/apiConfig';
+import { API_BASE_URL, SERVER_BASE_URL } from '../config/apiConfig';
 
 const BASE_URL = API_BASE_URL;
 
@@ -65,7 +65,7 @@ export async function fetchRegistrosSubasta() {
 }
 
 export function createWebSocket(onMessage, onOpen, onError) {
-  const socket = new WebSocket(Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : 'ws://10.42.194.57:8080/ws/bids');
+  const socket = new WebSocket(Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : `${SERVER_BASE_URL}/ws/bids`);
 
   socket.onopen = () => {
     if (onOpen) onOpen();

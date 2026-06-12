@@ -3,28 +3,36 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView,
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { createWebSocket, enviarPujaRest, fetchEstadoVivo, fetchDetalleEstatico } from '../api/auctionApi';
-import authManager from '../auth/authManager';
+import { getToken } from '../auth/authManager';
 
 export default function BidScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
-  const { subasta } = route.params || {};
+  const { subasta: paramSubasta, product } = route.params || {};
+  const subasta = paramSubasta || product;
   const [monto, setMonto] = useState('');
   const [socket, setSocket] = useState(null);
   const [conectado, setConectado] = useState(false);
   const [liveState, setLiveState] = useState(null);
   const [staticDetails, setStaticDetails] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const descripcion =
+    staticDetails?.descripcion ||
+    staticDetails?.items?.[0]?.descripcion ||
+    subasta?.descripcion ||
+    'Sin descripción disponible';
 
   const loadData = async () => {
-    if (!subasta?.identificador) return;
+    console.log('Cargando datos para subasta:', subasta.id);
+    if (!subasta?.id) return;
     try {
-      const token = await authManager.getToken();
-      const authHeader = token ? `Bearer ${token}` : null;
       
       const [vivoData, estaticoData] = await Promise.all([
-        fetchEstadoVivo(subasta.identificador),
-        fetchDetalleEstatico(subasta.identificador, authHeader)
+        fetchEstadoVivo(subasta.id),
+        fetchDetalleEstatico(subasta.id)
       ]);
-      
+      console.log('Datos vivo:', vivoData);
+      console.log('Datos estático:', estaticoData);
       setLiveState(vivoData);
       setStaticDetails(estaticoData);
     } catch (error) {
@@ -104,7 +112,8 @@ export default function BidScreen({ navigation, route }) {
   const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subasta?.identificador}`;
   const itemStatus = String(liveState?.estado || subasta?.estado || 'ATENCIÓN').toUpperCase();
   const itemLocation = subasta?.ubicacion || 'Ubicación no definida';
-  const itemCatalog = subasta?.categoria || 'GENERAL';
+  const itemCatalog = subasta?.categoria || 'comun';
+  const categoria = (itemCatalog || '').toLowerCase();
 
   const enviarPuja = async () => {
     if (!monto || isNaN(monto)) {
@@ -112,23 +121,38 @@ export default function BidScreen({ navigation, route }) {
       return;
     }
 
+    const bidValue = parseFloat(monto);
+    const base = basePrice || 0;
+    const lastBid = currentPrice || base;
+
+    // Reglas de validación (excepto oro/platino)
+    if (categoria !== 'oro' && categoria !== 'platino') {
+      const minBid = lastBid + base * 0.01;
+      const maxBid = lastBid + base * 0.20;
+
+      if (bidValue < minBid) {
+        Alert.alert('Error', `La puja mínima es ${subasta?.moneda || 'USD'} ${minBid.toFixed(2)}`);
+        return;
+      }
+      if (bidValue > maxBid) {
+        Alert.alert('Error', `La puja máxima es ${subasta?.moneda || 'USD'} ${maxBid.toFixed(2)}`);
+        return;
+      }
+    }
     try {
-      const token = await authManager.getToken();
-      // Nota: AsistenteId y itemId deberían ser sacados del usuario conectado y del catálogo de la subasta.
-      // Como no tenemos esos datos en este mock, estoy asumiendo valores de prueba o datos provenientes de 'subasta'.
-      // El backend requiere { asistenteId, itemId, importe }
-      const firstItemId = staticDetails?.items && staticDetails.items.length > 0 ? staticDetails.items[0].id : 1;
+      const token = await getToken();
+      const firstItemId = staticDetails?.items?.[0]?.id || 1;
 
       const bidData = {
-        asistenteId: 1, // REQUIERE CAMBIO DEPENDIENDO DEL LOGIN
-        itemId: firstItemId, 
-        importe: parseFloat(monto),
+        asistenteId: 1, 
+        itemId: firstItemId,
+        importe: bidValue,
       };
 
       await enviarPujaRest(bidData, token ? `Bearer ${token}` : null);
       Alert.alert('Éxito', 'Puja enviada');
       setMonto('');
-      loadLiveState(); // Refresh immediately
+      loadLiveState();
     } catch (error) {
       Alert.alert('Error al pujar', error.message || 'No se pudo enviar la puja');
     }
@@ -159,37 +183,89 @@ export default function BidScreen({ navigation, route }) {
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}> 
-          <Image source={{ uri: getImageUri() }} style={styles.mainImage} resizeMode="cover" />
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={{ marginBottom: 12 }}
+          >
+            {(staticDetails?.items?.[0]?.fotos || subasta?.fotos || []).map((foto, index) => {
+              const uri = typeof foto === 'string' 
+                ? (foto.startsWith('http') ? foto : `data:image/jpeg;base64,${foto}`) 
+                : null;
+
+              return (
+                <Image 
+                  key={index} 
+                  source={{ uri: uri || 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80' }} 
+                  style={{ width: 280, height: 200, borderRadius: 12, marginRight: 12 }} 
+                  resizeMode="cover" 
+                />
+              );
+            })}
+          </ScrollView>
           <View style={[styles.tagRow, { backgroundColor: colors.surface }]}> 
             <View style={[styles.chip, { backgroundColor: colors.primarySoft }]}> 
               <Text style={[styles.chipText, { color: colors.primary }]}>{itemCatalog.toUpperCase()}</Text>
             </View>
             <Text style={[styles.detailLabel, { color: colors.muted }]}>{formatDate(subasta?.fecha)}</Text>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: '#EEF5FF' }]}
+              onPress={() =>
+                navigation.navigate('Catalog', { product: subasta })
+              }
+            >
+              <Text style={[styles.actionButtonText, { color: colors.primary }]}>Ver Catálogo</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.cardBody}>
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{itemTitle}</Text>
-            <Text style={[styles.subtitle, { color: colors.muted }]} numberOfLines={2}>{itemLocation}</Text>
+            <Text style={styles.ownerText}>
+              DUEÑO ACTUAL: {staticDetails?.duenio || 'Sin información'}
+            </Text>
 
+            <Text style={styles.ownerText}>
+              REMATADOR: {staticDetails?.rematador || 'Sin información'}
+            </Text>
+            <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() => setShowDetails(!showDetails)}
+            >
+              <Text style={styles.detailsButtonText}>Detalles</Text>
+
+              <Icon
+                name={showDetails ? "chevron-up" : "chevron-down"}
+                size={20}
+                color="#666"
+              />
+            </TouchableOpacity>
+
+            {showDetails && (
+              <View style={styles.detailsContent}>
+                <Text style={styles.detailsText}>
+                  {descripcion}
+                </Text>
+              </View>
+            )}
             <View style={styles.pricesRow}>
-              <View style={[styles.priceBox, { backgroundColor: colors.primarySoft, borderRadius: radius.md, marginRight: 12 }]}> 
-                <Text style={[styles.priceLabel, { color: colors.muted }]}>Precio base</Text>
-                <Text style={[styles.priceValue, { color: colors.primary }]}>{subasta?.moneda || 'USD'} {Number(basePrice).toFixed(2)}</Text>
-              </View>
-              <View style={[styles.priceBox, { backgroundColor: '#EEF5FF', borderRadius: radius.md }]}> 
-                <Text style={[styles.priceLabel, { color: colors.muted }]}>Mayor puja</Text>
-                <Text style={[styles.priceValue, { color: colors.primary }]}>{subasta?.moneda || 'USD'} {Number(currentPrice).toFixed(2)}</Text>
-              </View>
-            </View>
+              <View style={styles.basePriceCard}>
+                <Text style={styles.cardLabel}>PRECIO BASE</Text>
 
-            <View style={[styles.infoRow, { borderColor: colors.border }]}> 
-              <View>
-                <Text style={[styles.infoLabel, { color: colors.muted }]}>Estado</Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>{itemStatus}</Text>
+                <Text style={styles.cardAmount}>
+                  ${Number(basePrice).toLocaleString()}
+                </Text>
               </View>
-              <View>
-                <Text style={[styles.infoLabel, { color: colors.muted }]}>Tiempo</Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>{formatDate(subasta?.fecha)}</Text>
+
+              <View style={styles.bidPriceCard}>
+                <Text style={styles.cardLabel}>MAYOR PUJA</Text>
+
+                <Text style={styles.cardAmountBlue}>
+                  ${Number(currentPrice).toLocaleString()}
+                </Text>
+
+                <View style={styles.topBadge}>
+                  <Text style={styles.topBadgeText}>TOP</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -205,43 +281,62 @@ export default function BidScreen({ navigation, route }) {
               const amount = puja.monto || puja.importe || puja.valor || puja.amount || 0;
               const when = puja.fecha || puja.timestamp || puja.createdAt;
               return (
-                <View key={index} style={styles.historyRow}>
-                  <View>
-                    <Text style={[styles.historyName, { color: colors.text }]}>{userName}</Text>
-                    <Text style={[styles.historyTime, { color: colors.muted }]}>{formatDate(when)}</Text>
+              <View key={index} style={styles.historyRow}>
+                <View style={styles.historyLeft}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {userName.substring(0,2).toUpperCase()}
+                    </Text>
                   </View>
-                  <Text style={[styles.historyAmount, { color: colors.primary }]}>{subasta?.moneda || 'USD'} {Number(amount).toFixed(2)}</Text>
+
+                  <View>
+                    <Text style={styles.historyName}>{userName}</Text>
+                    <Text style={styles.historyTime}>
+                      {formatDate(when)}
+                    </Text>
+                  </View>
                 </View>
+
+                <Text style={styles.historyAmount}>
+                  ${Number(amount).toLocaleString()}
+                </Text>
+              </View>
               );
             })
           )}
         </View>
 
-        <View style={[styles.inputCard, { backgroundColor: colors.surface, borderRadius: radius.lg, borderColor: colors.border }]}> 
-          <Text style={[styles.inputLabel, { color: colors.muted }]}>Puja mínima: {subasta?.moneda || 'USD'} {Number(currentPrice + 1).toFixed(2)}</Text>
-          <TextInput
-            style={[styles.input, { borderColor: colors.border, backgroundColor: '#F8F9FD', color: colors.text }]}
-            placeholder="Ingresa tu monto"
-            placeholderTextColor={colors.muted}
-            keyboardType="decimal-pad"
-            value={monto}
-            onChangeText={setMonto}
-          />
-          <TouchableOpacity
-            style={[styles.bidButton, { backgroundColor: conectado ? colors.primary : '#A0A7B3' }]}
-            onPress={enviarPuja}
-            disabled={!conectado}
-          >
-            <Text style={styles.bidButtonText}>Pujar</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
+        <View style={[styles.inputCard, { backgroundColor: colors.surface, borderRadius: radius.lg, borderColor: colors.border }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <TextInput
+              style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 12, borderColor: colors.border, backgroundColor: '#F8F9FD', color: colors.text }]}
+              placeholder="Ingresa tu monto"
+              placeholderTextColor={colors.muted}
+              keyboardType="decimal-pad"
+              value={monto}
+              onChangeText={setMonto}
+            />
+            <TouchableOpacity
+              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado ? colors.primary : '#A0A7B3' }]}
+              onPress={enviarPuja}
+              disabled={!conectado}
+            >
+              <Text style={styles.bidButtonText}>Pujar</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.inputLabel, { color: colors.muted }]}>
+            {categoria !== 'oro' && categoria !== 'platino'
+              ? `Puja minima: ${subasta?.moneda || 'USD'} ${(currentPrice + basePrice * 0.01).toFixed(2)}      Puja maxima: ${(currentPrice + basePrice * 0.20).toFixed(2)}`
+              : `Sin límites de puja`}
+          </Text>
+        </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, marginTop: 20 },
   container: {
     padding: 20,
     paddingBottom: 32,
@@ -284,6 +379,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
     marginBottom: 20,
+  },
+  actionButton: {
+  flex: 0.6,
+  paddingVertical: 12,
+  marginHorizontal: 6,
+  borderRadius: 12,
+  alignItems: 'center',
+  justifyContent: 'center',
+  shadowColor: '#000',
+  shadowOpacity: 0.05,
+  shadowRadius: 4,
+  shadowOffset: { width: 0, height: 2 },
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   mainImage: {
     width: '100%',
@@ -412,6 +523,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
   bidButtonText: {
     color: '#FFFFFF',
@@ -430,4 +545,119 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
+  detailsButton: {
+  marginTop: 14,
+  borderWidth: 1,
+  borderColor: '#DDD',
+  borderRadius: 12,
+  padding: 14,
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
+
+detailsButtonText: {
+  fontSize: 15,
+  fontWeight: '600',
+},
+
+detailsContent: {
+  backgroundColor: '#FFF',
+  padding: 14,
+  borderRadius: 12,
+  marginTop: 8,
+},
+
+detailsText: {
+  color: '#666',
+  lineHeight: 22,
+},
+
+ownerText: {
+  fontSize: 11,
+  color: '#666',
+  fontWeight: '600',
+  marginBottom: 2,
+},
+
+basePriceCard: {
+  flex: 1,
+  backgroundColor: '#DCE8DF',
+  borderRadius: 18,
+  padding: 16,
+  borderWidth: 1,
+  borderColor: '#A8B8AC',
+},
+
+bidPriceCard: {
+  flex: 1,
+  backgroundColor: '#E8EEFF',
+  borderRadius: 18,
+  padding: 16,
+  borderWidth: 1,
+  borderColor: '#5F7DDB',
+  position: 'relative',
+},
+
+cardLabel: {
+  fontSize: 11,
+  color: '#666',
+  fontWeight: '700',
+},
+
+cardAmount: {
+  fontSize: 28,
+  fontWeight: '800',
+  marginTop: 6,
+},
+
+cardAmountBlue: {
+  fontSize: 28,
+  fontWeight: '800',
+  color: '#2244AA',
+  marginTop: 6,
+},
+
+topBadge: {
+  position: 'absolute',
+  right: 10,
+  bottom: 10,
+  backgroundColor: '#2244AA',
+  borderRadius: 12,
+  paddingHorizontal: 8,
+  paddingVertical: 2,
+},
+
+topBadgeText: {
+  color: 'white',
+  fontSize: 10,
+  fontWeight: '700',
+},
+
+historyLeft: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+avatar: {
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  backgroundColor: '#D9E3FF',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 10,
+},
+
+avatarText: {
+  fontWeight: '700',
+},
+
+bottomBar: {
+  flexDirection: 'row',
+  padding: 16,
+  backgroundColor: '#FFF',
+  borderTopWidth: 1,
+  borderColor: '#EEE',
+},
 });

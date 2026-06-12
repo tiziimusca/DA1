@@ -393,10 +393,10 @@ public class DataSeeder implements CommandLineRunner {
                 Integer productoId = getInteger("SELECT identificador FROM productos WHERE descripcion_completa = ?",
                                 product.descripcionCompleta());
 
-                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
-                                product.photoUrls()[0].getBytes(StandardCharsets.UTF_8));
-                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
-                                product.photoUrls()[1].getBytes(StandardCharsets.UTF_8));
+                for (String url : product.photoUrls()) {
+                        jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
+                                        url.getBytes(StandardCharsets.UTF_8));
+                }
 
                 jdbcTemplate.update(
                                 "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
