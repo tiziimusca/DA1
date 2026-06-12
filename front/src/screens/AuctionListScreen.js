@@ -250,7 +250,7 @@ function AuctionCard({ item, navigation, colors, radius }) {
 
         <TouchableOpacity
           style={[styles.cardButton, { backgroundColor: isActive ? colors.primary : colors.border, borderRadius: radius.round }]}
-          onPress={() => isActive && navigation.navigate('Catalog', { product: item })}
+          onPress={() => isActive && navigation.navigate('Bid', { product: item })}
           disabled={!isActive}
         >
           <Text style={[styles.buttonText, { color: isActive ? '#fff' : colors.muted }]}>{isActive ? 'Ingresar' : 'Finalizada'}</Text>

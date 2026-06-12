@@ -134,7 +134,12 @@ export default function HomeScreen({ navigation, route }) {
               item={item}
               colors={colors}
               radius={radius}
-            onPress={() => navigation.navigate('Catalog', { product: item })}
+              onPress={() =>
+                navigation.navigate(
+                  isGuest ? 'Catalog' : 'Bid',
+                  { product: item }
+                )
+              }
               isGuest={isGuest}
             />
           )}

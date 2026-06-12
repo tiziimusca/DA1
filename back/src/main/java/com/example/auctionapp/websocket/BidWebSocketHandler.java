@@ -45,6 +45,21 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    public void broadcast(String message) {
+        for (WebSocketSession target : sessions) {
+            if (target.isOpen()) {
+                try {
+                    target.sendMessage(new TextMessage(message));
+                } catch (IOException e) {
+                    log.warn("Failed to broadcast message to session {}: {}", target.getId(), e.getMessage());
+                    safeCloseAndRemove(target);
+                } catch (Exception e) {
+                    log.warn("Unexpected error broadcasting to {}: {}", target.getId(), e.getMessage());
+                }
+            }
+        }
+    }
+
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         log.warn("Transport error on session {}: {}", session.getId(), exception.getMessage());

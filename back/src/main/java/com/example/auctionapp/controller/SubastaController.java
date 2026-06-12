@@ -3,6 +3,8 @@ package com.example.auctionapp.controller;
 import com.example.auctionapp.dto.CatalogoResponseDTO;
 import com.example.auctionapp.dto.SubastaActivaDTO;
 import com.example.auctionapp.dto.SubastaDTO;
+import com.example.auctionapp.dto.DetalleEstaticoResponseDTO;
+import com.example.auctionapp.dto.EstadoVivoResponseDTO;
 import com.example.auctionapp.model.Subasta;
 import com.example.auctionapp.service.CatalogoService;
 import com.example.auctionapp.service.SubastaService;
@@ -46,7 +48,6 @@ public class SubastaController {
         return subastaService.obtenerProximas().stream().map(MapperUtil::toSubastaDTO).collect(Collectors.toList());
     }
 
-
     @GetMapping("/{id}/catalogo")
     public ResponseEntity<CatalogoResponseDTO> getCatalogoPorSubasta(
             @PathVariable Integer id,
@@ -60,5 +61,21 @@ public class SubastaController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/{id}/detalle-estatico")
+    public ResponseEntity<DetalleEstaticoResponseDTO> getDetalleEstatico(
+            @PathVariable Integer id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        return subastaService.obtenerDetalleEstatico(id, authorizationHeader)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/estado-vivo")
+    public ResponseEntity<EstadoVivoResponseDTO> getEstadoVivo(@PathVariable Integer id) {
+        return subastaService.obtenerEstadoVivo(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

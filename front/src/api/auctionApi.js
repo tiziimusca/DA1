@@ -88,8 +88,34 @@ export function createWebSocket(onMessage, onOpen, onError) {
   return socket;
 }
 
-export function sendBid(socket, bid) {
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify(bid));
+export async function enviarPujaRest(pujaData, authToken) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/pujar`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(pujaData),
+  });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
   }
+  return response.json();
+}
+
+export async function fetchEstadoVivo(subastaId) {
+  const response = await fetch(`${BASE_URL}/subastas/${subastaId}/estado-vivo`);
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
+export async function fetchDetalleEstatico(subastaId, authToken) {
+  const headers = {};
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/subastas/${subastaId}/detalle-estatico`, { headers });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
 }
