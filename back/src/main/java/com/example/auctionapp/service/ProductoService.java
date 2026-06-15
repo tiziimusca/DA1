@@ -251,6 +251,9 @@ public class ProductoService {
     public MisPropuestosResponseDTO obtenerMisPropuestos(String authorizationHeader) {
         Usuario usuario = obtenerUsuarioDesdeToken(authorizationHeader);
         Integer usuarioId = usuario.getPersonaId();
+
+        long t0 = System.currentTimeMillis();
+
         
         List<productoPropuestoDTO> productos = obtenerDetallesPorUsuario(usuarioId)
                 .stream()
@@ -261,10 +264,10 @@ public class ProductoService {
                     dto.setFechaEnvio(detalle.getFechaEnviado().toLocalDate());
                     dto.setEstado(detalle.getEstado());
                     
-                    // Recuperamos la imagen y la convertimos a Base64
-                    List<Foto> fotos = fotoRepository.findByProducto_IdentificadorOrderByIdentificadorAsc(detalle.getProducto().getIdentificador());
-                    if (fotos != null && !fotos.isEmpty() && fotos.get(0).getFoto() != null) {
-                        byte[] bytes = fotos.get(0).getFoto();
+                    // Recuperamos solo la primera imagen y la convertimos a Base64
+                    Optional<Foto> fotoOpt = fotoRepository.findFirstByProducto_IdentificadorOrderByIdentificadorAsc(detalle.getProducto().getIdentificador());
+                    if (fotoOpt.isPresent() && fotoOpt.get().getFoto() != null) {
+                        byte[] bytes = fotoOpt.get().getFoto();
                         try {
                             if (bytes.length > 0 && bytes.length < 1000) {
                                 String str = new String(bytes, StandardCharsets.UTF_8);

@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons as Icon } from '@expo/vector-icons';
@@ -50,16 +51,23 @@ export default function ProponerProductoScreen({ navigation }) {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      allowsMultipleSelection: true,
       quality: 0.7,
       base64: true,
     });
 
     if (!result.canceled && result.assets?.length > 0) {
-      const asset = result.assets[0];
       setImages((current) => {
         const next = [...current];
-        next[index] = { uri: asset.uri, base64: asset.base64 };
+        if (index >= next.length) {
+          result.assets.forEach(asset => next.push({ uri: asset.uri, base64: asset.base64 }));
+        } else {
+          next[index] = { uri: result.assets[0].uri, base64: result.assets[0].base64 };
+          let insertIdx = index + 1;
+          for (let i = 1; i < result.assets.length; i++) {
+            next.splice(insertIdx++, 0, { uri: result.assets[i].uri, base64: result.assets[i].base64 });
+          }
+        }
         return next;
       });
     }
@@ -122,7 +130,7 @@ export default function ProponerProductoScreen({ navigation }) {
     }
   };
 
-  const imageSlots = Array.from({ length: MIN_IMAGES }, (_, index) => ({ index, image: images[index] }));
+  const imageSlots = Array.from({ length: Math.max(MIN_IMAGES, images.length + 1) }, (_, index) => ({ index, image: images[index] }));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}> 
@@ -229,7 +237,9 @@ export default function ProponerProductoScreen({ navigation }) {
         <Text style={styles.footerText}>Nuestros curadores revisarán su propuesta y se pondrán en contacto con usted en un plazo de 2 a 3 días hábiles.</Text>
 
       </ScrollView>
-      <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
+      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
+      </View>
       
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => { setModalVisible(false); navigation.goBack(); }}>
         <View style={styles.modalOverlay}>

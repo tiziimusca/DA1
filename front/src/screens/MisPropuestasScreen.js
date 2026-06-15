@@ -10,6 +10,7 @@ import {
   StatusBar,
   SafeAreaView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import AppFooterNav from '../components/AppFooterNav';
@@ -189,7 +190,7 @@ export default function ArticulosPropuestos({ navigation }) {
               if (p.imagenUrl.startsWith('http') || p.imagenUrl.startsWith('data:')) {
                 imgUri = p.imagenUrl;
               } else {
-                  imgUri = `data:image/jpeg;base64,${p.imagenUrl.replace(/\s+/g, '')}`;
+                  imgUri = `data:image/jpeg;base64,${p.imagenUrl}`;
               }
             }
             
@@ -234,7 +235,7 @@ export default function ArticulosPropuestos({ navigation }) {
  
       {/* ── Header ── */}
       <View style={[hStyles.header, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, backgroundColor: colors.background }]}>
-        <TouchableOpacity style={[hStyles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <TouchableOpacity style={[hStyles.back, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate('Home')}>
           <Text style={[hStyles.backArrow, { color: colors.text }]}>‹</Text>
         </TouchableOpacity>
         <Text style={[hStyles.title, { color: colors.text }]}>Artículos Propuestos</Text>
@@ -303,7 +304,7 @@ export default function ArticulosPropuestos({ navigation }) {
       </ScrollView>
  
       {/* ── FAB ── */}
-      <View style={[fabStyles.wrap, { bottom: 72, left: spacing.md, right: spacing.md }]}>
+      <View style={[fabStyles.wrap, { bottom: Platform.OS === 'android' ? 110 : 100, left: spacing.md, right: spacing.md }]}>
         <TouchableOpacity
           activeOpacity={0.85}
           style={[fabStyles.btn, { backgroundColor: colors.primary, borderRadius: radius.lg }]}
@@ -313,11 +314,13 @@ export default function ArticulosPropuestos({ navigation }) {
           <Text style={[fabStyles.label, { color: '#FFFFFF' }]}>Proponer Nuevo Artículo</Text>
         </TouchableOpacity>
       </View>
-      <AppFooterNav
-        navigation={navigation}
-        colors={colors}
-        activeRouteName="Profile"
-      />
+      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+        <AppFooterNav
+          navigation={navigation}
+          colors={colors}
+          activeRouteName="Profile"
+        />
+      </View>
     </SafeAreaView>
   );
 }
