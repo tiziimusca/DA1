@@ -59,6 +59,16 @@ export async function fetchPujas() {
   return response.json();
 }
 
+export async function fetchMisPropuestos(authToken) {
+  const headers = {};
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/productos/mis-propuestos`, { headers });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
 export async function fetchRegistrosSubasta() {
   const response = await fetch(`${BASE_URL}/registros-subasta`);
   return response.json();

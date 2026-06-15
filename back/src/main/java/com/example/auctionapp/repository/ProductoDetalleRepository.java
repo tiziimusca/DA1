@@ -13,6 +13,6 @@ import java.util.Optional;
 public interface ProductoDetalleRepository extends JpaRepository<ProductoDetalle, Integer> {
     Optional<ProductoDetalle> findByProductoIdentificador(Integer productoId);
     
-    @Query("SELECT pd FROM ProductoDetalle pd WHERE pd.producto.duenio = :duenioId")
+    @Query("SELECT pd FROM ProductoDetalle pd JOIN FETCH pd.producto WHERE pd.producto.duenio = :duenioId")
     List<ProductoDetalle> findByDuenio(@Param("duenioId") Integer duenioId);
 }

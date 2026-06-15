@@ -19,10 +19,8 @@ public class ProponerProductoDTO {
     @Size(max = 300)
     private String descripcionCompleta;
 
-    @NotNull
     private Integer revisorId;
 
-    @NotNull
     private Integer duenioId;
 
     @Size(max = 500)
