@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView,
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { createWebSocket, enviarPujaRest, fetchEstadoVivo, fetchDetalleEstatico } from '../api/auctionApi';
-import { getToken } from '../auth/authManager';
+import { getToken, getUser } from '../auth/authManager';
 
 export default function BidScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
@@ -15,6 +15,9 @@ export default function BidScreen({ navigation, route }) {
   const [liveState, setLiveState] = useState(null);
   const [staticDetails, setStaticDetails] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(120);
+
+  const currentUser = getUser();
 
   const descripcion =
     staticDetails?.descripcion ||
@@ -33,6 +36,7 @@ export default function BidScreen({ navigation, route }) {
       ]);
       console.log('Datos vivo:', vivoData);
       console.log('Datos estático:', estaticoData);
+      console.log('Subasta actual:', subasta);
       setLiveState(vivoData);
       setStaticDetails(estaticoData);
     } catch (error) {
@@ -41,9 +45,9 @@ export default function BidScreen({ navigation, route }) {
   };
 
   const loadLiveState = async () => {
-    if (!subasta?.identificador) return;
+    if (!subasta?.id) return;
     try {
-      const data = await fetchEstadoVivo(subasta.identificador);
+      const data = await fetchEstadoVivo(subasta.id);
       setLiveState(data);
     } catch (error) {
       console.error('Error fetching live state:', error);
@@ -56,8 +60,9 @@ export default function BidScreen({ navigation, route }) {
     const ws = createWebSocket(
       (data) => {
         console.log('Bid recibido:', data);
-        if (data && data.type === 'NEW_BID' && data.subastaId === subasta?.identificador) {
-          // If a new bid is placed on this auction, we refresh the live state from the server
+        console.log('Subasta actual:', subasta);
+        if (data && data.type === 'NEW_BID' && data.subastaId === subasta?.id) {
+          setTimeLeft(120);
           loadLiveState();
         }
       },
@@ -73,7 +78,47 @@ export default function BidScreen({ navigation, route }) {
     return () => {
       if (ws) ws.close();
     };
-  }, [subasta?.identificador]);
+  }, [subasta?.id]);
+
+  const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
+  const isHighestBidder = bidHistory.length > 0 && bidHistory[0].nombreAsistente === currentUser?.nombre;
+
+  useEffect(() => {
+    if (!conectado || timeLeft <= 0) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [conectado, timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      if (isHighestBidder) {
+        console.log('Navegando a Payment con subasta:', subasta);
+        navigation.replace('Payment', { subasta, winningBid: currentPrice, image: staticDetails.items[0].fotos[0], comision: staticDetails.items[0].comision });
+      } else {
+        navigation.replace('Home');
+      }
+    }
+  }, [timeLeft, isHighestBidder, navigation, subasta]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (isHighestBidder && timeLeft > 0) {
+        e.preventDefault();
+        Alert.alert('Espera', 'No puedes salir mientras seas la mayor puja.');
+      }
+    });
+    return unsubscribe;
+  }, [navigation, isHighestBidder, timeLeft]);
 
   const formatDate = (value) => {
     if (!value) return 'Próximamente';
@@ -86,6 +131,12 @@ export default function BidScreen({ navigation, route }) {
     });
   };
 
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
   const getImageUri = () => {
     let imageSource = null;
     if (staticDetails?.items && staticDetails.items.length > 0 && staticDetails.items[0].fotos?.length > 0) {
@@ -94,26 +145,31 @@ export default function BidScreen({ navigation, route }) {
       imageSource = Array.isArray(subasta?.fotos) ? subasta.fotos[0] : subasta?.imagen || subasta?.foto;
     }
 
-    if (!imageSource) {
-      return 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80';
-    }
     if (typeof imageSource === 'string') {
       if (imageSource.startsWith('http')) return imageSource;
-      if (imageSource.startsWith('/api/')) return `https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80`;
       return `data:image/jpeg;base64,${imageSource}`;
     }
-    return 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80';
   };
-
-  const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
 
   const currentPrice = bidHistory.length > 0 ? bidHistory[0].importe : (staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || 0);
   const basePrice = staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || subasta?.precio || 0;
-  const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subasta?.identificador}`;
+  const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subasta?.id}`;
   const itemStatus = String(liveState?.estado || subasta?.estado || 'ATENCIÓN').toUpperCase();
   const itemLocation = subasta?.ubicacion || 'Ubicación no definida';
   const itemCatalog = subasta?.categoria || 'comun';
   const categoria = (itemCatalog || '').toLowerCase();
+
+  const categoryRank = {
+    'comun': 1,
+    'especial': 2,
+    'plata': 3,
+    'oro': 4,
+    'platino': 5
+  };
+  const userCategory = (currentUser?.categoria || 'comun').toLowerCase();
+  const auctionCategoryRank = categoryRank[categoria] || 1;
+  const userCategoryRank = categoryRank[userCategory] || 1;
+  const isCategoryAllowed = userCategoryRank >= auctionCategoryRank;
 
   const enviarPuja = async () => {
     if (!monto || isNaN(monto)) {
@@ -144,7 +200,6 @@ export default function BidScreen({ navigation, route }) {
       const firstItemId = staticDetails?.items?.[0]?.id || 1;
 
       const bidData = {
-        asistenteId: 1, 
         itemId: firstItemId,
         importe: bidValue,
       };
@@ -152,6 +207,7 @@ export default function BidScreen({ navigation, route }) {
       await enviarPujaRest(bidData, token ? `Bearer ${token}` : null);
       Alert.alert('Éxito', 'Puja enviada');
       setMonto('');
+      setTimeLeft(120);
       loadLiveState();
     } catch (error) {
       Alert.alert('Error al pujar', error.message || 'No se pudo enviar la puja');
@@ -172,12 +228,18 @@ export default function BidScreen({ navigation, route }) {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}> 
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+            if (isHighestBidder) {
+              Alert.alert('Espera', 'No puedes salir mientras seas la mayor puja.');
+            } else {
+              navigation.goBack();
+            }
+          }} style={styles.backButton}>
             <Icon name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={[styles.statusPill, { backgroundColor: conectado ? '#E6F5EC' : '#FDEDEA' }]}> 
             <Text style={[styles.statusPillText, { color: conectado ? colors.success : '#D14343' }]}>
-              {conectado ? 'VIVO' : 'DESCONECTADO'}
+              {conectado ? '● VIVO' : 'DESCONECTADO'}
             </Text>
           </View>
         </View>
@@ -219,14 +281,38 @@ export default function BidScreen({ navigation, route }) {
           </View>
 
           <View style={styles.cardBody}>
-            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{itemTitle}</Text>
-            <Text style={styles.ownerText}>
-              DUEÑO ACTUAL: {staticDetails?.duenio || 'Sin información'}
-            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <Text style={[styles.title, { color: colors.primary, flex: 1, marginRight: 10}]}>
+                {itemTitle}
+              </Text>
 
-            <Text style={styles.ownerText}>
-              REMATADOR: {staticDetails?.rematador || 'Sin información'}
-            </Text>
+              <View
+                style={{ backgroundColor: '#E9D4DC', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, minWidth: 90, alignItems: 'center' }}>
+                <Text style={{ color: '#8A1F4A', fontSize: 12, fontWeight: '600' }}>
+                  Termina en
+                </Text>
+
+                <Text style={{ color: '#8A1F4A', fontSize: 18, fontWeight: '800', marginTop: 2 }}>
+                  {formatTime(timeLeft)}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={styles.ownerText}>
+                DUEÑO ACTUAL:
+              </Text>
+              <Text style={styles.ownerText2}>
+                {staticDetails?.duenio || 'Sin información'}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={styles.ownerText}>
+                REMATADOR:
+              </Text>
+              <Text style={styles.ownerText2}>
+                {staticDetails?.rematador || 'Sin información'}
+              </Text>
+            </View>
             <TouchableOpacity
               style={styles.detailsButton}
               onPress={() => setShowDetails(!showDetails)}
@@ -258,13 +344,14 @@ export default function BidScreen({ navigation, route }) {
 
               <View style={styles.bidPriceCard}>
                 <Text style={styles.cardLabel}>MAYOR PUJA</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.cardAmountBlue}>
+                    ${Number(currentPrice).toLocaleString()}
+                  </Text>
 
-                <Text style={styles.cardAmountBlue}>
-                  ${Number(currentPrice).toLocaleString()}
-                </Text>
-
-                <View style={styles.topBadge}>
-                  <Text style={styles.topBadgeText}>TOP</Text>
+                  <View style={styles.topBadge}>
+                    <Text style={styles.topBadgeText}>TOP</Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -277,9 +364,9 @@ export default function BidScreen({ navigation, route }) {
             <Text style={[styles.noHistoryText, { color: colors.muted }]}>Aún no hay pujas para este lote.</Text>
           ) : (
             bidHistory.slice(0, 3).map((puja, index) => {
-              const userName = puja.usuario?.nombre || puja.nombre || puja.bidder || `Usuario ${index + 1}`;
-              const amount = puja.monto || puja.importe || puja.valor || puja.amount || 0;
-              const when = puja.fecha || puja.timestamp || puja.createdAt;
+              const userName = puja.nombreAsistente || `Usuario ${index + 1}`;
+              const amount = puja.importe || 0;
+              const when = puja.fecha;
               return (
               <View key={index} style={styles.historyRow}>
                 <View style={styles.historyLeft}>
@@ -290,16 +377,29 @@ export default function BidScreen({ navigation, route }) {
                   </View>
 
                   <View>
-                    <Text style={styles.historyName}>{userName}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={styles.historyName}>{userName}</Text>
+                    </View>
                     <Text style={styles.historyTime}>
                       {formatDate(when)}
                     </Text>
                   </View>
                 </View>
-
-                <Text style={styles.historyAmount}>
+                    <View style={{ flexDirection: 'column', alignItems: 'center' }}>
+                <Text style={[styles.historyAmount, {color: colors.primary}]}>
                   ${Number(amount).toLocaleString()}
                 </Text>
+                {index === 0 && (
+                  <View style={styles.winnerBadge}>
+                    <Text style={styles.winnerText}>PRINCIPAL</Text>
+                  </View>
+                )}
+                {index === 1 && (
+                  <View style={[styles.winnerBadge, { backgroundColor: '#F1F3F5' }]}>
+                    <Text style={[styles.winnerText, { color: '#39538C' }]}>ANTERIOR</Text>
+                  </View>
+                )}
+                </View>
               </View>
               );
             })
@@ -318,11 +418,11 @@ export default function BidScreen({ navigation, route }) {
               onChangeText={setMonto}
             />
             <TouchableOpacity
-              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado ? colors.primary : '#A0A7B3' }]}
+              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado && !isHighestBidder && isCategoryAllowed ? colors.primary : '#A0A7B3' }]}
               onPress={enviarPuja}
-              disabled={!conectado}
+              disabled={!conectado || isHighestBidder || !isCategoryAllowed}
             >
-              <Text style={styles.bidButtonText}>Pujar</Text>
+              <Text style={styles.bidButtonText}>{isHighestBidder ? 'Ganando' : !isCategoryAllowed ? 'Bloqueado' : 'Pujar'}</Text>
             </TouchableOpacity>
           </View>
           <Text style={[styles.inputLabel, { color: colors.muted }]}>
@@ -433,6 +533,7 @@ const styles = StyleSheet.create({
   },
   pricesRow: {
     flexDirection: 'row',
+    marginTop: 20,
   },
   priceBox: {
     flex: 1,
@@ -575,6 +676,13 @@ detailsText: {
 
 ownerText: {
   fontSize: 11,
+  color: '#000000',
+  fontWeight: '600',
+  marginBottom: 2,
+  marginRight: 6,
+},
+ownerText2: {
+  fontSize: 11,
   color: '#666',
   fontWeight: '600',
   marginBottom: 2,
@@ -650,6 +758,20 @@ avatar: {
 },
 
 avatarText: {
+  fontWeight: '700',
+},
+
+winnerBadge: {
+  backgroundColor: '#E6F5EC',
+  borderRadius: 12,
+  paddingHorizontal: 8,
+  paddingVertical: 2,
+  marginLeft: 8,
+},
+
+winnerText: {
+  color: '#28A745',
+  fontSize: 10,
   fontWeight: '700',
 },
 

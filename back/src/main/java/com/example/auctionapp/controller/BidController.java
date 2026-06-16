@@ -49,6 +49,9 @@ public class BidController {
     private final MetodoPagoTarjetaService tarjetaService;
     private final MetodoPagoChequeService chequeService;
     private final BidWebSocketHandler bidWebSocketHandler;
+    private final com.example.auctionapp.service.JwtService jwtService;
+    private final com.example.auctionapp.repository.UsuarioRepository usuarioRepository;
+    private final com.example.auctionapp.repository.ClienteRepository clienteRepository;
 
     public BidController(PujaService pujaService,
             AsistenteService asistenteService,
@@ -56,7 +59,10 @@ public class BidController {
             MetodoPagoBancoService bancoService,
             MetodoPagoTarjetaService tarjetaService,
             MetodoPagoChequeService chequeService,
-            BidWebSocketHandler bidWebSocketHandler) {
+            BidWebSocketHandler bidWebSocketHandler,
+            com.example.auctionapp.service.JwtService jwtService,
+            com.example.auctionapp.repository.UsuarioRepository usuarioRepository,
+            com.example.auctionapp.repository.ClienteRepository clienteRepository) {
         this.pujaService = pujaService;
         this.asistenteService = asistenteService;
         this.itemCatalogoService = itemCatalogoService;
@@ -64,42 +70,82 @@ public class BidController {
         this.tarjetaService = tarjetaService;
         this.chequeService = chequeService;
         this.bidWebSocketHandler = bidWebSocketHandler;
+        this.jwtService = jwtService;
+        this.usuarioRepository = usuarioRepository;
+        this.clienteRepository = clienteRepository;
     }
 
     @PostMapping("/pujar")
-    public ResponseEntity<Puja> pujar(@Valid @RequestBody PujaBidRequestDTO request) {
-        Asistente asistente = asistenteService.obtenerPorId(request.getAsistenteId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Asistente no encontrado"));
+    public ResponseEntity<Puja> pujar(
+            @org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @Valid @RequestBody PujaBidRequestDTO request) {
+
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no proporcionado");
+        }
+
+        String token = jwtService.extraerToken(authorizationHeader);
+        String email = jwtService.validarTokenAutenticacion(token);
+        com.example.auctionapp.model.Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+
+        Cliente cliente = clienteRepository.findById(usuario.getPersonaId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Cliente no encontrado"));
 
         ItemCatalogo item = itemCatalogoService.obtenerPorId(request.getItemId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item de catálogo no encontrado"));
 
-        Cliente cliente = asistente.getCliente();
+        Subasta subastaItem = item.getCatalogo() != null ? item.getCatalogo().getSubasta() : null;
+        if (subastaItem == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El item no tiene subasta asociada");
+        }
+
+        Asistente asistente = asistenteService
+                .obtenerPorClienteYSubasta(cliente.getIdentificador(), subastaItem.getIdentificador())
+                .orElseGet(() -> {
+                    Asistente nuevo = new Asistente();
+                    nuevo.setCliente(cliente);
+                    nuevo.setSubasta(subastaItem);
+                    int count = asistenteService.contarPorSubasta(subastaItem.getIdentificador());
+                    nuevo.setNumeroPostor(count + 1);
+                    return asistenteService.crear(nuevo);
+                });
+
+        System.out.println(cliente);
+        System.out.println("Hola");
         if (cliente == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El asistente no está asociado a un cliente válido");
         }
-
+        System.out.println(!tieneMetodoPagoAprobado(cliente.getIdentificador()));
+        System.out.println("gola");
         if (!tieneMetodoPagoAprobado(cliente.getIdentificador())) {
+            System.out.println("no tengo metodo de pago valido");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Debe tener al menos un método de pago verificado/aprobado para enviar una puja");
         }
+        System.out.println(item.getCatalogo().getDescripcion());
+        System.out.println(asistente.getSubasta().getEstado());
 
-        Subasta subastaItem = item.getCatalogo() != null ? item.getCatalogo().getSubasta() : null;
-        if (subastaItem == null || asistente.getSubasta() == null ||
-                !subastaItem.getIdentificador().equals(asistente.getSubasta().getIdentificador())) {
+        if (!subastaItem.getIdentificador().equals(asistente.getSubasta().getIdentificador())) {
+            System.out.println(subastaItem);
+            System.out.println(asistente.getSubasta());
+            System.out.println(subastaItem.getIdentificador());
+            System.out.println(asistente.getSubasta().getIdentificador());
+            System.out.println("muere aca");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El item no pertenece a la subasta asociada al asistente");
         }
-
+        System.out.println("estoy aca");
         String categoriaCliente = normalizeCategoria(cliente.getCategoria());
         String categoriaSubasta = normalizeCategoria(subastaItem.getCategoria());
-
+        System.out.println(categoriaCliente);
+        System.out.println(categoriaSubasta);
         if (!permiteCategoria(categoriaCliente, categoriaSubasta)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "La categoría del cliente no es suficiente para participar en esta subasta");
         }
-
+        System.out.println(item.getPrecioBase());
         BigDecimal precioBase = item.getPrecioBase();
         if (precioBase == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El item no tiene precio base definido");
@@ -133,10 +179,10 @@ public class BidController {
         puja.setGanador("no");
 
         Puja savedPuja = pujaService.crear(puja);
-        
+
         // Notify all clients about the new bid
-        String notification = String.format("{\"type\":\"NEW_BID\",\"subastaId\":%d,\"importe\":%s}", 
-            subastaItem.getIdentificador(), savedPuja.getImporte().toString());
+        String notification = String.format("{\"type\":\"NEW_BID\",\"subastaId\":%d,\"importe\":%s}",
+                subastaItem.getIdentificador(), savedPuja.getImporte().toString());
         bidWebSocketHandler.broadcast(notification);
 
         return ResponseEntity.ok(savedPuja);

@@ -14,6 +14,7 @@ public class DetalleEstaticoItemDTO {
     private BigDecimal precioBase;
     private String moneda;
     private List<String> fotos;
+    private BigDecimal comision;
 
     public Integer getId() {
         return id;
@@ -45,6 +46,14 @@ public class DetalleEstaticoItemDTO {
 
     public void setPrecioBase(BigDecimal precioBase) {
         this.precioBase = precioBase;
+    }
+
+    public void setComision(BigDecimal comision) {
+        this.comision = comision;
+    }
+
+    public BigDecimal getComision() {
+        return comision;
     }
 
     public String getMoneda() {

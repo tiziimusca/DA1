@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.Getter;
@@ -22,11 +22,11 @@ public class Puja {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer identificador;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "asistente", referencedColumnName = "identificador", nullable = false)
     private Asistente asistente;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "item", referencedColumnName = "identificador", nullable = false)
     private ItemCatalogo item;
 

@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 
 public class PujaBidRequestDTO {
 
-    @NotNull
     private Integer asistenteId;
 
     @NotNull

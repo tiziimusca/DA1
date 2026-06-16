@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,11 +24,11 @@ public class Asistente {
     @Column(nullable = false)
     private Integer numeroPostor;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "cliente", referencedColumnName = "identificador", nullable = false)
     private Cliente cliente;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "subasta", referencedColumnName = "identificador", nullable = false)
     private Subasta subasta;
 

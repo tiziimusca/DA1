@@ -25,6 +25,14 @@ public class AsistenteService {
         return asistenteRepository.findById(id);
     }
 
+    public Optional<Asistente> obtenerPorClienteYSubasta(Integer clienteId, Integer subastaId) {
+        return asistenteRepository.findByCliente_IdentificadorAndSubasta_Identificador(clienteId, subastaId);
+    }
+
+    public int contarPorSubasta(Integer subastaId) {
+        return asistenteRepository.countBySubasta_Identificador(subastaId);
+    }
+
     public Asistente crear(Asistente asistente) {
         return asistenteRepository.save(asistente);
     }
