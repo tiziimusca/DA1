@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,9 +36,11 @@ import com.example.auctionapp.model.Producto;
 import com.example.auctionapp.model.ProductoDetalle;
 import com.example.auctionapp.model.Subasta;
 import com.example.auctionapp.repository.FotoRepository;
+import com.example.auctionapp.service.AuthService;
 import com.example.auctionapp.service.ProductoService;
 import com.example.auctionapp.util.MapperUtil;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,29 +54,46 @@ public class ProductoController {
 
     private final ProductoService productoService;
     private final FotoRepository fotoRepository;
+    private final AuthService authService;
 
-    public ProductoController(ProductoService productoService, FotoRepository fotoRepository) {
+    public ProductoController(ProductoService productoService, FotoRepository fotoRepository, AuthService authService) {
         this.productoService = productoService;
         this.fotoRepository = fotoRepository;
+        this.authService = authService;
+    }
+
+    // Resuelve el id de la persona autenticada a partir del header Authorization.
+    // Se resuelve vía Cliente (todo usuario logueado tiene fila en 'clientes'), no vía
+    // Dueno: ese id es el mismo número (Persona.identificador) que se usa como duenio.
+    // El registro en 'duenios' se crea recién al proponer un producto (ProductoService.asegurarDueno).
+    // Lanza SecurityException si el token es inválido o expiró (se traduce a 401).
+    private Integer obtenerDuenioId(String authorizationHeader) {
+        return authService.obtenerClienteDesdeToken(authorizationHeader).getIdentificador();
     }
 
     @PostMapping("/proponer")
-    public ResponseEntity<?> crear(@Valid @RequestBody ProponerProductoDTO requestDto, Authentication authentication) {
+    public ResponseEntity<?> crear(
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @Valid @RequestBody ProponerProductoDTO requestDto) {
+        Integer duenioId;
         try {
-            //Integer duenioId = Integer.parseInt(authentication.getName());
-            Integer duenioId = 2; // TODO: Eliminar esta línea cuando se integre con autenticación real
-            
-            requestDto.setDuenioId(duenioId); 
-            
+            duenioId = obtenerDuenioId(authorizationHeader);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+
+        try {
+            requestDto.setDuenioId(duenioId);
+
             // Le pasamos el DTO COMPLETO al Service
             ProductoDetalle productoDetalle = productoService.crearProductoDetalle(requestDto);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("productoId", productoDetalle.getProducto().getIdentificador());
             response.put("estado", productoDetalle.getEstado());
-            
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
@@ -84,6 +103,7 @@ public class ProductoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductoDTO> actualizar(@PathVariable Integer id,
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ProductoDTO productoDto) {
         try {
             Producto p = MapperUtil.toProductoEntity(productoDto);
@@ -96,12 +116,16 @@ public class ProductoController {
 
 
     @GetMapping("/mis-propuestos")
-    public ResponseEntity<MisPropuestosResponseDTO> obtenerMisProductos(Authentication authentication) {
-        //String identificadorToken = authentication.getName(); 
-        // Integer usuarioId = Integer.parseInt(identificadorToken);
-        Integer usuarioId = 2;
-        
-        List<productoPropuestoDTO> productos = productoService.obtenerDetallesPorUsuario(usuarioId)
+    public ResponseEntity<?> obtenerMisProductos(
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        Integer duenioId;
+        try {
+            duenioId = obtenerDuenioId(authorizationHeader);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+
+        List<productoPropuestoDTO> productos = productoService.obtenerDetallesPorUsuario(duenioId)
                 .stream()
                 .map(detalle -> {
                     productoPropuestoDTO dto = new productoPropuestoDTO();
@@ -115,17 +139,24 @@ public class ProductoController {
                 .collect(Collectors.toList());
                 
         MisPropuestosResponseDTO responseDto = new MisPropuestosResponseDTO();
-        responseDto.setUsuarioId(usuarioId);
+        responseDto.setUsuarioId(duenioId);
         responseDto.setProductos(productos);
         
         return ResponseEntity.ok(responseDto); 
     }
 
     @GetMapping("/{id}/seguimiento")
-    public ResponseEntity<?> obtenerSeguimiento(@PathVariable Integer id, Authentication authentication) {
+    public ResponseEntity<?> obtenerSeguimiento(
+            @PathVariable Integer id,
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        Integer usuarioSolicitanteId;
         try {
-            //Integer usuarioSolicitanteId = Integer.parseInt(authentication.getName());
-            Integer usuarioSolicitanteId = 2;
+            usuarioSolicitanteId = obtenerDuenioId(authorizationHeader);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+
+        try {
             ProductoDetalle productoDetalle = productoService.obtenerSeguimiento(id, usuarioSolicitanteId);
 
             SeguimientoResponseDTO responseDto = new SeguimientoResponseDTO();
@@ -160,7 +191,15 @@ public class ProductoController {
     }
 
     @PostMapping("/{id}/confirmar")
-    public ResponseEntity<?> confirmar(@PathVariable Integer id) {
+    public ResponseEntity<?> confirmar(
+            @PathVariable Integer id,
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        try {
+            obtenerDuenioId(authorizationHeader);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+
         try {
             productoService.confirmarProducto(id);
             return ResponseEntity.ok("Confirmación exitosa.");
@@ -175,7 +214,15 @@ public class ProductoController {
     }
 
     @PostMapping("/{id}/devolver")
-    public ResponseEntity<?> devolver(@PathVariable Integer id) {
+    public ResponseEntity<?> devolver(
+            @PathVariable Integer id,
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        try {
+            obtenerDuenioId(authorizationHeader);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+
         try {
             productoService.devolverProducto(id);
 

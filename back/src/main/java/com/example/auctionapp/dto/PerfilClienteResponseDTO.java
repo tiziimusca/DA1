@@ -1,6 +1,7 @@
 package com.example.auctionapp.dto;
 
 public class PerfilClienteResponseDTO {
+    private Integer identificador;
     private String nombre;
     private String categoria;
     private String pais;
@@ -10,12 +11,21 @@ public class PerfilClienteResponseDTO {
     public PerfilClienteResponseDTO() {
     }
 
-    public PerfilClienteResponseDTO(String nombre, String categoria, String pais, String estado, String direccion) {
+    public PerfilClienteResponseDTO(Integer identificador, String nombre, String categoria, String pais, String estado, String direccion) {
+        this.identificador = identificador;
         this.nombre = nombre;
         this.categoria = categoria;
         this.pais = pais;
         this.estado = estado;
         this.direccion = direccion;
+    }
+
+    public Integer getIdentificador() {
+        return identificador;
+    }
+
+    public void setIdentificador(Integer identificador) {
+        this.identificador = identificador;
     }
 
     public String getNombre() {

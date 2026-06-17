@@ -3,12 +3,18 @@ package com.example.auctionapp.service;
 import com.example.auctionapp.model.Producto;
 import com.example.auctionapp.model.ProductoDetalle;
 import com.example.auctionapp.dto.ProponerProductoDTO;
+import com.example.auctionapp.model.Dueno;
+import com.example.auctionapp.model.Empleado;
 import com.example.auctionapp.model.Foto;
 import com.example.auctionapp.model.HistorialEstado;
+import com.example.auctionapp.model.Persona;
 import com.example.auctionapp.repository.ProductoRepository;
 import com.example.auctionapp.util.MapperUtil;
 import com.example.auctionapp.repository.ProductoDetalleRepository;
+import com.example.auctionapp.repository.DuenoRepository;
+import com.example.auctionapp.repository.EmpleadoRepository;
 import com.example.auctionapp.repository.FotoRepository;
+import com.example.auctionapp.repository.PersonaRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -25,11 +31,38 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final ProductoDetalleRepository productoDetalleRepository;
     private final FotoRepository fotoRepository;
+    private final DuenoRepository duenoRepository;
+    private final PersonaRepository personaRepository;
+    private final EmpleadoRepository empleadoRepository;
 
-    public ProductoService(ProductoRepository productoRepository, ProductoDetalleRepository productoDetalleRepository, FotoRepository fotoRepository) {
+    public ProductoService(ProductoRepository productoRepository, ProductoDetalleRepository productoDetalleRepository, FotoRepository fotoRepository,
+            DuenoRepository duenoRepository, PersonaRepository personaRepository, EmpleadoRepository empleadoRepository) {
         this.productoRepository = productoRepository;
         this.productoDetalleRepository = productoDetalleRepository;
         this.fotoRepository = fotoRepository;
+        this.duenoRepository = duenoRepository;
+        this.personaRepository = personaRepository;
+        this.empleadoRepository = empleadoRepository;
+    }
+
+    // Quien propone un producto pasa a ser su "dueño". Si esa persona todavía no
+    // figura en la tabla 'duenios', creamos el registro reutilizando su Persona
+    // (la FK obligatoria de productos.duenio lo exige).
+    // Dueno comparte identificador con Persona vía @MapsId.
+    private void asegurarDueno(Integer duenioId) {
+        if (duenioId == null || duenoRepository.existsById(duenioId)) {
+            return;
+        }
+        Persona persona = personaRepository.findById(duenioId)
+                .orElseThrow(() -> new IllegalArgumentException("No existe una persona para el dueño " + duenioId));
+        Empleado verificador = empleadoRepository.findFirstByOrderByIdentificadorAsc();
+        if (verificador == null) {
+            throw new IllegalStateException("No hay empleados disponibles para asignar como verificador del dueño");
+        }
+        Dueno dueno = new Dueno();
+        dueno.setPersona(persona); // @MapsId: el identificador del dueño = identificador de la persona
+        dueno.setVerificador(verificador);
+        duenoRepository.save(dueno);
     }
 
     public List<Producto> obtenerTodos() {
@@ -49,7 +82,10 @@ public class ProductoService {
 
     @Transactional
     public ProductoDetalle crearProductoDetalle(ProponerProductoDTO requestDto) {
-        
+
+        // Garantizar que exista el dueño (la FK productos.duenio es obligatoria)
+        asegurarDueno(requestDto.getDuenioId());
+
         // 1. Crear y guardar el Producto base (Los datos ya están validados por el DTO)
         Producto p = MapperUtil.toProductoEntity(requestDto);
         Producto productoGuardado = productoRepository.save(p);

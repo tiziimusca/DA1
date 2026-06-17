@@ -1,7 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { API_BASE_URL } from '../../config/apiConfig';
+import { getToken } from '../../auth/authManager';
 
 const baseUrl = `${API_BASE_URL}/clientes/me/metodos-pago`;
+
+// El back deriva el cliente del token (Authorization: Bearer <token>), ya no del
+// query ?clienteId=. El token se guarda en authManager al hacer login.
+function authHeaders(extra = {}) {
+  const token = getToken();
+  return {
+    ...extra,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 // El back devuelve los errores de validación como TEXTO PLANO (no JSON),
 // así que response.json() falla y perdíamos el mensaje. Esto lee texto o JSON.
@@ -23,10 +34,12 @@ async function extraerMensajeError(response) {
 // GET todos
 export const fetchMetodosPago = createAsyncThunk(
   'metodoPago/fetchAll',
-  async (clienteId, { rejectWithValue }) => {
+  async (_clienteId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${baseUrl}?clienteId=${clienteId}`);
-      if (!response.ok) throw new Error('Error al obtener los métodos de pago');
+      const response = await fetch(baseUrl, { headers: authHeaders() });
+      if (!response.ok) {
+        return rejectWithValue(await extraerMensajeError(response));
+      }
       return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
@@ -37,11 +50,13 @@ export const fetchMetodosPago = createAsyncThunk(
 // GET por id
 export const fetchMetodoPagoPorId = createAsyncThunk(
   'metodoPago/fetchById',
-  async ({ id, tipo, clienteId }, { rejectWithValue }) => {
+  async ({ id, tipo }, { rejectWithValue }) => {
     try {
       // El id no es único entre tipos: hay que mandar tipo para pegarle a la tabla correcta
-      const response = await fetch(`${baseUrl}/${id}?clienteId=${clienteId}&tipo=${tipo}`);
-      if (!response.ok) throw new Error('Error al obtener el método de pago');
+      const response = await fetch(`${baseUrl}/${id}?tipo=${tipo}`, { headers: authHeaders() });
+      if (!response.ok) {
+        return rejectWithValue(await extraerMensajeError(response));
+      }
       return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
@@ -52,11 +67,11 @@ export const fetchMetodoPagoPorId = createAsyncThunk(
 // POST crear
 export const createMetodoPago = createAsyncThunk(
   'metodoPago/create',
-  async ({ data, clienteId }, { rejectWithValue }) => {
+  async ({ data }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${baseUrl}?clienteId=${clienteId}`, {
+      const response = await fetch(baseUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -72,11 +87,11 @@ export const createMetodoPago = createAsyncThunk(
 // PUT editar
 export const updateMetodoPago = createAsyncThunk(
   'metodoPago/update',
-  async ({ id, data, clienteId }, { rejectWithValue }) => {
+  async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${baseUrl}/${id}?clienteId=${clienteId}`, {
+      const response = await fetch(`${baseUrl}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -92,10 +107,11 @@ export const updateMetodoPago = createAsyncThunk(
 // DELETE eliminar
 export const deleteMetodoPago = createAsyncThunk(
   'metodoPago/delete',
-  async ({ id, tipo, clienteId }, { rejectWithValue }) => {
+  async ({ id, tipo }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${baseUrl}/${id}?clienteId=${clienteId}&tipo=${tipo}`, {
+      const response = await fetch(`${baseUrl}/${id}?tipo=${tipo}`, {
         method: 'DELETE',
+        headers: authHeaders(),
       });
       if (!response.ok) {
         return rejectWithValue(await extraerMensajeError(response));

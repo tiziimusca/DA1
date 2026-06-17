@@ -11,15 +11,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.example.auctionapp.dto.LoginRequestDTO;
 import com.example.auctionapp.dto.LoginResponseDTO;
+import com.example.auctionapp.dto.PerfilClienteResponseDTO;
 import com.example.auctionapp.dto.RegistroRequestDTO;
 import com.example.auctionapp.dto.RegistroResponseDTO;
 import com.example.auctionapp.dto.ResetearPasswordDTO;
 import com.example.auctionapp.dto.VerificarCodigoResponseDTO;
 import com.example.auctionapp.model.Cliente;
+import com.example.auctionapp.model.Dueno;
 import com.example.auctionapp.model.Empleado;
 import com.example.auctionapp.model.Persona;
 import com.example.auctionapp.model.Usuario;
 import com.example.auctionapp.repository.ClienteRepository;
+import com.example.auctionapp.repository.DuenoRepository;
 import com.example.auctionapp.repository.PersonaRepository;
 import com.example.auctionapp.repository.UsuarioRepository;
 import com.example.auctionapp.repository.PaisRepository;
@@ -33,12 +36,15 @@ public class AuthService {
     private final PersonaRepository personaRepository;
     private final ClienteRepository clienteRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ClienteService clienteService;
     private final PaisRepository paisRepository;
     private final EmpleadoRepository empleadoRepository;
+    private final DuenoRepository duenoRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final SmtpEmailService smtpEmailService;
     private final RecoveryCodeStore recoveryCodeStore;
+
 
     // Rate limiter: map email -> deque of request timestamps
     private final ConcurrentHashMap<String, Deque<Instant>> requestTimestamps = new ConcurrentHashMap<>();
@@ -48,8 +54,10 @@ public class AuthService {
     public AuthService(PersonaRepository personaRepository,
             ClienteRepository clienteRepository,
             UsuarioRepository usuarioRepository,
+            ClienteService clienteService,
             PaisRepository paisRepository,
             EmpleadoRepository empleadoRepository,
+            DuenoRepository duenoRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             SmtpEmailService smtpEmailService,
@@ -57,8 +65,10 @@ public class AuthService {
         this.personaRepository = personaRepository;
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
+        this.clienteService = clienteService;
         this.paisRepository = paisRepository;
         this.empleadoRepository = empleadoRepository;
+        this.duenoRepository = duenoRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.smtpEmailService = smtpEmailService;
@@ -284,5 +294,13 @@ public class AuthService {
         if (!tieneEspecial) {
             throw new IllegalArgumentException("La contraseña es demasiado débil");
         }
+    }
+
+    public Cliente obtenerClienteDesdeToken(String authorizationHeader) {
+        Usuario usuario = clienteService.obtenerUsuarioDesdeToken(authorizationHeader);
+        Cliente cliente = clienteRepository.findById(usuario.getPersonaId())
+                .orElseThrow(() -> new SecurityException("Token inválido o sesión expirada"));
+
+        return cliente;
     }
 }

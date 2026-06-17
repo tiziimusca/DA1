@@ -186,12 +186,13 @@ export default function MetodosDePago() {
   const { metodosPago, loading, cargarTodos, borrarMetodoPago } = useMetodosPagoViewModel();
 
   const [paraEliminar, setParaEliminar] = useState(null); 
+  
   const route = useRoute();
-  const idDelCliente = 11;
 
-  // 2. Disparamos la carga inicial al entrar a la pantalla
+  // 2. Disparamos la carga inicial al entrar a la pantalla.
+  //    El cliente lo deriva el back del token (Authorization), no hace falta clienteId.
   useEffect(() => {
-    cargarTodos(11);
+    cargarTodos();
   }, [route.params?.refresh]);
 
     async function confirmarEliminar() {

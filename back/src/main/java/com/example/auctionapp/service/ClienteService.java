@@ -76,6 +76,7 @@ public class ClienteService {
                 .orElseThrow(() -> new SecurityException("Token inválido o sesión expirada"));
 
         return new PerfilClienteResponseDTO(
+                cliente.getIdentificador(),
                 persona.getNombre(),
                 capitalizar(cliente.getCategoria()),
                 cliente.getNumeroPais() != null ? cliente.getNumeroPais().getNombre() : null,
@@ -109,6 +110,7 @@ public class ClienteService {
         usuarioRepository.save(usuario);
 
         return new PerfilClienteResponseDTO(
+                cliente.getIdentificador(),
                 persona.getNombre(),
                 capitalizar(cliente.getCategoria()),
                 pais.getNombre(),
@@ -116,7 +118,7 @@ public class ClienteService {
                 persona.getDireccion());
     }
 
-    private Usuario obtenerUsuarioDesdeToken(String authorizationHeader) {
+    public Usuario obtenerUsuarioDesdeToken(String authorizationHeader) {
         String token = jwtService.extraerToken(authorizationHeader);
         if (token == null || token.isBlank()) {
             throw new SecurityException("Token inválido o sesión expirada");

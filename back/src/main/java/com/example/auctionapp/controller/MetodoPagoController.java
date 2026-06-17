@@ -1,13 +1,22 @@
 package com.example.auctionapp.controller;
 
+import com.example.auctionapp.service.AuthService;
+import com.example.auctionapp.service.ClienteService;
 import com.example.auctionapp.service.MetodoPagoBancoService;
 import com.example.auctionapp.service.MetodoPagoTarjetaService;
 import com.example.auctionapp.service.MetodoPagoChequeService;
 import com.example.auctionapp.dto.*;
+import com.example.auctionapp.model.Cliente;
+import com.example.auctionapp.model.Usuario;
+import com.example.auctionapp.repository.ClienteRepository;
+import com.example.auctionapp.repository.UsuarioRepository;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -23,26 +32,33 @@ public class MetodoPagoController {
     private final MetodoPagoTarjetaService tarjetaService;
     private final MetodoPagoChequeService chequeService;
     private final ObjectMapper objectMapper;
+    private final AuthService authService;
 
     public MetodoPagoController(
             MetodoPagoBancoService bancoService,
             MetodoPagoTarjetaService tarjetaService,
             MetodoPagoChequeService chequeService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AuthService authService) {
         this.bancoService = bancoService;
         this.tarjetaService = tarjetaService;
         this.chequeService = chequeService;
         this.objectMapper = objectMapper;
+        this.authService = authService;
     }
 
     @PostMapping
     public ResponseEntity<?> crearMetodoPago(
-            @RequestParam Integer clienteId,
-            @Valid @RequestBody CrearMetodoPagoRequestDTO request) {
+            
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @Valid @RequestBody CrearMetodoPagoRequestDTO request
+            ) {
 
         try {
             String tipo = request.getTipo();
             JsonNode datos = request.getDatos();
+            Cliente cliente = authService.obtenerClienteDesdeToken(authorizationHeader);
+            Integer clienteId = cliente.getIdentificador();
 
             switch (tipo) {
                 case "banco":
@@ -77,7 +93,10 @@ public class MetodoPagoController {
 
     @GetMapping
     public ResponseEntity<List<Object>> listarMetodosPago(
-            @RequestParam Integer clienteId) {
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+
+            Cliente cliente = authService.obtenerClienteDesdeToken(authorizationHeader);
+            Integer clienteId = cliente.getIdentificador();
 
         List<Object> todosMétodos = new ArrayList<>();
 
@@ -139,8 +158,15 @@ public class MetodoPagoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarMetodoPago(
             @PathVariable Integer id,
-            @RequestParam Integer clienteId,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @RequestParam String tipo) {
+
+        Integer clienteId;
+        try {
+            clienteId = authService.obtenerClienteDesdeToken(authorizationHeader).getIdentificador();
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
 
         // Sin 'tipo' este borrado era ambiguo: con ids repetidos entre tablas
         // podía borrar el método equivocado (ej: borrar el banco id 2 al pedir la tarjeta id 2).
@@ -168,8 +194,15 @@ public class MetodoPagoController {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarMetodoPago(
             @PathVariable Integer id,
-            @RequestParam Integer clienteId,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody CrearMetodoPagoRequestDTO request) {
+
+        Integer clienteId;
+        try {
+            clienteId = authService.obtenerClienteDesdeToken(authorizationHeader).getIdentificador();
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
 
         try {
             String tipo = request.getTipo();
