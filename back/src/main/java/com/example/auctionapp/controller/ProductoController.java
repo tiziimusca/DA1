@@ -96,7 +96,7 @@ public class ProductoController {
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ProductoDTO productoDto) {
         try {
-            ProductoDTO updated = productoService.actualizarProducto(id, productoDto);
+            ProductoDTO updated = productoService.actualizarProducto(id, productoDto, authorizationHeader);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -139,7 +139,7 @@ public class ProductoController {
         }
 
         try {
-            productoService.confirmarProducto(id);
+            productoService.confirmarProducto(id, authorizationHeader);
             return ResponseEntity.ok(Map.of("mensaje", "Confirmación exitosa."));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO("conflict", e.getMessage()));
@@ -154,7 +154,7 @@ public class ProductoController {
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         try {
-            productoService.devolverProducto(id);
+            productoService.devolverProducto(id, authorizationHeader);
 
             Map<String, Object> response = new HashMap<>();
             response.put("opcion", "envio");

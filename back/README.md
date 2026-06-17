@@ -28,3 +28,6 @@ El backend usa H2 en memoria para arranque rápido y pruebas locales.
 
 ## swagger
 - http://localhost:8080/swagger-ui/index.html#
+
+## BD
+-  http://localhost:8080/h2-console
