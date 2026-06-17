@@ -11,33 +11,31 @@ import {
  
 export const useMetodosPagoViewModel = () => {
 
-    const CLIENT_ID = 11;
   const dispatch = useDispatch();
  
   const { lista, detalle, loading, error } = useSelector(
     (state) => state.metodoPago
   );
  
-  // clienteId requerido para el GET
-  const cargarTodos = (clienteId) => {
-    dispatch(fetchMetodosPago(clienteId));
+  // El cliente lo deriva el back del token (Authorization), no hace falta clienteId.
+  const cargarTodos = () => {
+    dispatch(fetchMetodosPago());
   };
- 
+
   const cargarPorId = (id, tipo) => {
-    dispatch(fetchMetodoPagoPorId({ id, tipo, clienteId: CLIENT_ID }));
+    dispatch(fetchMetodoPagoPorId({ id, tipo }));
   };
- 
-  // FIXED: desestructuramos correctamente para no anidar doble
-  const agregarMetodoPago = ({ data, clienteId }) => {
-    return dispatch(createMetodoPago({ data, clienteId }));
+
+  const agregarMetodoPago = ({ data }) => {
+    return dispatch(createMetodoPago({ data }));
   };
- 
+
     const editarMetodoPago = (id, data) => {
-    return dispatch(updateMetodoPago({ id, data, clienteId: CLIENT_ID }));
+    return dispatch(updateMetodoPago({ id, data }));
     };
-    
+
     const borrarMetodoPago = (id, tipo) => {
-    return dispatch(deleteMetodoPago({ id, tipo, clienteId: CLIENT_ID }));
+    return dispatch(deleteMetodoPago({ id, tipo }));
     };
  
   const limpiarErrorActual = () => dispatch(clearError());

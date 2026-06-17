@@ -2,15 +2,12 @@ package com.example.auctionapp.controller;
 
 import static java.lang.String.valueOf;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
 import org.springframework.validation.FieldError;
@@ -24,7 +21,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import com.example.auctionapp.dto.ErrorResponseDTO;
 import com.example.auctionapp.dto.ProductoDTO;
 import com.example.auctionapp.dto.ProponerProductoDTO;
 import com.example.auctionapp.dto.SeguimientoResponseDTO;
@@ -38,12 +38,9 @@ import com.example.auctionapp.model.Subasta;
 import com.example.auctionapp.repository.FotoRepository;
 import com.example.auctionapp.service.AuthService;
 import com.example.auctionapp.service.ProductoService;
-import com.example.auctionapp.util.MapperUtil;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
-
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.auctionapp.dto.MisPropuestosResponseDTO;
 
@@ -75,29 +72,22 @@ public class ProductoController {
     public ResponseEntity<?> crear(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ProponerProductoDTO requestDto) {
-        Integer duenioId;
+        
         try {
-            duenioId = obtenerDuenioId(authorizationHeader);
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        }
+            // 1. Llamamos al Service pasándole el DTO y el Token. 
+            // El Service hace todo el trabajo y nos devuelve el Map listo.
+            Map<String, Object> response = productoService.crearProductoDetalle(requestDto, authorizationHeader);
 
-        try {
-            requestDto.setDuenioId(duenioId);
-
-            // Le pasamos el DTO COMPLETO al Service
-            ProductoDetalle productoDetalle = productoService.crearProductoDetalle(requestDto);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("productoId", productoDetalle.getProducto().getIdentificador());
-            response.put("estado", productoDetalle.getEstado());
-
+            // 2. Retornamos la respuesta exitosa
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
+        } catch (SecurityException e) {
+            // Si falla el token en el Service, cae acá
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(new ErrorResponseDTO("bad_request", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al crear el producto");
+            return ResponseEntity.badRequest().body(new ErrorResponseDTO("bad_request", "Error al crear el producto"));
         }
     }
 
@@ -106,9 +96,8 @@ public class ProductoController {
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ProductoDTO productoDto) {
         try {
-            Producto p = MapperUtil.toProductoEntity(productoDto);
-            Producto updated = productoService.actualizar(id, p);
-            return ResponseEntity.ok(MapperUtil.toProductoDTO(updated));
+            ProductoDTO updated = productoService.actualizarProducto(id, productoDto);
+            return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -116,75 +105,24 @@ public class ProductoController {
 
 
     @GetMapping("/mis-propuestos")
-    public ResponseEntity<?> obtenerMisProductos(
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        Integer duenioId;
+    public ResponseEntity<Object> obtenerMisProductos(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
-            duenioId = obtenerDuenioId(authorizationHeader);
+            MisPropuestosResponseDTO responseDto = productoService.obtenerMisPropuestos(authorizationHeader);
+            return ResponseEntity.ok(responseDto); 
         } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponseDTO("unauthorized", e.getMessage()));
         }
-
-        List<productoPropuestoDTO> productos = productoService.obtenerDetallesPorUsuario(duenioId)
-                .stream()
-                .map(detalle -> {
-                    productoPropuestoDTO dto = new productoPropuestoDTO();
-                    dto.setIdentificador(detalle.getProducto().getIdentificador());
-                    dto.setTitulo(detalle.getTitulo());
-                    dto.setFechaEnvio(detalle.getFechaEnviado().toLocalDate());
-                    dto.setEstado(detalle.getEstado());
-                    dto.setImagenUrl("/api/productos/" + detalle.getProducto().getIdentificador() + "/foto"); // Endpoint para obtener la foto
-                    return dto;
-                })
-                .collect(Collectors.toList());
-                
-        MisPropuestosResponseDTO responseDto = new MisPropuestosResponseDTO();
-        responseDto.setUsuarioId(duenioId);
-        responseDto.setProductos(productos);
-        
-        return ResponseEntity.ok(responseDto); 
     }
 
     @GetMapping("/{id}/seguimiento")
-    public ResponseEntity<?> obtenerSeguimiento(
-            @PathVariable Integer id,
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        Integer usuarioSolicitanteId;
+    public ResponseEntity<Object> obtenerSeguimiento(@PathVariable Integer id, 
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
-            usuarioSolicitanteId = obtenerDuenioId(authorizationHeader);
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        }
-
-        try {
-            ProductoDetalle productoDetalle = productoService.obtenerSeguimiento(id, usuarioSolicitanteId);
-
-            SeguimientoResponseDTO responseDto = new SeguimientoResponseDTO();
-            responseDto.setTituloProducto(productoDetalle.getTitulo());
-            responseDto.setDeposito(productoDetalle.getDeposito());
-            responseDto.setFechaEnviado(productoDetalle.getFechaEnviado());
-            responseDto.setFechaRevision(productoDetalle.getFechaRevision());
-            responseDto.setFechaInspeccionTecnica(productoDetalle.getFechaInspeccionTecnica());
-            responseDto.setFechaAceptado(productoDetalle.getFechaAceptado());
-            responseDto.setCostoVerificacion(productoDetalle.getCostoVerificacion());
-            responseDto.setEstadoActual(productoDetalle.getEstado());
-
-            if (productoDetalle.getSeguroEntity() != null) {
-                SeguroInfoDTO seguroDto = new SeguroInfoDTO();
-                seguroDto.setCompania(productoDetalle.getSeguroEntity().getCompania());
-                seguroDto.setPoliza(productoDetalle.getSeguroEntity().getNroPoliza());
-                seguroDto.setMonto(productoDetalle.getSeguroEntity().getImporte());
-                responseDto.setSeguro(seguroDto);
-            }
-
-            // Los datos de ItemCatalogo, Subasta, etc. se obtienen desde la tabla de subastas
-            // cuando el producto sea incluido en una subasta
-            // Por ahora los valores quedan en null hasta que se cree una subasta
-
+            Object responseDto = productoService.obtenerSeguimientoDTO(id, authorizationHeader);
             return ResponseEntity.ok(responseDto);
-
         } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponseDTO("forbidden", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -202,12 +140,9 @@ public class ProductoController {
 
         try {
             productoService.confirmarProducto(id);
-            return ResponseEntity.ok("Confirmación exitosa.");
-            
+            return ResponseEntity.ok(Map.of("mensaje", "Confirmación exitosa."));
         } catch (IllegalStateException e) {
-            // Retorna 409 Conflict si ya estaba cancelado o publicado
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-            
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO("conflict", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -217,11 +152,6 @@ public class ProductoController {
     public ResponseEntity<?> devolver(
             @PathVariable Integer id,
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        try {
-            obtenerDuenioId(authorizationHeader);
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        }
 
         try {
             productoService.devolverProducto(id);
@@ -231,10 +161,8 @@ public class ProductoController {
             response.put("costoEnvio", new BigDecimal(valueOf(Math.random() * 4000 + 1000))); // Simulación de costo de envío entre 1000 y 5000
 
             return ResponseEntity.ok(response);
-
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO("conflict", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

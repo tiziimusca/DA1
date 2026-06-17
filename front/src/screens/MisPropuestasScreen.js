@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,42 +9,14 @@ import {
   Animated,
   StatusBar,
   SafeAreaView,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import AppFooterNav from '../components/AppFooterNav';
-
- 
-// ─── Datos de ejemplo ──────────────────────────────────────────────────────────
-const ARTICULOS = [
-  {
-    id: '1',
-    titulo: 'Patek Philippe Nautilus 5711',
-    fecha: 'Enviado Dic 12, 2024',
-    estado: 'revision',
-    imagen: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=200&q=80',
-  },
-  {
-    id: '2',
-    titulo: 'Pintura al óleo del siglo XIX',
-    fecha: 'Enviado Sep 19, 2025',
-    estado: 'rechazado',
-    imagen: 'https://images.unsplash.com/photo-1578321272176-b7bbc0679853?w=200&q=80',
-  },
-  {
-    id: '3',
-    titulo: 'Zapatillas de edición limitada',
-    fecha: 'Enviado Oct 12, 2025',
-    estado: 'aceptado',
-    imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&q=80',
-  },
-  {
-    id: '4',
-    titulo: 'Cámara Leica M3 Vintage',
-    fecha: 'Enviado Ago 09, 2025',
-    estado: 'revision',
-    imagen: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200&q=80',
-  },
-];
+import { getToken } from '../auth/authManager';
+import { fetchMisPropuestos } from '../api/auctionApi';
+import { useFocusEffect } from '@react-navigation/native';
  
 const TABS = [
   { key: 'todos',    label: 'Todos' },
@@ -57,28 +29,21 @@ const TABS = [
 function EstadoBadge({ estado, theme }) {
   const { colors } = theme;
  
-  const config = {
-    revision: {
-      label: 'En Revisión',
-      bg: '#EBF2FC',
-      text: colors.primary,       // #183B70
-      border: colors.accent,      // #79AEEB
-    },
-    aceptado: {
-      label: 'Aceptado',
-      bg: '#E4F4EF',
-      text: colors.success,       // #176F5B
-      border: '#5BBD9F',
-    },
-    rechazado: {
-      label: 'Rechazado',
-      bg: '#FDECEA',
-      text: '#C0392B',
-      border: '#E8A09A',
-    },
-  };
- 
-  const c = config[estado];
+  const normalizedState = (estado || '').replace('_', '');
+  const isRevision = ['revision', 'enviado', 'eninspeccion'].includes(normalizedState);
+  const isAceptado = ['aceptado', 'confirmado', 'publicado'].includes(normalizedState);
+  const isRechazado = ['rechazado', 'cancelado'].includes(normalizedState);
+
+  let c = { label: 'Desconocido', bg: '#EEE', text: '#555', border: '#CCC' };
+
+  if (isRevision) {
+    c = { label: 'En Revisión', bg: '#EBF2FC', text: colors.primary, border: colors.accent };
+  } else if (isAceptado) {
+    c = { label: 'Aceptado', bg: '#E4F4EF', text: colors.success, border: '#5BBD9F' };
+  } else if (isRechazado) {
+    c = { label: 'Rechazado', bg: '#FDECEA', text: '#C0392B', border: '#E8A09A' };
+  }
+
   return (
     <View style={[badgeStyles.wrap, { backgroundColor: c.bg, borderColor: c.border }]}>
       <Text style={[badgeStyles.text, { color: c.text }]}>{c.label}</Text>
@@ -204,17 +169,73 @@ export default function ArticulosPropuestos({ navigation }) {
   const theme = useAppTheme();
   const { colors, spacing, radius } = theme;
   const [tabActivo, setTabActivo] = useState('todos');
+  const [articulos, setArticulos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
  
-  const filtrados =
-    tabActivo === 'todos' ? ARTICULOS : ARTICULOS.filter(a => a.estado === tabActivo);
+  useFocusEffect(
+    useCallback(() => {
+    let mounted = true;
+    async function loadData() {
+      try {
+        setLoading(true);
+        const token = getToken();
+        const authHeader = token ? `Bearer ${token}` : null;
+        const data = await fetchMisPropuestos(authHeader);
+        
+        if (mounted && data?.productos) {
+          const mapped = data.productos.map(p => {
+            let imgUri = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&q=80';
+            if (p.imagenUrl) {
+              if (p.imagenUrl.startsWith('http') || p.imagenUrl.startsWith('data:')) {
+                imgUri = p.imagenUrl;
+              } else {
+                  imgUri = `data:image/jpeg;base64,${p.imagenUrl}`;
+              }
+            }
+            
+            const dateObj = new Date(p.fechaEnvio);
+            const dateStr = isNaN(dateObj.getTime()) ? p.fechaEnvio : dateObj.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            return {
+              id: String(p.identificador),
+              titulo: p.titulo || 'Sin título',
+              fecha: `Enviado ${dateStr}`,
+              estado: p.estado ? String(p.estado).toLowerCase() : 'enviado',
+              imagen: imgUri,
+            };
+          });
+          setArticulos(mapped);
+        }
+      } catch (err) {
+        if (mounted) setError(err.message || 'Error al cargar mis propuestos');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    
+    loadData();
+    return () => { mounted = false; };
+  }, [])
+);
  
+  const filtrados = tabActivo === 'todos' 
+    ? articulos 
+    : articulos.filter(a => {
+        const st = a.estado.replace('_', '');
+        if (tabActivo === 'revision') return ['revision', 'enviado', 'eninspeccion'].includes(st);
+        if (tabActivo === 'aceptado') return ['aceptado', 'confirmado', 'publicado'].includes(st);
+        if (tabActivo === 'rechazado') return ['rechazado', 'cancelado'].includes(st);
+        return false;
+      });
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, marginTop: 40 }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
  
       {/* ── Header ── */}
       <View style={[hStyles.header, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, backgroundColor: colors.background }]}>
-        <TouchableOpacity style={[hStyles.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <TouchableOpacity style={[hStyles.back, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate('Home')}>
           <Text style={[hStyles.backArrow, { color: colors.text }]}>‹</Text>
         </TouchableOpacity>
         <Text style={[hStyles.title, { color: colors.text }]}>Artículos Propuestos</Text>
@@ -260,7 +281,15 @@ export default function ArticulosPropuestos({ navigation }) {
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.xs }}
         showsVerticalScrollIndicator={false}
       >
-        {filtrados.length === 0 ? (
+        {loading ? (
+          <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : error ? (
+          <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+            <Text style={{ fontSize: 14, color: '#C0392B', textAlign: 'center' }}>{error}</Text>
+          </View>
+        ) : filtrados.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 60 }}>
             <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic' }}>
               Sin artículos en esta categoría
@@ -275,7 +304,7 @@ export default function ArticulosPropuestos({ navigation }) {
       </ScrollView>
  
       {/* ── FAB ── */}
-      <View style={[fabStyles.wrap, { bottom: 72, left: spacing.md, right: spacing.md }]}>
+      <View style={[fabStyles.wrap, { bottom: Platform.OS === 'android' ? 110 : 100, left: spacing.md, right: spacing.md }]}>
         <TouchableOpacity
           activeOpacity={0.85}
           style={[fabStyles.btn, { backgroundColor: colors.primary, borderRadius: radius.lg }]}
@@ -285,11 +314,13 @@ export default function ArticulosPropuestos({ navigation }) {
           <Text style={[fabStyles.label, { color: '#FFFFFF' }]}>Proponer Nuevo Artículo</Text>
         </TouchableOpacity>
       </View>
-      <AppFooterNav
-        navigation={navigation}
-        colors={colors}
-        activeRouteName="Profile"
-      />
+      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+        <AppFooterNav
+          navigation={navigation}
+          colors={colors}
+          activeRouteName="Profile"
+        />
+      </View>
     </SafeAreaView>
   );
 }

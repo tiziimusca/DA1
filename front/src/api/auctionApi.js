@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { API_BASE_URL } from '../config/apiConfig';
+import { API_BASE_URL, SERVER_BASE_URL } from '../config/apiConfig';
 
 const BASE_URL = API_BASE_URL;
 
@@ -59,13 +59,24 @@ export async function fetchPujas() {
   return response.json();
 }
 
+export async function fetchMisPropuestos(authToken) {
+  const headers = {};
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/productos/mis-propuestos`, { headers });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
 export async function fetchRegistrosSubasta() {
   const response = await fetch(`${BASE_URL}/registros-subasta`);
   return response.json();
 }
 
 export function createWebSocket(onMessage, onOpen, onError) {
-  const socket = new WebSocket(Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : 'ws://10.42.194.57:8080/ws/bids');
+  const wsUrl = Platform.OS === 'web' ? 'ws://localhost:8080/ws/bids' : `${SERVER_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://')}/ws/bids`;
+  const socket = new WebSocket(wsUrl);
 
   socket.onopen = () => {
     if (onOpen) onOpen();
@@ -88,8 +99,34 @@ export function createWebSocket(onMessage, onOpen, onError) {
   return socket;
 }
 
-export function sendBid(socket, bid) {
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify(bid));
+export async function enviarPujaRest(pujaData, authToken) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/pujar`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(pujaData),
+  });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
   }
+  return response.json();
+}
+
+export async function fetchEstadoVivo(subastaId) {
+  const response = await fetch(`${BASE_URL}/subastas/${subastaId}/estado-vivo`);
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
+export async function fetchDetalleEstatico(subastaId, authToken) {
+  const headers = {};
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/subastas/${subastaId}/detalle-estatico`, { headers });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
 }

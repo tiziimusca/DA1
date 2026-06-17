@@ -58,6 +58,7 @@ export default function LoginScreen({ navigation }) {
       setSession({
         token: response.token,
         user: {
+          id: response.usuarioId,
           nombre: response.nombre,
           categoria: response.categoria,
           email: email.trim(),

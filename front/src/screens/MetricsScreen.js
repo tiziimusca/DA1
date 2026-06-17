@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchHomeDashboard, fetchPujas, fetchRegistrosSubasta } from '../api/auctionApi';
 import { getToken } from '../auth/authManager';
 import AppFooterNav from '../components/AppFooterNav';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 function compactMoney(value) {
   const amount = Number(value || 0);
@@ -125,6 +126,13 @@ export default function MetricsScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon
+            name="arrow-back"
+            size={24}
+            color={colors.text}
+          />
+        </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Métricas de Subastas</Text>
 
         <View style={styles.grid}>
@@ -190,7 +198,7 @@ function MetricCard({ title, value, delta, note, colors, radius }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, marginTop: 40 },
   content: { padding: 16, paddingBottom: 24 },
   title: { fontSize: 26, fontWeight: '500', marginBottom: 14 },
   grid: { gap: 12, marginBottom: 14 },

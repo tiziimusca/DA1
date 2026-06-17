@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import countries from '../data/countries';
 import { isValidEmail, isValidName } from '../utils/validation';
+import { Ionicons as Icon } from '@expo/vector-icons';
 
 export default function RegisterScreen({ navigation }) {
   const { colors, spacing, radius, typography } = useAppTheme();
@@ -267,6 +268,13 @@ export default function RegisterScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon
+              name="arrow-back"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
           <Image source={require('../assets/logo.png')} style={styles.logo} />
           <Text style={[styles.header, { color: colors.text }]}>Registro</Text>
           <Text style={[styles.helpText, { color: colors.muted }]}>Ingrese su información exactamente como aparece en su documento de identidad</Text>
@@ -457,7 +465,7 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, marginTop: 40 },
   scroll: { flexGrow: 1 },
   container: { padding: 20, alignItems: 'stretch' },
   logo: { width: 72, height: 72, alignSelf: 'center', marginBottom: 10 },

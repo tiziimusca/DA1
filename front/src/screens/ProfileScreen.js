@@ -89,7 +89,7 @@ export default function ProfileScreen({ navigation }) {
       title: 'Artículos Propuestos',
       icon: 'document-text-outline',
       badge: 4,
-      onPress: () => {},
+      onPress: () => navigation.navigate('MisPropuestas'),
     },
   ];
 

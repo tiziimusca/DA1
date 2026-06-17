@@ -185,7 +185,7 @@ public class DataSeeder implements CommandLineRunner {
 
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
-                                personaUsuarioId, argentinaId, "SI", "A", empleadoVerificadorId);
+                                personaUsuarioId, argentinaId, "SI", "Especial", empleadoVerificadorId);
 
                 jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
                                 subastadorUnoId, "SUB-0001", "Centro");
@@ -227,7 +227,11 @@ public class DataSeeder implements CommandLineRunner {
                                                 "NO",
                                                 new String[] {
                                                                 "https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&w=900&q=80",
-                                                                "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=900&q=80"
+                                                                "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=900&q=80",
+                                                                "https://images.unsplash.com/flagged/photo-1572392640988-ba48d1a74457?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?q=80&w=719&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=390&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1582561424760-0321d75e81fa?q=80&w=489&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
                                 new BidSpec(clienteUnoId, 1, new BigDecimal("3550.00"), "SI"));
 
@@ -253,10 +257,14 @@ public class DataSeeder implements CommandLineRunner {
                                                 new BigDecimal("500.00"),
                                                 "NO",
                                                 new String[] {
-                                                                "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=900&q=80",
-                                                                "https://images.unsplash.com/photo-1507646227500-4d389b0012be?auto=format&fit=crop&w=900&q=80"
+                                                                "https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1606674556490-c2bbb4ee05e5?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1633603125151-6a3c1a4778a5?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1590587754330-6fc06e3a9bb7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1558603655-491ecfa8324f?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                new BidSpec(clienteDosId, 2, new BigDecimal("6200.00"), "SI"));
+                                new BidSpec(clienteDosId, 2, new BigDecimal("6200.00"), "no"));
 
                 seedAuction(
                                 LocalDate.now().plusDays(14),
@@ -280,10 +288,14 @@ public class DataSeeder implements CommandLineRunner {
                                                 new BigDecimal("100.00"),
                                                 "NO",
                                                 new String[] {
-                                                                "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=80",
-                                                                "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=80"
+                                                                "https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?q=80&w=1122&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1534146789009-76ed5060ec70?q=80&w=709&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1501147830916-ce44a6359892?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1528629297340-d1d466945dc5?q=80&w=1222&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                new BidSpec(clienteTresId, 3, new BigDecimal("1250.00"), "SI"));
+                                new BidSpec(clienteTresId, 3, new BigDecimal("1250.00"), "no"));
 
                 jdbcTemplate.update(
                                 "INSERT INTO metodos_pago_banco (cliente_id, nombre_titular, dni_titular, nombre_banco, numero_cuenta, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -307,6 +319,14 @@ public class DataSeeder implements CommandLineRunner {
                                 clienteUnoId, "Cliente Demo 1", 4111111111111111L, "12/28", "123", "aprobado",
                                 System.currentTimeMillis());
 
+                jdbcTemplate.update(
+                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                personaUsuarioId, "Usuario Demo", 5111111111111111L, "12/29", "456", "aprobado",
+                                System.currentTimeMillis());
+                jdbcTemplate.update(
+                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                personaUsuarioId, "Usuario Demo", 5111111111112222L, "06/34", "123", "aprobado",
+                                System.currentTimeMillis());
                 // --- Agregar producto "Reloj de mano importante" al Catalogo 2 ("Catalogo
                 // futuro uno") ---
                 Integer catalogo2Id = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
@@ -326,6 +346,21 @@ public class DataSeeder implements CommandLineRunner {
                 String relojUrl = "https://images.unsplash.com/photo-1639006570490-79c0c53f1080?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
                 byte[] fotoRelojBytes = relojUrl.getBytes(StandardCharsets.UTF_8);
                 jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes);
+                String relojUrl2 = "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1180&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+                byte[] fotoRelojBytes2 = relojUrl2.getBytes(StandardCharsets.UTF_8);
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes2);
+                String relojUrl3 = "https://images.unsplash.com/photo-1620625515032-6ed0c1790c75?q=80&w=464&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+                byte[] fotoRelojBytes3 = relojUrl3.getBytes(StandardCharsets.UTF_8);
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes3);
+                String relojUrl4 = "https://images.unsplash.com/photo-1639006570490-79c0c53f1080?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+                byte[] fotoRelojBytes4 = relojUrl4.getBytes(StandardCharsets.UTF_8);
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes4);
+                String relojUrl5 = "https://images.unsplash.com/photo-1662384197911-e82189f4dc60?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+                byte[] fotoRelojBytes5 = relojUrl5.getBytes(StandardCharsets.UTF_8);
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes5);
+                String relojUrl6 = "https://images.unsplash.com/photo-1670404160620-a3a86428560e?q=80&w=725&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+                byte[] fotoRelojBytes6 = relojUrl6.getBytes(StandardCharsets.UTF_8);
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes6);
 
                 jdbcTemplate.update(
                                 "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
@@ -381,10 +416,10 @@ public class DataSeeder implements CommandLineRunner {
                 Integer productoId = getInteger("SELECT identificador FROM productos WHERE descripcion_completa = ?",
                                 product.descripcionCompleta());
 
-                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
-                                product.photoUrls()[0].getBytes(StandardCharsets.UTF_8));
-                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
-                                product.photoUrls()[1].getBytes(StandardCharsets.UTF_8));
+                for (String url : product.photoUrls()) {
+                        jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoId,
+                                        url.getBytes(StandardCharsets.UTF_8));
+                }
 
                 jdbcTemplate.update(
                                 "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",

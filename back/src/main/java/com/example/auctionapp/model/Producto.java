@@ -28,10 +28,10 @@ public class Producto {
     @Column(length = 2)
     private String disponible;
 
-    @Column(length = 500)
+    @Column( length = 500)
     private String descripcionCatalogo = "No posee";
 
-    @Column(nullable = false, length = 300)
+    @Column(nullable = false,  length = 300)
     private String descripcionCompleta;
 
     @Column(nullable = false)
@@ -44,7 +44,7 @@ public class Producto {
     private String seguro;
 
     @ManyToOne
-    @JoinColumn(name = "revisor", referencedColumnName = "identificador", insertable = false, updatable = false, nullable = false)
+    @JoinColumn(name = "revisor", referencedColumnName = "identificador", insertable = false, updatable = false)
     private Empleado revisorEmpleado;
 
     @ManyToOne

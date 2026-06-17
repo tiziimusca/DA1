@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -10,11 +11,14 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import AppFooterNav from '../components/AppFooterNav';
+import { SERVER_BASE_URL } from '../config/apiConfig';
+import { getToken } from '../auth/authManager';
 
 const MIN_IMAGES = 6;
 
@@ -27,6 +31,8 @@ export default function ProponerProductoScreen({ navigation }) {
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [errors, setErrors] = useState({});
   const [permissionError, setPermissionError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -45,15 +51,23 @@ export default function ProponerProductoScreen({ navigation }) {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      allowsMultipleSelection: true,
       quality: 0.7,
+      base64: true,
     });
 
     if (!result.canceled && result.assets?.length > 0) {
-      const uri = result.assets[0].uri;
       setImages((current) => {
         const next = [...current];
-        next[index] = uri;
+        if (index >= next.length) {
+          result.assets.forEach(asset => next.push({ uri: asset.uri, base64: asset.base64 }));
+        } else {
+          next[index] = { uri: result.assets[0].uri, base64: result.assets[0].base64 };
+          let insertIdx = index + 1;
+          for (let i = 1; i < result.assets.length; i++) {
+            next.splice(insertIdx++, 0, { uri: result.assets[i].uri, base64: result.assets[i].base64 });
+          }
+        }
         return next;
       });
     }
@@ -78,20 +92,45 @@ export default function ProponerProductoScreen({ navigation }) {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert('Error', 'Revisa los datos del formulario.');
       return;
     }
 
-    Alert.alert(
-      'Propuesta enviada',
-      'Tu producto ha sido enviado para revisión. Nuestro equipo se pondrá en contacto contigo en 2-3 días hábiles.',
-      [{ text: 'Aceptar', onPress: () => navigation.goBack() }],
-    );
+    setIsSubmitting(true);
+    try {
+      const token = getToken();
+      const payload = {
+        titulo: title,
+        descripcionCompleta: description,
+        historia: relevance,
+        declaracionPropiedad: legalAccepted,
+        fotos: images.filter(Boolean).map(img => img.base64)
+      };
+
+      const response = await fetch(`${SERVER_BASE_URL}/api/productos/proponer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || 'Error al enviar la propuesta.');
+      }
+
+      setModalVisible(true);
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const imageSlots = Array.from({ length: MIN_IMAGES }, (_, index) => ({ index, uri: images[index] }));
+  const imageSlots = Array.from({ length: Math.max(MIN_IMAGES, images.length + 1) }, (_, index) => ({ index, image: images[index] }));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}> 
@@ -155,9 +194,9 @@ export default function ProponerProductoScreen({ navigation }) {
               onPress={() => handleSelectImage(item.index)}
               activeOpacity={0.8}
             >
-              {item.uri ? (
+              {item.image?.uri ? (
                 <>
-                  <Image source={{ uri: item.uri }} style={styles.thumbnail} />
+                  <Image source={{ uri: item.image.uri }} style={styles.thumbnail} />
                   <TouchableOpacity
                     style={styles.removeImage}
                     onPress={() => handleRemoveImage(item.index)}
@@ -189,15 +228,37 @@ export default function ProponerProductoScreen({ navigation }) {
         {errors.legal ? <Text style={styles.errorText}>{errors.legal}</Text> : null}
 
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: colors.primary }]}
+          style={[styles.submitButton, { backgroundColor: isSubmitting ? colors.border : colors.primary }]}
           onPress={handleSubmit}
+          disabled={isSubmitting}
         >
-          <Text style={styles.submitText}>Enviar propuesta para revisión</Text>
+          <Text style={styles.submitText}>{isSubmitting ? 'Enviando...' : 'Enviar propuesta para revisión'}</Text>
         </TouchableOpacity>
         <Text style={styles.footerText}>Nuestros curadores revisarán su propuesta y se pondrán en contacto con usted en un plazo de 2 a 3 días hábiles.</Text>
 
       </ScrollView>
-      <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
+      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
+      </View>
+      
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => { setModalVisible(false); navigation.goBack(); }}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>El artículo se estará verificando</Text>
+            <Text style={[styles.modalText, { color: colors.muted }]}>Le notificaremos a medida que se actualice la información.</Text>
+            
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: colors.primary }]}
+              onPress={() => {
+                setModalVisible(false);
+                navigation.goBack();
+              }}
+            >
+              <Text style={styles.modalButtonText}>Aceptar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -332,5 +393,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: -12,
     marginBottom: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  modalText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });

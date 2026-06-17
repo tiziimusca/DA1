@@ -25,6 +25,10 @@ public class PujaService {
         return pujaRepository.findById(id);
     }
 
+    public Optional<Puja> obtenerMejorPujaPorItem(Integer itemId) {
+        return pujaRepository.findTopByItem_IdentificadorOrderByImporteDesc(itemId);
+    }
+
     public Puja crear(Puja puja) {
         return pujaRepository.save(puja);
     }
