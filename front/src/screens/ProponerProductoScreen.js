@@ -237,7 +237,7 @@ export default function ProponerProductoScreen({ navigation }) {
         <Text style={styles.footerText}>Nuestros curadores revisarán su propuesta y se pondrán en contacto con usted en un plazo de 2 a 3 días hábiles.</Text>
 
       </ScrollView>
-      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+      <View style={{ backgroundColor: colors.surface }}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
       </View>
       

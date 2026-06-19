@@ -12,13 +12,17 @@ import {
   Modal,
   FlatList,
   Platform,
+  ActionSheetIOS,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import countries from '../data/countries';
 import { getToken } from '../auth/authManager';
 import { updateProfile } from '../api/authApi';
 import AppFooterNav from '../components/AppFooterNav';
+
+const DEFAULT_AVATAR = 'https://randomuser.me/api/portraits/women/44.jpg';
 
 export default function EditProfileScreen({ navigation, route }) {
   const { colors } = useAppTheme();
@@ -34,12 +38,16 @@ export default function EditProfileScreen({ navigation, route }) {
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
+  const [avatarUri, setAvatarUri] = useState(initialProfile?.avatarUrl || DEFAULT_AVATAR);
 
   useEffect(() => {
     if (initialProfile) {
       setFullName(initialProfile.nombre || '');
       setPais(initialProfile.pais || '');
       setDireccion(initialProfile.direccion || '');
+      if (initialProfile.avatarUrl) {
+        setAvatarUri(initialProfile.avatarUrl);
+      }
     }
   }, [initialProfile]);
 
@@ -48,6 +56,85 @@ export default function EditProfileScreen({ navigation, route }) {
     const idx = countries.findIndex(c => c.name === name);
     return idx >= 0 ? Math.max(1, idx + 1) : 1;
   }
+
+  // ─── Selector de foto de perfil ────────────────────────────────────────────
+
+  const pickFromCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        'Permiso requerido',
+        'Necesitamos acceso a la cámara para tomar una foto. Podés habilitarlo en los ajustes del dispositivo.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAvatarUri(result.assets[0].uri);
+      setAvatarBase64(result.assets[0].base64);
+    }
+  };
+
+  const pickFromLibrary = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        'Permiso requerido',
+        'Necesitamos acceso a tus fotos para elegir una imagen. Podés habilitarlo en los ajustes del dispositivo.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAvatarUri(result.assets[0].uri);
+      setAvatarBase64(result.assets[0].base64);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    // En iOS usamos el ActionSheet nativo, más prolijo visualmente.
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancelar', 'Tomar foto', 'Elegir de la galería'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) pickFromCamera();
+          if (buttonIndex === 2) pickFromLibrary();
+        }
+      );
+      return;
+    }
+
+    // En Android (y web) usamos Alert con botones, que se ve como un diálogo.
+    Alert.alert(
+      'Foto de perfil',
+      '¿Cómo querés actualizar tu foto?',
+      [
+        { text: 'Tomar foto', onPress: pickFromCamera },
+        { text: 'Elegir de la galería', onPress: pickFromLibrary },
+        { text: 'Cancelar', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
+  };
 
   async function handleSave() {
     const errors = {};
@@ -79,6 +166,8 @@ export default function EditProfileScreen({ navigation, route }) {
       errors.fullName = 'Ingrese nombre y apellido';
     }
 
+    console.log("Errores detectados:", errors);
+
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setFormError('Corrige los campos marcados en rojo.');
@@ -97,6 +186,9 @@ export default function EditProfileScreen({ navigation, route }) {
     if (password) {
       payload.password = password;
     }
+
+    // TODO: si el backend acepta subir avatar, agregar acá el envío de
+    // avatarUri (por ejemplo como FormData o base64) junto al resto del payload.
 
     try {
       setIsSaving(true);
@@ -140,14 +232,11 @@ export default function EditProfileScreen({ navigation, route }) {
 
         <View style={styles.avatarWrapper}>
           <Image
-            source={{
-              uri:
-                'https://randomuser.me/api/portraits/women/44.jpg',
-            }}
+            source={{ uri: avatarUri }}
             style={styles.avatar}
           />
 
-          <TouchableOpacity style={styles.editAvatar}>
+          <TouchableOpacity style={styles.editAvatar} onPress={handleAvatarPress}>
             <Icon
               name="pencil"
               size={18}
@@ -247,7 +336,7 @@ export default function EditProfileScreen({ navigation, route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-<View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20}}>
+      <View style={{ backgroundColor: colors.surface }}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Profile" />
       </View>
     </SafeAreaView>

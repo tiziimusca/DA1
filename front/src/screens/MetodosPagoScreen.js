@@ -16,6 +16,7 @@ import { useNavigation} from '@react-navigation/native';
 import { useAppTheme } from '../theme/AppTheme';
 import { useMetodosPagoViewModel } from '../hooks/useMetodoPagoViewModel';
 import { useRoute } from '@react-navigation/native';
+import AppFooterNav from '../components/AppFooterNav';
  
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function tipoLabel(tipo) {
@@ -298,18 +299,8 @@ export default function MetodosDePago() {
         </Text>
       </View>
 
-      <View style={[nav.bar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-        {[
-          { icon: '⌂', label: 'Inicio' },
-          { icon: '◈', label: 'Subastas' },
-          { icon: '◎', label: 'Vender' },
-          { icon: '◉', label: 'Perfil', active: true },
-        ].map(item => (
-          <TouchableOpacity key={item.label} style={nav.item}>
-            <Text style={[nav.icon,  { color: item.active ? colors.primary : colors.muted }]}>{item.icon}</Text>
-            <Text style={[nav.label, { color: item.active ? colors.primary : colors.muted, fontWeight: item.active ? '700' : '400' }]}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={{ backgroundColor: colors.surface}}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="MetodosDePago" />
       </View>
     </SafeAreaView>
   );

@@ -173,11 +173,13 @@ export default function MetricsScreen() {
           </View>
         </View>
       </ScrollView>
-      <AppFooterNav
-        navigation={navigation}
-        colors={colors}
-        activeRouteName="Profile"
-      />
+      <View style={{ backgroundColor: colors.surface}}>
+        <AppFooterNav
+          navigation={navigation}
+          colors={colors}
+          activeRouteName="Profile"
+        />
+      </View>
     </SafeAreaView>
   );
 }

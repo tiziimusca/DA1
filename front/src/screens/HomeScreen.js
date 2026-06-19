@@ -278,7 +278,7 @@ export default function HomeScreen({ navigation, route }) {
           />
         )}
       </View>
-      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+      <View style={{ backgroundColor: colors.surface}}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
       </View>
     </SafeAreaView>

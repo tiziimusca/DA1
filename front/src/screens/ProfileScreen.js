@@ -78,7 +78,7 @@ export default function ProfileScreen({ navigation }) {
     {
       title: 'Métodos de Pago',
       icon: 'card-outline',
-      onPress: () => {},
+      onPress: () => navigation.navigate('MetodosDePago'),
     },
     {
       title: 'Métricas y Actividad',
@@ -291,7 +291,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </ScrollView>
 
-<View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20}}>
+<View style={{ backgroundColor: colors.surface}}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Profile" />
       </View>
       </View>

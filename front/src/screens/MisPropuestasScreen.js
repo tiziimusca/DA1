@@ -314,7 +314,7 @@ export default function ArticulosPropuestos({ navigation }) {
           <Text style={[fabStyles.label, { color: '#FFFFFF' }]}>Proponer Nuevo Artículo</Text>
         </TouchableOpacity>
       </View>
-      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
+      <View style={{ backgroundColor: colors.surface}}>
         <AppFooterNav
           navigation={navigation}
           colors={colors}

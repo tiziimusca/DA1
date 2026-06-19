@@ -1,51 +1,57 @@
 import React, { useState } from 'react';
-import { View, Image, ScrollView, StyleSheet, Text, Dimensions } from 'react-native';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
+import { View, Image, ScrollView, StyleSheet, Text } from 'react-native';
 
 /**
  * Carrusel de fotos reutilizable.
  *
  * Props:
  *  - uris        string[]   URIs ya decodificadas listas para <Image>
- *  - width       number     ancho de cada imagen (default: ancho de pantalla - 32)
  *  - height      number     alto del carrusel (default: 220)
  *  - tag         string     texto del badge esquina superior derecha (ej: categoría)
+ *
+ * El ancho de cada página se mide con onLayout del propio contenedor en vez
+ * de recibirse como prop fijo. Si el width pasaba por afuera no coincidía
+ * pixel a pixel con el ancho real de la card (por bordes, padding, redondeos
+ * de Dimensions.get('window') en web, etc.), el pagingEnabled de ScrollView
+ * no cortaba justo y se veía un pedacito de la foto siguiente/anterior.
  */
-export default function PhotoCarousel({
-  uris = [],
-  width = SCREEN_WIDTH - 32,
-  height = 220,
-  tag,
-}) {
+export default function PhotoCarousel({ uris = [], height = 220, tag }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   const safeUris = uris.length > 0 ? uris : [
     'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
   ];
 
   return (
-    <View style={[styles.wrap, { height }]}>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => {
-          const index = Math.round(
-            e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width
-          );
-          setActiveIndex(index);
-        }}
-      >
-        {safeUris.map((uri, idx) => (
-          <Image
-            key={idx}
-            source={{ uri }}
-            style={{ width, height }}
-            resizeMode="cover"
-          />
-        ))}
-      </ScrollView>
+    <View
+      style={[styles.wrap, { height }]}
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+    >
+      {containerWidth > 0 && (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={containerWidth}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          onMomentumScrollEnd={(e) => {
+            const index = Math.round(e.nativeEvent.contentOffset.x / containerWidth);
+            setActiveIndex(index);
+          }}
+        >
+          {safeUris.map((uri, idx) => (
+            <Image
+              key={idx}
+              source={{ uri }}
+              style={{ width: containerWidth, height }}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {/* Badge categoría */}
       {tag ? (

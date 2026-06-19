@@ -1,12 +1,34 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Image, TextInput, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
+import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { useAppTheme } from '../theme/AppTheme';
-import { fetchSubastas, fetchCatalogo } from '../api/auctionApi';
-import { SERVER_BASE_URL } from '../config/apiConfig';
-import AppFooterNav from '../components/AppFooterNav';
+import { fetchHomeDashboard, fetchCatalogo } from '../api/auctionApi';
+import { getToken } from '../auth/authManager';
 import { Ionicons as Icon } from '@expo/vector-icons';
+import AppFooterNav from '../components/AppFooterNav';
+import PhotoCarousel from '../components/PhotoCarousel';
+import { decodeImageUri } from '../utils/imageUtils';
 
-const HOST_URL = SERVER_BASE_URL;
+// Ancho fijo en vez de Dimensions.get('window').width: en web ese valor
+// puede tomar el ancho de la ventana completa, no el del contenedor,
+// haciendo que el slider se vea gigante.
+const MAX_SLIDER_WIDTH = 280;
+
+// Techo de precio por moneda — los rangos de ARS y USD no tienen la
+// misma escala, así que el slider se adapta según la moneda elegida.
+const PRICE_CEIL_BY_CURRENCY = {
+  ARS: 200000,
+  USD: 10000,
+};
+const DEFAULT_PRICE_CEIL = 200000;
 
 export default function AuctionListScreen({ navigation }) {
   const { colors, radius } = useAppTheme();
@@ -15,22 +37,36 @@ export default function AuctionListScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [priceRange, setPriceRange] = useState({ min: 0, max: null });
+  const [selectedCurrency, setSelectedCurrency] = useState('Todas'); // 'Todas' | 'ARS' | 'USD'
+
+  const priceCeil = PRICE_CEIL_BY_CURRENCY[selectedCurrency] || DEFAULT_PRICE_CEIL;
+  const [priceRange, setPriceRange] = useState([0, DEFAULT_PRICE_CEIL]);
+  // Inputs de texto para escribir el precio a mano (más preciso que arrastrar el slider)
+  const [minInput, setMinInput] = useState('0');
+  const [maxInput, setMaxInput] = useState(String(DEFAULT_PRICE_CEIL));
+
+  // Si cambia la moneda seleccionada, reseteamos el rango al techo correspondiente
+  useEffect(() => {
+    setPriceRange([0, priceCeil]);
+    setMinInput('0');
+    setMaxInput(String(priceCeil));
+  }, [selectedCurrency]);
 
   useEffect(() => {
     const loadSubastas = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchSubastas();
-        setSubastas(data);
+        const token = getToken();
+        const authHeader = token ? `Bearer ${token}` : null;
+        const data = await fetchHomeDashboard(authHeader);
+        setSubastas(data?.subastasActivas || []);
       } catch (err) {
         setError(err.message || 'Error al cargar subastas');
       } finally {
         setLoading(false);
       }
     };
-
     loadSubastas();
   }, []);
 
@@ -42,33 +78,52 @@ export default function AuctionListScreen({ navigation }) {
   const filteredSubastas = useMemo(() => {
     const text = searchText.trim().toLowerCase();
     return subastas.filter((item) => {
-      const searchSource = [item.titulo, item.nombre, item.descripcion, item.descripcion_catalogo]
+      const searchSource = [item.titulo, item.descripcion]
         .filter(Boolean)
         .join(' ')
-        .toString()
         .toLowerCase();
       const matchesText = !text || searchSource.includes(text);
-      const matchesCategory = selectedCategory === 'Todas' || (item.categoria || '').toString().toUpperCase() === selectedCategory;
-      const price = Number((item.precioBase ?? item.precio) || 0);
-      const matchesMin = price >= priceRange.min;
-      const matchesMax = priceRange.max == null || price <= priceRange.max;
-      return matchesText && matchesCategory && matchesMin && matchesMax;
+
+      const matchesCategory =
+        selectedCategory === 'Todas' || (item.categoria || '').toString().toUpperCase() === selectedCategory;
+
+      const moneda = (item.moneda || 'ARS').toUpperCase();
+      const matchesCurrency = selectedCurrency === 'Todas' || moneda === selectedCurrency;
+
+      const precio = Number(item.precioBase ?? 0);
+      // El rango de precio solo aplica si la moneda coincide con la seleccionada
+      // (o si está en "Todas", en cuyo caso no filtramos por rango para no mezclar escalas).
+      const matchesRange =
+        selectedCurrency === 'Todas' || (precio >= priceRange[0] && precio <= priceRange[1]);
+
+      return matchesText && matchesCategory && matchesCurrency && matchesRange;
     });
-  }, [subastas, searchText, selectedCategory, priceRange]);
+  }, [subastas, searchText, selectedCategory, selectedCurrency, priceRange]);
 
-  const formatPrice = (value) => {
+  const formatPrice = (value, moneda = 'ARS') => {
     if (value == null || Number.isNaN(Number(value))) return '---';
-    const number = Number(value);
-    return number.toLocaleString('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    return `${moneda} ${Number(value).toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
   };
 
-  const renderSubasta = ({ item }) => {
-    return <AuctionCard item={item} navigation={navigation} colors={colors} radius={radius} />;
+  const applyMinInput = () => {
+    const val = Math.max(0, Math.min(Number(minInput) || 0, priceRange[1]));
+    setPriceRange([val, priceRange[1]]);
+    setMinInput(String(val));
   };
+
+  const applyMaxInput = () => {
+    const val = Math.min(priceCeil, Math.max(Number(maxInput) || 0, priceRange[0]));
+    setPriceRange([priceRange[0], val]);
+    setMaxInput(String(val));
+  };
+
+  const renderSubasta = ({ item }) => (
+    <AuctionCard item={item} navigation={navigation} colors={colors} radius={radius} />
+  );
 
   if (loading) {
     return (
-      <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}> 
+      <View style={[styles.loaderContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -76,184 +131,237 @@ export default function AuctionListScreen({ navigation }) {
 
   if (error) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}> 
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.primary }]}>Error: {error}</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Icon
-          name="arrow-back"
-          size={24}
-          color={colors.text}
-        />
-      </TouchableOpacity>
-      <Text style={[styles.header, { color: colors.text }]}>Subastas</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Icon name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.header, { color: colors.text }]}>Subastas activas</Text>
+      </View>
+
       <FlatList
         data={filteredSubastas}
-        keyExtractor={(item) => String(item.identificador)}
+        keyExtractor={(item) => String(item.identificador || item.id)}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <View style={[styles.filtersContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
+          <View style={[styles.filtersContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.filterTitle, { color: colors.text }]}>Filtros</Text>
+
             <TextInput
               placeholder="Filtre por nombre"
               placeholderTextColor={colors.muted}
               value={searchText}
               onChangeText={setSearchText}
-              style={[styles.searchInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.background }]}
+              style={[
+                styles.searchInput,
+                { borderColor: colors.border, color: colors.text, backgroundColor: colors.background },
+              ]}
             />
+
             <View style={styles.categoryRow}>
               {categories.map((category) => {
                 const active = selectedCategory === category;
                 return (
                   <TouchableOpacity
                     key={category}
-                    style={[styles.categoryChip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: colors.border }]}
+                    style={[
+                      styles.categoryChip,
+                      { backgroundColor: active ? colors.primary : colors.background, borderColor: colors.border },
+                    ]}
                     onPress={() => setSelectedCategory(category)}
                   >
-                    <Text style={{ color: active ? '#fff' : colors.text, fontSize: 12 }}>{category}</Text>
+                    <Text style={{ color: active ? '#fff' : colors.text, fontSize: 12, fontWeight: '600' }}>
+                      {category}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
-              <View style={styles.rangeRow}>
-              <View style={[styles.rangeBox, styles.rangeGroup, { borderColor: colors.border }]}> 
-                <Text style={[styles.rangeLabel, { color: colors.muted }]}>Mínimo</Text>
-                <Text style={[styles.rangeValue, { color: colors.text }]}>{formatPrice(priceRange.min)}</Text>
-                <View style={styles.rangeControls}>
+
+            {/* Selector de moneda */}
+            <View style={styles.currencyRow}>
+              {['Todas', 'ARS', 'USD'].map((currency) => {
+                const active = selectedCurrency === currency;
+                return (
                   <TouchableOpacity
-                    style={[styles.rangeControlButton, { borderColor: colors.border }]}
-                    onPress={() => setPriceRange((prev) => ({ ...prev, min: Math.max(0, prev.min - 1000) }))}
+                    key={currency}
+                    style={[
+                      styles.currencyChip,
+                      { backgroundColor: active ? colors.text : colors.background, borderColor: colors.border },
+                    ]}
+                    onPress={() => setSelectedCurrency(currency)}
                   >
-                    <Text style={{ color: colors.text }}>-</Text>
+                    <Text style={{ color: active ? '#fff' : colors.text, fontSize: 12, fontWeight: '700' }}>
+                      {currency}
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.rangeControlButton, { borderColor: colors.border }]}
-                    onPress={() => setPriceRange((prev) => ({ ...prev, min: prev.min + 1000 }))}
-                  >
-                    <Text style={{ color: colors.text }}>+ Min</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={[styles.rangeBox, styles.rangeGroup, { borderColor: colors.border }]}> 
-                <Text style={[styles.rangeLabel, { color: colors.muted }]}>Máximo</Text>
-                <Text style={[styles.rangeValue, { color: colors.text }]}>{priceRange.max ? formatPrice(priceRange.max) : 'Sin tope'}</Text>
-                <View style={styles.rangeControls}>
-                  <TouchableOpacity
-                    style={[styles.rangeControlButton, { borderColor: colors.border }]}
-                    onPress={() => setPriceRange((prev) => ({ ...prev, max: Math.max(0, (prev.max || 0) - 1000) }))}
-                  >
-                    <Text style={{ color: colors.text }}>- Max</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.rangeControlButton, { borderColor: colors.border }]}
-                    onPress={() => setPriceRange((prev) => ({ ...prev, max: (prev.max || 0) + 1000 }))}
-                  >
-                    <Text style={{ color: colors.text }}>+ Max</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+                );
+              })}
             </View>
+
+            {selectedCurrency === 'Todas' ? (
+              <Text style={[styles.hintText, { color: colors.muted }]}>
+                Elegí ARS o USD para filtrar por rango de precio
+              </Text>
+            ) : (
+              <View style={styles.priceSliderWrap}>
+                {/* Inputs numéricos para precisión */}
+                <View style={styles.priceInputsRow}>
+                  <View style={styles.priceInputBox}>
+                    <Text style={[styles.priceInputLabel, { color: colors.muted }]}>Mínimo</Text>
+                    <TextInput
+                      value={minInput}
+                      onChangeText={setMinInput}
+                      onBlur={applyMinInput}
+                      onSubmitEditing={applyMinInput}
+                      keyboardType="numeric"
+                      style={[styles.priceInput, { borderColor: colors.border, color: colors.text }]}
+                    />
+                  </View>
+                  <View style={styles.priceInputBox}>
+                    <Text style={[styles.priceInputLabel, { color: colors.muted }]}>Máximo</Text>
+                    <TextInput
+                      value={maxInput}
+                      onChangeText={setMaxInput}
+                      onBlur={applyMaxInput}
+                      onSubmitEditing={applyMaxInput}
+                      keyboardType="numeric"
+                      style={[styles.priceInput, { borderColor: colors.border, color: colors.text }]}
+                    />
+                  </View>
+                </View>
+
+                <View style={[styles.priceLabelsRow, { width: MAX_SLIDER_WIDTH }]}>
+                  <Text style={[styles.priceLabelText, { color: colors.primary }]}>
+                    {formatPrice(priceRange[0], selectedCurrency)}
+                  </Text>
+                  <Text style={[styles.priceLabelText, { color: colors.primary }]}>
+                    {formatPrice(priceRange[1], selectedCurrency)}
+                  </Text>
+                </View>
+                <View style={styles.sliderCenterWrap}>
+                  <MultiSlider
+                    values={priceRange}
+                    min={0}
+                    max={priceCeil}
+                    step={selectedCurrency === 'USD' ? 50 : 1000}
+                    sliderLength={MAX_SLIDER_WIDTH}
+                    onValuesChange={(values) => {
+                      setPriceRange(values);
+                      setMinInput(String(values[0]));
+                      setMaxInput(String(values[1]));
+                    }}
+                    selectedStyle={{ backgroundColor: colors.text }}
+                    unselectedStyle={{ backgroundColor: colors.border }}
+                    containerStyle={{ height: 24 }}
+                    trackStyle={{ height: 3, borderRadius: 2 }}
+                    markerStyle={[styles.sliderMarker, { borderColor: colors.text }]}
+                    pressedMarkerStyle={styles.sliderMarkerPressed}
+                  />
+                </View>
+              </View>
+            )}
           </View>
         }
         renderItem={renderSubasta}
-        
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: colors.text }]}>No hay subastas registradas.</Text>
           </View>
         }
       />
-      <View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20 }}>
-        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
+
+      <View style={{ backgroundColor: colors.surface }}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Auctions" />
       </View>
     </View>
   );
 }
 
 function AuctionCard({ item, navigation, colors, radius }) {
-  const [photoUri, setPhotoUri] = useState(null);
-  const [title, setTitle] = useState(item.titulo || item.descripcion || `Subasta #${item.identificador}`);
-  const [description, setDescription] = useState(item.descripcion || item.descripcion_catalogo || 'Sin descripción disponible');
+  const fallbackUris = ['https://images.unsplash.com/photo-1513602855647-7dbafac0f632?auto=format&fit=crop&w=900&q=80'];
+
+  // El endpoint /home solo trae UNA foto (campo "foto", singular), suficiente
+  // para mostrar algo de entrada sin esperar. La usamos como estado inicial
+  // y la completamos con todas las fotos del catálogo en segundo plano.
+  const homeFoto = item.fotos && item.fotos.length > 0 ? item.fotos : (item.foto ? [item.foto] : []);
+  const homeDecoded = homeFoto.map(decodeImageUri).filter(Boolean);
+  const initialUris = homeDecoded.length > 0 ? homeDecoded : fallbackUris;
+
+  const [photoUris, setPhotoUris] = useState(initialUris);
+
+  const itemId = item.identificador || item.id;
 
   useEffect(() => {
     let mounted = true;
 
-    const resolveImageUri = (foto) => {
-      if (!foto) return null;
-      if (foto.startsWith('http')) return foto;
-      if (foto.startsWith('/api/')) return `${HOST_URL}${foto}`;
-      const cleaned = foto.replace(/[^0-9a-fA-F]/g, '');
-      if (/^[0-9a-fA-F]+$/.test(cleaned) && cleaned.length >= 8) {
-        const even = cleaned.length % 2 === 1 ? cleaned + '0' : cleaned;
-        let out = '';
-        for (let i = 0; i < even.length; i += 2) {
-          out += String.fromCharCode(parseInt(even.substr(i, 2), 16));
-        }
-        if (out.startsWith('http')) return out;
-      }
-      return `data:image/jpeg;base64,${foto}`;
-    };
-
-    const loadCatalogPhoto = async () => {
+    const loadFullCatalogPhotos = async () => {
       try {
-        const subastaId = item.identificador || item.id;
-        if (!subastaId) return;
+        if (!itemId) return;
+        const data = await fetchCatalogo(itemId, null);
+        if (!mounted) return;
 
-        const data = await fetchCatalogo(subastaId, null);
-        if (!mounted || !data?.items?.length) return;
-
-        const firstItem = data.items[0];
-        if (firstItem.titulo) {
-          setTitle(firstItem.titulo);
+        const fotos = data?.items?.[0]?.fotos || [];
+        const decoded = fotos.map(decodeImageUri).filter(Boolean);
+        if (decoded.length > 0) {
+          setPhotoUris(decoded);
         }
-        if (firstItem.descripcion) {
-          setDescription(firstItem.descripcion);
-        }
-        if (firstItem.fotos && firstItem.fotos.length > 0) {
-          setPhotoUri(resolveImageUri(firstItem.fotos[0]));
-        }
-      } catch (err) {
-        // ignore failed image fetches
+      } catch {
+        // Si falla, nos quedamos con la foto única que ya vino de /home
       }
     };
 
-    loadCatalogPhoto();
+    loadFullCatalogPhotos();
     return () => { mounted = false; };
-  }, [item]);
+  }, [itemId]);
 
-  const isActive = String(item.estado || '').toLowerCase() === 'abierta';
+  // Los items que llegan desde /home (subastasActivas) ya vienen pre-filtrados
+  // como activos por el backend y no traen un campo "estado". Si en algún momento
+  // sí lo trajeran, respetamos ese valor; si no existe, asumimos que está activa.
+  const isActive = item.estado != null
+    ? String(item.estado).toLowerCase() === 'abierta'
+    : true;
+  const title = item.titulo || item.descripcion || `Subasta #${item.identificador}`;
+  const price = item.precioBase != null
+    ? `${item.moneda || 'ARS'} ${Number(item.precioBase).toLocaleString('es-AR')}`
+    : '---';
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}> 
-      <View style={styles.cardImageWrap}>
-        <Image source={{ uri: photoUri || 'https://images.unsplash.com/photo-1513602855647-7dbafac0f632?auto=format&fit=crop&w=900&q=80' }} style={styles.cardImage} />
-        <View style={[styles.tag, { backgroundColor: colors.primary }]}> 
-          <Text style={styles.tagText}>{(item.categoria || 'GENERAL').toUpperCase()}</Text>
-        </View>
-      </View>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}>
+      <PhotoCarousel uris={photoUris} height={180} tag={(item.categoria || 'GENERAL').toUpperCase()} />
 
       <View style={styles.cardBody}>
         <View style={styles.cardHeaderRow}>
           <View style={{ flex: 1, marginRight: 8 }}>
-            <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
-            <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>{item.fecha || 'Fecha pendiente'}</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>
+              {item.fecha ? `Empieza ${item.fecha}` : 'Fecha pendiente'}
+            </Text>
           </View>
-          <Text style={[styles.priceText, { color: colors.primary }]}>{item.precioBase != null ? `${item.moneda || 'USD'} ${item.precioBase.toFixed(2)}` : item.precio != null ? `${item.moneda || 'USD'} ${Number(item.precio).toFixed(2)}` : '---'}</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={[styles.priceText, { color: colors.primary }]}>{price}</Text>
+            <Text style={[styles.priceLabel, { color: colors.muted }]}>Precio inicial</Text>
+          </View>
         </View>
-
-        <Text style={[styles.cardDescription, { color: colors.text }]} numberOfLines={2}>{description}</Text>
 
         <TouchableOpacity
           style={[styles.cardButton, { backgroundColor: isActive ? colors.primary : colors.border, borderRadius: radius.round }]}
           onPress={() => isActive && navigation.navigate('Bid', { product: item })}
           disabled={!isActive}
         >
-          <Text style={[styles.buttonText, { color: isActive ? '#fff' : colors.muted }]}>{isActive ? 'Ingresar' : 'Finalizada'}</Text>
+          <Text style={[styles.buttonText, { color: isActive ? '#fff' : colors.muted }]}>
+            {isActive ? 'Ingresar' : 'Finalizada'}
+          </Text>
+
         </TouchableOpacity>
       </View>
     </View>
@@ -261,21 +369,13 @@ function AuctionCard({ item, navigation, colors, radius }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginTop: 40,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 24,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginTop: 20,
-    marginHorizontal: 16,
-    marginBottom: 10,
-  },
+  container: { flex: 1, marginTop: 40 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 12, marginBottom: 4, gap: 12 },
+  backBtn: { padding: 4 },
+  header: { fontSize: 26, fontWeight: '700' },
+  listContent: { padding: 16, paddingBottom: 24 },
+
+  // Card
   card: {
     borderWidth: 1,
     overflow: 'hidden',
@@ -286,174 +386,69 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
   },
-  cardImageWrap: {
-    height: 180,
-    position: 'relative',
-    backgroundColor: '#eee',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  tag: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 18,
-  },
-  tagText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  cardBody: {
-    padding: 16,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    flex: 1,
-    marginRight: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    marginBottom: 6,
-  },
-  cardDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  cardButton: {
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filtersContainer: {
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  filterTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  searchInput: {
-    height: 46,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    marginBottom: 12,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
+  cardBody: { padding: 16 },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+  cardTitle: { fontSize: 18, fontWeight: '700', marginRight: 12 },
+  cardSubtitle: { fontSize: 13, marginTop: 2 },
+  cardButton: { paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+  priceText: { fontSize: 16, fontWeight: '800' },
+  priceLabel: { fontSize: 11, marginTop: 2 },
+  buttonText: { fontSize: 14, fontWeight: '700' },
+
+  // Filters
+  filtersContainer: { borderWidth: 1, borderRadius: 20, padding: 16, marginBottom: 16 },
+  filterTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  searchInput: { height: 46, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, marginBottom: 14 },
+  categoryRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 14 },
   categoryChip: {
     borderWidth: 1,
     borderRadius: 999,
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     marginRight: 8,
     marginBottom: 8,
   },
-  rangeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  rangeBox: {
-    flex: 1,
+  currencyRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  currencyChip: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginRight: 8,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
   },
-  rangeLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  rangeValue: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  rangeGroup: {
-    flex: 1,
+  hintText: { fontSize: 12, fontStyle: 'italic', textAlign: 'center' },
+
+  // Price slider — ancho fijo (MAX_SLIDER_WIDTH) para que no se estire en web
+  priceSliderWrap: { alignItems: 'center' },
+  priceInputsRow: { flexDirection: 'row', gap: 10, marginBottom: 12, width: MAX_SLIDER_WIDTH },
+  priceInputBox: { flex: 1 },
+  priceInputLabel: { fontSize: 11, marginBottom: 4 },
+  priceInput: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-  },
-  rangeControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  rangeControlRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  rangeControlButton: {
-    flex: 1,
-    minWidth: 84,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    marginRight: 8,
-  },
-  priceText: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  footer: {
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  footerText: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     fontSize: 13,
-    color: '#888',
   },
-  buttonText: {
-    fontSize: 14,
-    fontWeight: '700',
+  priceLabelsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  priceLabelText: { fontSize: 13, fontWeight: '700' },
+  sliderCenterWrap: { alignItems: 'center' },
+  sliderMarker: {
+    height: 22,
+    width: 22,
+    borderRadius: 11,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
   },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: 'center',
-    margin: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-  },
-  emptyText: {
-    fontSize: 16,
-  },
+  sliderMarkerPressed: { height: 26, width: 26, borderRadius: 13 },
+
+  // Misc
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { fontSize: 16, textAlign: 'center', margin: 16 },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  emptyText: { fontSize: 16 },
 });
