@@ -23,6 +23,11 @@ public class ActualizarPerfilClienteRequestDTO {
     @Size(min = 8, max = 255)
     private String password;
 
+    // Foto en Base64 puro (sin prefijo "data:image/..."), tal como la genera
+    // expo-image-picker con { base64: true }. Es opcional: si el usuario no
+    // tocó el avatar, este campo viene null y no se actualiza la foto existente.
+    private String foto;
+
     public String getNombre() {
         return nombre;
     }
@@ -61,5 +66,13 @@ public class ActualizarPerfilClienteRequestDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getFoto() {
+        return foto;
+    }
+
+    public void setFoto(String foto) {
+        this.foto = foto;
     }
 }

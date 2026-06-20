@@ -7,6 +7,7 @@ import { SERVER_BASE_URL } from '../config/apiConfig';
 import AppFooterNav from '../components/AppFooterNav';
 import PhotoCarousel from '../components/PhotoCarousel';
 import { decodeImageUri } from '../utils/imageUtils';
+import { fetchProfile } from '../api/authApi';
 
 const HOST_URL = SERVER_BASE_URL;
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -145,6 +146,7 @@ export default function HomeScreen({ navigation, route }) {
   const isGuest = accessMode === 'guest';
 
   const [homeData, setHomeData] = useState(null);
+  const [profileFoto, setProfileFoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -159,6 +161,8 @@ export default function HomeScreen({ navigation, route }) {
         setError(null);
         const authHeader = isGuest ? null : (token ? `Bearer ${token}` : null);
         const data = await fetchHomeDashboard(authHeader);
+        const profileData = await fetchProfile(token);
+        setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`)
         console.log('[HomeScreen] homeData fetched:', data);
         setHomeData(data);
       } catch (err) {
@@ -202,8 +206,15 @@ export default function HomeScreen({ navigation, route }) {
                     disabled={!isGuest}
                     onPress={() => { if (isGuest) navigation.navigate('Login'); }}
                   >
-                    <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
-                      <Text style={{ color: colors.primary, fontWeight: '700' }}>{isGuest ? 'i' : 'LG'}</Text>
+                    <View style={[styles.avatar]}>
+                      <Image
+                        source={{
+                          uri:
+                            profileFoto ||
+                            'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+                          }}
+                          style={styles.avatar}
+                      />
                     </View>
                     <Text style={[styles.userName, { color: colors.text }]}>
                       {isGuest ? 'Inicie Sesión' : userName}

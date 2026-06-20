@@ -11,8 +11,11 @@ import com.example.auctionapp.repository.PaisRepository;
 import com.example.auctionapp.repository.PersonaRepository;
 import com.example.auctionapp.repository.UsuarioRepository;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,7 +84,9 @@ public class ClienteService {
                 capitalizar(cliente.getCategoria()),
                 cliente.getNumeroPais() != null ? cliente.getNumeroPais().getNombre() : null,
                 persona.getEstado(),
-                persona.getDireccion());
+                persona.getDireccion(),
+                fotoBytesToBase64(persona.getFoto()));
+        
     }
 
     public PerfilClienteResponseDTO actualizarPerfil(String authorizationHeader,
@@ -89,33 +94,63 @@ public class ClienteService {
         Usuario usuario = obtenerUsuarioDesdeToken(authorizationHeader);
         Cliente cliente = clienteRepository.findById(usuario.getPersonaId())
                 .orElseThrow(() -> new SecurityException("Token inválido o sesión expirada"));
-
+    
         Persona persona = personaRepository.findById(cliente.getIdentificador())
                 .orElseThrow(() -> new SecurityException("Token inválido o sesión expirada"));
-
+    
         String nombreCompleto = String.format("%s %s", request.getNombre().trim(), request.getApellido().trim());
         persona.setNombre(nombreCompleto);
         persona.setDireccion(request.getDireccion());
-
+    
         Pais pais = paisRepository.findById(request.getIdPaisNacimiento())
                 .orElseThrow(() -> new IllegalArgumentException("País no encontrado"));
         cliente.setNumeroPais(pais);
-
+    
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         }
-
+    
+        // Solo actualizamos la foto si el usuario mandó una nueva (string no vacío).
+        // Si vino null/blank, dejamos la foto existente intacta en la entidad.
+        if (request.getFoto() != null && !request.getFoto().isBlank()) {
+            try {
+                String fotoBase64 = request.getFoto();
+                // Por si el front llega a mandar el prefijo data URI alguna vez
+                // (ej: "data:image/jpeg;base64,...."), lo recortamos antes de decodificar.
+                if (fotoBase64.contains(",")) {
+                    fotoBase64 = fotoBase64.split(",")[1];
+                }
+                byte[] fotoBytes = Base64.getDecoder().decode(fotoBase64);
+                persona.setFoto(fotoBytes);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("La foto enviada no es un Base64 válido");
+            }
+        }
+    
         personaRepository.save(persona);
         clienteRepository.save(cliente);
         usuarioRepository.save(usuario);
-
+    
         return new PerfilClienteResponseDTO(
                 cliente.getIdentificador(),
                 persona.getNombre(),
                 capitalizar(cliente.getCategoria()),
                 pais.getNombre(),
                 persona.getEstado(),
-                persona.getDireccion());
+                persona.getDireccion(),
+                fotoBytesToBase64(persona.getFoto()));
+    }
+ 
+/**
+ * Convierte los bytes de la foto a Base64 para devolverla al front,
+ * lista para usar como <Image source={{ uri: \`data:image/jpeg;base64,${foto}\` }} />.
+ * Devuelve null si la persona todavía no tiene foto guardada.
+ */
+    private String fotoBytesToBase64(byte[] fotoBytes) {
+        if (fotoBytes == null || fotoBytes.length == 0) {
+            return null;
+        }
+        return Base64.getEncoder().encodeToString(fotoBytes);
     }
 
     public Usuario obtenerUsuarioDesdeToken(String authorizationHeader) {

@@ -15,6 +15,7 @@ import {
   ActionSheetIOS,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import countries from '../data/countries';
@@ -29,6 +30,8 @@ export default function EditProfileScreen({ navigation, route }) {
 
   const initialProfile = route?.params?.profile || null;
 
+  console.log("LOL",initialProfile)
+
   const [fullName, setFullName] = useState('');
   const [pais, setPais] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -39,14 +42,18 @@ export default function EditProfileScreen({ navigation, route }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [avatarUri, setAvatarUri] = useState(initialProfile?.avatarUrl || DEFAULT_AVATAR);
+  // Foto en base64 puro, lista para mandar al backend como byte[] (varbinary).
+  // Se completa solo cuando el usuario elige una foto nueva; si queda null,
+  // significa que no se tocó el avatar y no se manda ese campo al guardar.
+  const [avatarBase64, setAvatarBase64] = useState(null);
 
   useEffect(() => {
     if (initialProfile) {
       setFullName(initialProfile.nombre || '');
       setPais(initialProfile.pais || '');
       setDireccion(initialProfile.direccion || '');
-      if (initialProfile.avatarUrl) {
-        setAvatarUri(initialProfile.avatarUrl);
+      if (initialProfile.foto) {
+        setAvatarUri(`data:image/jpeg;base64,${initialProfile.foto}`);
       }
     }
   }, [initialProfile]);
@@ -58,6 +65,25 @@ export default function EditProfileScreen({ navigation, route }) {
   }
 
   // ─── Selector de foto de perfil ────────────────────────────────────────────
+
+  /**
+   * A veces (sobre todo en Android con allowsEditing:true) el picker no
+   * devuelve el campo base64 del resultado, aunque se haya pedido
+   * { base64: true }. Como fallback, leemos el archivo del uri directamente
+   * con expo-file-system y lo codificamos a mano.
+   */
+  const resolveBase64 = async (asset) => {
+    if (asset.base64) return asset.base64;
+    try {
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding:  'base64',
+      });
+      return base64;
+    } catch (err) {
+      console.log('[EditProfileScreen] No se pudo generar base64 de la foto:', err.message);
+      return null;
+    }
+  };
 
   const pickFromCamera = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -77,9 +103,12 @@ export default function EditProfileScreen({ navigation, route }) {
       base64: true,
     });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setAvatarUri(result.assets[0].uri);
-      setAvatarBase64(result.assets[0].base64);
+    if (!result.canceled && result.assets?.[0]) {
+      const asset = result.assets[0];
+      setAvatarUri(asset.uri);
+      const base64 = await resolveBase64(asset);
+      console.log('[EditProfileScreen] avatarBase64 length (cámara):', base64?.length || 0);
+      setAvatarBase64(base64);
     }
   };
 
@@ -101,9 +130,12 @@ export default function EditProfileScreen({ navigation, route }) {
       base64: true,
     });
 
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      setAvatarUri(result.assets[0].uri);
-      setAvatarBase64(result.assets[0].base64);
+    if (!result.canceled && result.assets?.[0]) {
+      const asset = result.assets[0];
+      setAvatarUri(asset.uri);
+      const base64 = await resolveBase64(asset);
+      console.log('[EditProfileScreen] avatarBase64 length (galería):', base64?.length || 0);
+      setAvatarBase64(base64);
     }
   };
 
@@ -166,8 +198,6 @@ export default function EditProfileScreen({ navigation, route }) {
       errors.fullName = 'Ingrese nombre y apellido';
     }
 
-    console.log("Errores detectados:", errors);
-
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setFormError('Corrige los campos marcados en rojo.');
@@ -187,8 +217,13 @@ export default function EditProfileScreen({ navigation, route }) {
       payload.password = password;
     }
 
-    // TODO: si el backend acepta subir avatar, agregar acá el envío de
-    // avatarUri (por ejemplo como FormData o base64) junto al resto del payload.
+    // Solo mandamos el campo foto si el usuario realmente eligió una nueva imagen.
+    // Si avatarBase64 es null significa que no tocó el avatar, y no queremos
+    // pisar la foto existente en el backend con un valor vacío.
+    if (avatarBase64) {
+      payload.foto = avatarBase64;
+    }
+    console.log('[EditProfileScreen] avatarBase64 al guardar:', avatarBase64 ? `${avatarBase64.length} chars` : 'null/vacío');
 
     try {
       setIsSaving(true);
@@ -232,7 +267,11 @@ export default function EditProfileScreen({ navigation, route }) {
 
         <View style={styles.avatarWrapper}>
           <Image
-            source={{ uri: avatarUri }}
+            source={{
+                uri:
+                  avatarUri ||
+                  'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+              }}
             style={styles.avatar}
           />
 

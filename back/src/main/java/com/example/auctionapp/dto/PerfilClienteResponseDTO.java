@@ -7,17 +7,20 @@ public class PerfilClienteResponseDTO {
     private String pais;
     private String estado;
     private String direccion;
+    private String foto; // Base64 (o URL si así viene guardada), listo para <Image source={{ uri }} />
 
     public PerfilClienteResponseDTO() {
     }
 
-    public PerfilClienteResponseDTO(Integer identificador, String nombre, String categoria, String pais, String estado, String direccion) {
+    public PerfilClienteResponseDTO(Integer identificador, String nombre, String categoria, String pais,
+            String estado, String direccion, String foto) {
         this.identificador = identificador;
         this.nombre = nombre;
         this.categoria = categoria;
         this.pais = pais;
         this.estado = estado;
         this.direccion = direccion;
+        this.foto = foto;
     }
 
     public Integer getIdentificador() {
@@ -66,5 +69,13 @@ public class PerfilClienteResponseDTO {
 
     public void setDireccion(String direccion) {
         this.direccion = direccion;
+    }
+
+    public String getFoto() {
+        return foto;
+    }
+
+    public void setFoto(String foto) {
+        this.foto = foto;
     }
 }
