@@ -33,7 +33,7 @@ public class SubastaService {
     private final FotoRepository fotoRepository;
     private final PujaRepository pujaRepository;
 
-    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public SubastaService(SubastaRepository subastaRepository,
             CatalogoRepository catalogoRepository,

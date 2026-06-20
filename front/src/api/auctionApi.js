@@ -54,6 +54,16 @@ export async function fetchHomeDashboard(authToken) {
   return response.json();
 }
 
+export async function fetchClienteEstadisticas(authToken) {
+  const response = await fetch(`${BASE_URL}/clientes/me/estadisticas`, {
+    headers: authToken ? { Authorization: authToken } : undefined,
+  });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
 export async function fetchPujas() {
   const response = await fetch(`${BASE_URL}/pujas`);
   return response.json();

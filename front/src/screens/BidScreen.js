@@ -4,6 +4,158 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { createWebSocket, enviarPujaRest, fetchEstadoVivo, fetchDetalleEstatico } from '../api/auctionApi';
 import { getToken, getUser } from '../auth/authManager';
+import Svg, { Path, Line } from 'react-native-svg';
+
+function CategoryBadgeIcon({ category }) {
+  if (!category) return null;
+  const name = category.trim().toUpperCase();
+
+  if (name.includes('COMUN') || name.includes('COMÚN')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M12,3 L21,10.5 L21,20.5 L12,16 L3,20.5 L3,10.5 Z"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('ESPECIAL')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M12,3 L21,10.5 L21,20.5 L12,16 L3,20.5 L3,10.5 Z"
+          fill="#F8D66D"
+          stroke="#F8D66D"
+          strokeWidth={1}
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('PLATA')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M7,2.5 L8.2,5.2 L11.1,5.5 L8.9,7.5 L9.5,10.3 L7,8.8 L4.5,10.3 L5.1,7.5 L2.9,5.5 L5.8,5.2 Z"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={1.2}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M17,2.5 L18.2,5.2 L21.1,5.5 L18.9,7.5 L19.5,10.3 L17,8.8 L14.5,10.3 L15.1,7.5 L12.9,5.5 L15.8,5.2 Z"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={1.2}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,13 L12,19 L20,13"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,17 L12,23 L20,17"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('ORO')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M7,2.5 L8.2,5.2 L11.1,5.5 L8.9,7.5 L9.5,10.3 L7,8.8 L4.5,10.3 L5.1,7.5 L2.9,5.5 L5.8,5.2 Z"
+          fill="#F8D66D"
+          stroke="#F8D66D"
+          strokeWidth={1}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M17,2.5 L18.2,5.2 L21.1,5.5 L18.9,7.5 L19.5,10.3 L17,8.8 L14.5,10.3 L15.1,7.5 L12.9,5.5 L15.8,5.2 Z"
+          fill="#F8D66D"
+          stroke="#F8D66D"
+          strokeWidth={1}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,13 L12,19 L20,13"
+          fill="none"
+          stroke="#F8D66D"
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,17 L12,23 L20,17"
+          fill="none"
+          stroke="#F8D66D"
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('PLATINO')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M4,3 L20,3 L20,18 L12,23 L4,18 Z"
+          fill="#F8D66D"
+        />
+        <Line
+          x1={4}
+          y1={5.5}
+          x2={20}
+          y2={5.5}
+          stroke="#111"
+          strokeWidth={1}
+        />
+        <Path
+          d="M12,7 L12.8,8.8 L14.8,9 L13.3,10.3 L13.7,12.2 L12,11.2 L10.3,12.2 L10.7,10.3 L9.2,9 L11.2,8.8 Z"
+          fill="#111"
+        />
+        <Path
+          d="M8,14.5 L12,17.5 L16,14.5"
+          fill="none"
+          stroke="#111"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M8,17 L12,20 L16,17"
+          fill="none"
+          stroke="#111"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M8,19.5 L12,22.5 L16,19.5"
+          fill="none"
+          stroke="#111"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  return null;
+}
 
 export default function BidScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
@@ -16,8 +168,35 @@ export default function BidScreen({ navigation, route }) {
   const [staticDetails, setStaticDetails] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
+  const [hasStarted, setHasStarted] = useState(() => {
+    if (!subasta?.fecha) return true;
+    const startDate = new Date(
+      subasta.hora && !subasta.fecha.includes('T')
+        ? `${subasta.fecha}T${subasta.hora}`
+        : subasta.fecha
+    );
+    return new Date() >= startDate;
+  });
 
   const currentUser = getUser();
+
+  useEffect(() => {
+    if (hasStarted || !subasta?.fecha) return;
+
+    const checkStartInterval = setInterval(() => {
+      const startDate = new Date(
+        subasta.hora && !subasta.fecha.includes('T')
+          ? `${subasta.fecha}T${subasta.hora}`
+          : subasta.fecha
+      );
+      if (new Date() >= startDate) {
+        setHasStarted(true);
+        clearInterval(checkStartInterval);
+      }
+    }, 1000);
+
+    return () => clearInterval(checkStartInterval);
+  }, [hasStarted, subasta?.fecha, subasta?.hora]);
 
   const descripcion =
     staticDetails?.descripcion ||
@@ -63,6 +242,7 @@ export default function BidScreen({ navigation, route }) {
         console.log('Subasta actual:', subasta);
         if (data && data.type === 'NEW_BID' && data.subastaId === subasta?.id) {
           setTimeLeft(120);
+          setHasStarted(true);
           loadLiveState();
         }
       },
@@ -84,7 +264,7 @@ export default function BidScreen({ navigation, route }) {
   const isHighestBidder = bidHistory.length > 0 && bidHistory[0].nombreAsistente === currentUser?.nombre;
 
   useEffect(() => {
-    if (!conectado || timeLeft <= 0) return;
+    if (!conectado || !hasStarted || timeLeft <= 0) return;
 
     const intervalId = setInterval(() => {
       setTimeLeft(prev => {
@@ -97,7 +277,7 @@ export default function BidScreen({ navigation, route }) {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [conectado, timeLeft]);
+  }, [conectado, hasStarted, timeLeft]);
 
   useEffect(() => {
     if (timeLeft === 0) {
@@ -122,12 +302,20 @@ export default function BidScreen({ navigation, route }) {
 
   const formatDate = (value) => {
     if (!value) return 'Próximamente';
-    const date = new Date(value);
-    return date.toLocaleDateString('es-ES', {
+    let parsedStr = value;
+    if (parsedStr.length === 10) {
+      parsedStr = `${parsedStr}T00:00:00`;
+    }
+    if (parsedStr.includes('T') && !parsedStr.includes('-03:00') && !parsedStr.endsWith('Z')) {
+      parsedStr = `${parsedStr}-03:00`;
+    }
+    const date = new Date(parsedStr);
+    return date.toLocaleDateString('es-AR', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/Argentina/Buenos_Aires',
     });
   };
 
@@ -244,7 +432,7 @@ export default function BidScreen({ navigation, route }) {
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}> 
+        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: radius.lg }]}> 
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false} 
@@ -265,9 +453,10 @@ export default function BidScreen({ navigation, route }) {
               );
             })}
           </ScrollView>
-          <View style={[styles.tagRow, { backgroundColor: colors.surface }]}> 
-            <View style={[styles.chip, { backgroundColor: colors.primarySoft }]}> 
-              <Text style={[styles.chipText, { color: colors.primary }]}>{itemCatalog.toUpperCase()}</Text>
+          <View style={[styles.tagRow, { backgroundColor: colors.background }]}> 
+            <View style={[styles.chip, { backgroundColor: '#111', flexDirection: 'row', alignItems: 'center', gap: 4 }]}> 
+              <CategoryBadgeIcon category={itemCatalog} />
+              <Text style={[styles.chipText, { color: '#FFF' }]}>{itemCatalog.trim().toUpperCase()}</Text>
             </View>
             <Text style={[styles.detailLabel, { color: colors.muted }]}>{formatDate(subasta?.fecha)}</Text>
             <TouchableOpacity
@@ -358,7 +547,7 @@ export default function BidScreen({ navigation, route }) {
           </View>
         </View>
 
-        <View style={[styles.section, { backgroundColor: colors.surface, borderRadius: radius.lg }]}> 
+        <View style={[styles.section, { backgroundColor: colors.background, borderRadius: radius.lg }]}> 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Últimas pujas</Text>
           {bidHistory.length === 0 ? (
             <Text style={[styles.noHistoryText, { color: colors.muted }]}>Aún no hay pujas para este lote.</Text>
@@ -407,10 +596,10 @@ export default function BidScreen({ navigation, route }) {
         </View>
 
       </ScrollView>
-        <View style={[styles.inputCard, { backgroundColor: colors.surface, borderRadius: radius.lg, borderColor: colors.border }]}> 
+        <View style={[styles.inputCard, { backgroundColor: colors.background, borderRadius: radius.lg, borderColor: colors.border }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
             <TextInput
-              style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 12, borderColor: colors.border, backgroundColor: '#F8F9FD', color: colors.text }]}
+              style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 12, borderColor: colors.border, backgroundColor: '#E3DFD8', color: colors.text }]}
               placeholder="Ingresa tu monto"
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
@@ -418,11 +607,11 @@ export default function BidScreen({ navigation, route }) {
               onChangeText={setMonto}
             />
             <TouchableOpacity
-              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado && !isHighestBidder && isCategoryAllowed ? colors.primary : '#A0A7B3' }]}
+              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado && hasStarted && !isHighestBidder && isCategoryAllowed ? colors.primary : '#A0A7B3' }]}
               onPress={enviarPuja}
-              disabled={!conectado || isHighestBidder || !isCategoryAllowed}
+              disabled={!hasStarted || !conectado || isHighestBidder || !isCategoryAllowed}
             >
-              <Text style={styles.bidButtonText}>{isHighestBidder ? 'Ganando' : !isCategoryAllowed ? 'Bloqueado' : 'Pujar'}</Text>
+              <Text style={styles.bidButtonText}>{!hasStarted ? 'Bloqueado' : isHighestBidder ? 'Ganando' : !isCategoryAllowed ? 'Bloqueado' : 'Pujar'}</Text>
             </TouchableOpacity>
           </View>
           <Text style={[styles.inputLabel, { color: colors.muted }]}>
@@ -448,17 +637,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   backButton: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignSelf: 'flex-start',
   },
   statusPill: {
     paddingHorizontal: 12,
@@ -481,10 +662,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actionButton: {
-  flex: 0.6,
-  paddingVertical: 12,
+  flex: 0.5,
+  paddingVertical: 8,
+  paddingHorizontal: 6,
   marginHorizontal: 6,
-  borderRadius: 12,
+  borderRadius: 999,
   alignItems: 'center',
   justifyContent: 'center',
   shadowColor: '#000',
@@ -493,7 +675,7 @@ const styles = StyleSheet.create({
   shadowOffset: { width: 0, height: 2 },
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   mainImage: {
@@ -508,12 +690,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 18,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   detailLabel: {
@@ -655,6 +837,7 @@ const styles = StyleSheet.create({
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
+  backgroundColor: '#FFF',
 },
 
 detailsButtonText: {

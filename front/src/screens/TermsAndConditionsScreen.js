@@ -88,7 +88,7 @@ export default function TermsAndConditionsScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topSpacer} />
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
               <Icon
                 name="arrow-back"
                 size={24}

@@ -11,7 +11,7 @@ import {
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchHomeDashboard, fetchCatalogo } from '../api/auctionApi';
-import { getToken } from '../auth/authManager';
+import { getToken, getUser } from '../auth/authManager';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import AppFooterNav from '../components/AppFooterNav';
 import PhotoCarousel from '../components/PhotoCarousel';
@@ -26,11 +26,11 @@ const MAX_SLIDER_WIDTH = 280;
 // misma escala, así que el slider se adapta según la moneda elegida.
 const PRICE_CEIL_BY_CURRENCY = {
   ARS: 200000,
-  USD: 10000,
+  USD: 100000,
 };
 const DEFAULT_PRICE_CEIL = 200000;
 
-export default function AuctionListScreen({ navigation }) {
+export default function AuctionListScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
   const [subastas, setSubastas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +38,11 @@ export default function AuctionListScreen({ navigation }) {
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedCurrency, setSelectedCurrency] = useState('Todas'); // 'Todas' | 'ARS' | 'USD'
+
+  const token = getToken();
+  const authUser = getUser();
+  const isGuest = !token;
+  const userName = authUser?.nombre || route?.params?.userName || 'Usuario';
 
   const priceCeil = PRICE_CEIL_BY_CURRENCY[selectedCurrency] || DEFAULT_PRICE_CEIL;
   const [priceRange, setPriceRange] = useState([0, DEFAULT_PRICE_CEIL]);
@@ -139,6 +144,27 @@ export default function AuctionListScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.profileHeaderRow, { paddingHorizontal: 16, marginTop: 12 }]}>
+        <TouchableOpacity
+          style={styles.profileRow}
+          activeOpacity={0.8}
+          onPress={() => {
+            if (isGuest) {
+              navigation.navigate('Login');
+            } else {
+              navigation.navigate('Profile');
+            }
+          }}
+        >
+          <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
+            <Text style={{ color: colors.primary, fontWeight: '700' }}>{isGuest ? 'i' : 'LG'}</Text>
+          </View>
+          <Text style={[styles.userName, { color: colors.text }]}>
+            {isGuest ? 'Inicie Sesión' : userName}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Icon name="arrow-back" size={24} color={colors.text} />
@@ -297,6 +323,24 @@ function AuctionCard({ item, navigation, colors, radius }) {
 
   const [photoUris, setPhotoUris] = useState(initialUris);
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Próximamente';
+    let parsedStr = dateStr;
+    if (parsedStr.length === 10) {
+      parsedStr = `${parsedStr}T00:00:00`;
+    }
+    if (parsedStr.includes('T') && !parsedStr.includes('-03:00') && !parsedStr.endsWith('Z')) {
+      parsedStr = `${parsedStr}-03:00`;
+    }
+    return new Date(parsedStr).toLocaleDateString('es-AR', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
+  };
+  
   const itemId = item.identificador || item.id;
 
   useEffect(() => {
@@ -344,7 +388,7 @@ function AuctionCard({ item, navigation, colors, radius }) {
               {title}
             </Text>
             <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>
-              {item.fecha ? `Empieza ${item.fecha}` : 'Fecha pendiente'}
+              {item.fecha ? `Empieza ${formatDate(item.fecha)}` : 'Fecha pendiente'}
             </Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
@@ -451,4 +495,10 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 16, textAlign: 'center', margin: 16 },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
   emptyText: { fontSize: 16 },
+
+  // Profile Header
+  profileHeaderRow: { marginBottom: 4 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  userName: { fontSize: 16, fontWeight: '500' },
 });
