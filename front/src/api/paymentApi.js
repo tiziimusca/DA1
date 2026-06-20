@@ -21,3 +21,21 @@ export async function fetchMetodosPago(clienteId) {
       throw new Error(error.message);
     }
 };
+
+export async function completarPago(subastaId) {
+  try {
+    const response = await fetch(`${BASE_URL}/compras/${subastaId}/completar-pago`, {
+      method: 'POST',
+      headers: authHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) {
+      throw new Error('Error al completar el pago');
+    }
+    return await response.json();
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}

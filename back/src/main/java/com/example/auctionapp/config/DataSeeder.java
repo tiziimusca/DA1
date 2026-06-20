@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -111,11 +112,35 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
                                 "DNI-2003", "Cliente Demo 3", "Calle 23", "Activo");
                 jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-3004", "Dueno Demo 4", "Calle 34", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-3005", "Dueno Demo 5", "Calle 35", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-3006", "Dueno Demo 6", "Calle 36", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-3007", "Dueno Demo 7", "Calle 37", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-3008", "Dueno Demo 8", "Calle 38", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-2004", "Cliente Demo 4", "Calle 24", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-2005", "Cliente Demo 5", "Calle 25", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
                                 "DNI-4001", "Subastador Demo 1", "Calle 4", "Activo");
                 jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
                                 "DNI-4002", "Subastador Demo 2", "Calle 42", "Activo");
                 jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
                                 "DNI-4003", "Subastador Demo 3", "Calle 43", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-4004", "Subastador Demo 4", "Calle 44", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-4005", "Subastador Demo 5", "Calle 45", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-4006", "Subastador Demo 6", "Calle 46", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-4007", "Subastador Demo 7", "Calle 47", "Activo");
+                jdbcTemplate.update("INSERT INTO personas (documento, nombre, direccion, estado) VALUES (?, ?, ?, ?)",
+                                "DNI-4008", "Subastador Demo 8", "Calle 48", "Activo");
 
                 Integer personaUsuarioId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
                                 "DNI-1001");
@@ -126,12 +151,32 @@ public class DataSeeder implements CommandLineRunner {
                 Integer clienteDosId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-2002");
                 Integer clienteTresId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
                                 "DNI-2003");
+                Integer duenoCuatroId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-3004");
+                Integer duenoCincoId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-3005");
+                Integer duenoSeisId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-3006");
+                Integer duenoSieteId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-3007");
+                Integer duenoOchoId = getInteger("SELECT identificador FROM personas WHERE documento = ?", "DNI-3008");
+                Integer clienteCuatroId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-2004");
+                Integer clienteCincoId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-2005");
                 Integer subastadorUnoId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
                                 "DNI-4001");
                 Integer subastadorDosId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
                                 "DNI-4002");
                 Integer subastadorTresId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
                                 "DNI-4003");
+                Integer subastadorCuatroId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-4004");
+                Integer subastadorCincoId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-4005");
+                Integer subastadorSeisId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-4006");
+                Integer subastadorSieteId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-4007");
+                Integer subastadorOchoId = getInteger("SELECT identificador FROM personas WHERE documento = ?",
+                                "DNI-4008");
 
                 jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
                                 "demo@gmail.com", passwordEncoder.encode("demo123"), personaUsuarioId);
@@ -143,6 +188,16 @@ public class DataSeeder implements CommandLineRunner {
                                 201);
                 jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 3",
                                 202);
+                jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 4",
+                                203);
+                jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 5",
+                                204);
+                jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 6",
+                                205);
+                jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 7",
+                                206);
+                jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 8",
+                                207);
 
                 Integer empleadoVerificadorId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
                                 "Verificador Demo");
@@ -152,6 +207,16 @@ public class DataSeeder implements CommandLineRunner {
                                 "Responsable Catalogo 2");
                 Integer responsableTresId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
                                 "Responsable Catalogo 3");
+                Integer responsableCuatroId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                                "Responsable Catalogo 4");
+                Integer responsableCincoId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                                "Responsable Catalogo 5");
+                Integer responsableSeisId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                                "Responsable Catalogo 6");
+                Integer responsableSieteId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                                "Responsable Catalogo 7");
+                Integer responsableOchoId = getInteger("SELECT identificador FROM empleados WHERE cargo = ?",
+                                "Responsable Catalogo 8");
 
                 jdbcTemplate.update(
                                 "INSERT INTO sectores (nombre_sector, codigo_sector, responsable_sector) VALUES (?, ?, ?)",
@@ -172,6 +237,21 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update(
                                 "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
                                 duenoTresId, argentinaId, "SI", "NO", 4, empleadoVerificadorId);
+                jdbcTemplate.update(
+                                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                                duenoCuatroId, argentinaId, "SI", "SI", 2, empleadoVerificadorId);
+                jdbcTemplate.update(
+                                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                                duenoCincoId, chileId, "SI", "SI", 2, empleadoVerificadorId);
+                jdbcTemplate.update(
+                                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                                duenoSeisId, argentinaId, "SI", "SI", 2, empleadoVerificadorId);
+                jdbcTemplate.update(
+                                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                                duenoSieteId, argentinaId, "SI", "SI", 2, empleadoVerificadorId);
+                jdbcTemplate.update(
+                                "INSERT INTO duenios (identificador, numero_pais, verificacion_financiera, verificacion_judicial, calificacion_riesgo, verificador) VALUES (?, ?, ?, ?, ?, ?)",
+                                duenoOchoId, argentinaId, "SI", "SI", 2, empleadoVerificadorId);
 
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
@@ -182,6 +262,12 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
                                 clienteTresId, chileId, "SI", "C", empleadoVerificadorId);
+                jdbcTemplate.update(
+                                "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
+                                clienteCuatroId, argentinaId, "SI", "A", empleadoVerificadorId);
+                jdbcTemplate.update(
+                                "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
+                                clienteCincoId, chileId, "SI", "A", empleadoVerificadorId);
 
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
@@ -193,6 +279,16 @@ public class DataSeeder implements CommandLineRunner {
                                 subastadorDosId, "SUB-0002", "Norte");
                 jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
                                 subastadorTresId, "SUB-0003", "Sur");
+                jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                                subastadorCuatroId, "SUB-0004", "Este");
+                jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                                subastadorCincoId, "SUB-0005", "Oeste");
+                jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                                subastadorSeisId, "SUB-0006", "Centro");
+                jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                                subastadorSieteId, "SUB-0007", "Norte");
+                jdbcTemplate.update("INSERT INTO subastadores (identificador, matricula, region) VALUES (?, ?, ?)",
+                                subastadorOchoId, "SUB-0008", "Sur");
 
                 jdbcTemplate.update(
                                 "INSERT INTO seguros (nro_poliza, compania, poliza_combinada, importe) VALUES (?, ?, ?, ?)",
@@ -224,7 +320,7 @@ public class DataSeeder implements CommandLineRunner {
                                                 "POL-0001",
                                                 new BigDecimal("3000.00"),
                                                 new BigDecimal("250.00"),
-                                                "NO",
+                                                "SI",
                                                 new String[] {
                                                                 "https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&w=900&q=80",
                                                                 "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=900&q=80",
@@ -297,6 +393,77 @@ public class DataSeeder implements CommandLineRunner {
                                                 }),
                                 new BidSpec(clienteTresId, 3, new BigDecimal("1250.00"), "no"));
 
+                // Subasta Especial - Comienza en 5 minutos
+                LocalDateTime especialTime = LocalDateTime.now().plusMinutes(5);
+                LocalDate fechaEspecial = especialTime.toLocalDate();
+                LocalTime horaEspecial = especialTime.toLocalTime().withNano(0);
+
+                seedAuction(
+                                fechaEspecial,
+                                horaEspecial,
+                                "abierta",
+                                subastadorCuatroId,
+                                "Salon especial",
+                                30,
+                                "SI",
+                                "SI",
+                                "Especial",
+                                "Catalogo especial",
+                                responsableCuatroId,
+                                new ProductSpec(
+                                                "Escultura moderna",
+                                                "Escultura moderna del siglo XX en bronce.",
+                                                empleadoVerificadorId,
+                                                duenoCuatroId,
+                                                "POL-0001",
+                                                new BigDecimal("1200.00"),
+                                                new BigDecimal("120.00"),
+                                                "NO",
+                                                new String[] {
+                                                                "https://images.unsplash.com/photo-1566054757965-8c4085344c96?q=80&w=865&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1548811579-017cf2a4268b?q=80&w=689&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1601887389937-0b02c26b602c?q=80&w=627&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1600173293426-65190a24be72?q=80&w=1112&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1593494193844-c2bd6b1a0e16?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1591102972305-213abaa76d6f?q=80&w=436&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                                                }),
+                                new BidSpec(clienteCuatroId, 4, new BigDecimal("1300.00"), "no"));
+
+                // Subasta Platino - Comienza en 5 días
+                LocalDate fechaPlatino = LocalDate.now().plusDays(5);
+                LocalTime horaPlatino = LocalTime.of(15, 0);
+
+                seedAuction(
+                                fechaPlatino,
+                                horaPlatino,
+                                "abierta",
+                                subastadorCincoId,
+                                "Salon platino",
+                                20,
+                                "SI",
+                                "SI",
+                                "Platino",
+                                "Catalogo de platino",
+                                responsableCincoId,
+                                new ProductSpec(
+                                                "Anillo de diamantes",
+                                                "Anillo de diamantes exclusivo de platino 950.",
+                                                empleadoVerificadorId,
+                                                duenoCincoId,
+                                                "POL-0002",
+                                                new BigDecimal("15000.00"),
+                                                new BigDecimal("1500.00"),
+                                                "NO",
+                                                new String[] {
+                                                                "https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1605100804567-1ffe942b5cd6?q=80&w=580&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1607703829739-c05b7beddf60?q=80&w=580&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1613945407943-59cd755fd69e?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1677045419454-e8b201856472?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                                                                "https://images.unsplash.com/photo-1481980235850-66e47651e431?q=80&w=388&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                                                }),
+                                new BidSpec(clienteCincoId, 5, new BigDecimal("16000.00"), "no"));
+
                 jdbcTemplate.update(
                                 "INSERT INTO metodos_pago_banco (cliente_id, nombre_titular, dni_titular, nombre_banco, numero_cuenta, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                 clienteUnoId, "Cliente Demo 1", 12345678, "Banco Demo", "000123456789", "aprobado",
@@ -365,6 +532,144 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update(
                                 "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
                                 catalogo2Id, relojId, new BigDecimal("25000.00"), new BigDecimal("2500.00"), "NO");
+
+                // --- Seed data for MetricsScreen Mockup for demo user ---
+                // 1. Reloj Rolex (Joyería Fina y relojes -> category "Oro", price USD 4.400,
+                // Ganada)
+                jdbcTemplate.update(
+                                "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                LocalDate.now().minusDays(3), Time.valueOf(LocalTime.of(15, 0)), "finalizada",
+                                subastadorSeisId, "Salon Rolex", 30, "SI", "SI", "Oro");
+                Integer subastaRolexId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?",
+                                "Salon Rolex");
+
+                jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
+                                "Subasta Rolex", subastaRolexId, responsableSeisId);
+                Integer catalogoRolexId = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
+                                "Subasta Rolex");
+
+                jdbcTemplate.update(
+                                "INSERT INTO productos (fecha, disponible, descripcion_catalogo, descripcion_completa, revisor, duenio, seguro) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                LocalDate.now(), "SI", "Reloj Rolex", "Reloj Rolex de colección", empleadoVerificadorId,
+                                duenoSeisId, "POL-0001");
+                Integer productoRolexId = getInteger(
+                                "SELECT identificador FROM productos WHERE descripcion_completa = ?",
+                                "Reloj Rolex de colección");
+
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoRolexId,
+                                "https://images.unsplash.com/photo-1639006570490-79c0c53f1080?q=80&w=200&auto=format&fit=crop"
+                                                .getBytes(StandardCharsets.UTF_8));
+
+                jdbcTemplate.update(
+                                "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
+                                catalogoRolexId, productoRolexId, new BigDecimal("4000.00"), new BigDecimal("400.00"),
+                                "SI");
+                Integer itemRolexId = getInteger("SELECT identificador FROM items_catalogo WHERE producto = ?",
+                                productoRolexId);
+
+                jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)", 12,
+                                personaUsuarioId, subastaRolexId);
+                Integer asistenteRolexId = getInteger(
+                                "SELECT identificador FROM asistentes WHERE cliente = ? AND subasta = ?",
+                                personaUsuarioId, subastaRolexId);
+
+                jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
+                                asistenteRolexId, itemRolexId, new BigDecimal("4400.00"), "SI");
+
+                // 2. 1967 Mustang (Autos clásicos -> category "Autos", price USD 130.000,
+                // Ganada)
+                jdbcTemplate.update(
+                                "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                LocalDate.now().minusDays(2), Time.valueOf(LocalTime.of(16, 0)), "finalizada",
+                                subastadorSieteId, "Salon Mustang", 30, "SI", "SI", "Especial");
+                Integer subastaMustangId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?",
+                                "Salon Mustang");
+
+                jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
+                                "Subasta Mustang", subastaMustangId, responsableSieteId);
+                Integer catalogoMustangId = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
+                                "Subasta Mustang");
+
+                jdbcTemplate.update(
+                                "INSERT INTO productos (fecha, disponible, descripcion_catalogo, descripcion_completa, revisor, duenio, seguro) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                LocalDate.now(), "SI", "1967 Mustang", "Ford Mustang 1967 impecable",
+                                empleadoVerificadorId, duenoSieteId, "POL-0002");
+                Integer productoMustangId = getInteger(
+                                "SELECT identificador FROM productos WHERE descripcion_completa = ?",
+                                "Ford Mustang 1967 impecable");
+
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoMustangId,
+                                "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?q=80&w=200&auto=format&fit=crop"
+                                                .getBytes(StandardCharsets.UTF_8));
+
+                jdbcTemplate.update(
+                                "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
+                                catalogoMustangId, productoMustangId, new BigDecimal("120000.00"),
+                                new BigDecimal("10000.00"), "SI");
+                Integer itemMustangId = getInteger("SELECT identificador FROM items_catalogo WHERE producto = ?",
+                                productoMustangId);
+
+                jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)", 12,
+                                personaUsuarioId, subastaMustangId);
+                Integer asistenteMustangId = getInteger(
+                                "SELECT identificador FROM asistentes WHERE cliente = ? AND subasta = ?",
+                                personaUsuarioId, subastaMustangId);
+
+                jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
+                                asistenteMustangId, itemMustangId, new BigDecimal("130000.00"), "SI");
+
+                // 3. Horizonte No. 4 (Arte moderno -> category "Arte", price ARS 257.000,
+                // Perdida)
+                jdbcTemplate.update(
+                                "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                LocalDate.now().minusDays(1), Time.valueOf(LocalTime.of(17, 0)), "finalizada",
+                                subastadorOchoId, "Salon Horizonte", 30, "SI", "SI", "Comun");
+                Integer subastaHorizonteId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?",
+                                "Salon Horizonte");
+
+                jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
+                                "Subasta Horizonte", subastaHorizonteId, responsableOchoId);
+                Integer catalogoHorizonteId = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
+                                "Subasta Horizonte");
+
+                jdbcTemplate.update(
+                                "INSERT INTO productos (fecha, disponible, descripcion_catalogo, descripcion_completa, revisor, duenio, seguro) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                LocalDate.now(), "SI", "Horizonte No. 4", "Cuadro abstracto Horizonte No. 4",
+                                empleadoVerificadorId, duenoOchoId, "POL-0003");
+                Integer productoHorizonteId = getInteger(
+                                "SELECT identificador FROM productos WHERE descripcion_completa = ?",
+                                "Cuadro abstracto Horizonte No. 4");
+
+                jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", productoHorizonteId,
+                                "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=200&auto=format&fit=crop"
+                                                .getBytes(StandardCharsets.UTF_8));
+
+                jdbcTemplate.update(
+                                "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
+                                catalogoHorizonteId, productoHorizonteId, new BigDecimal("250000.00"),
+                                new BigDecimal("7000.00"), "SI");
+                Integer itemHorizonteId = getInteger("SELECT identificador FROM items_catalogo WHERE producto = ?",
+                                productoHorizonteId);
+
+                jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)", 12,
+                                personaUsuarioId, subastaHorizonteId);
+                Integer asistenteHorizonteUserId = getInteger(
+                                "SELECT identificador FROM asistentes WHERE cliente = ? AND subasta = ?",
+                                personaUsuarioId, subastaHorizonteId);
+
+                jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
+                                asistenteHorizonteUserId, itemHorizonteId, new BigDecimal("257000.00"), "no");
+
+                // Para simular la pérdida, registramos que otro cliente (clienteUnoId) ganó con
+                // 260.000
+                jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)", 15,
+                                clienteUnoId, subastaHorizonteId);
+                Integer asistenteHorizonteOtherId = getInteger(
+                                "SELECT identificador FROM asistentes WHERE cliente = ? AND subasta = ?", clienteUnoId,
+                                subastaHorizonteId);
+
+                jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
+                                asistenteHorizonteOtherId, itemHorizonteId, new BigDecimal("260000.00"), "SI");
 
                 log.info("Datos iniciales creados correctamente");
         }

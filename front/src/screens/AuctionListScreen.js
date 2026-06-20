@@ -297,6 +297,24 @@ function AuctionCard({ item, navigation, colors, radius }) {
 
   const [photoUris, setPhotoUris] = useState(initialUris);
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Próximamente';
+    let parsedStr = dateStr;
+    if (parsedStr.length === 10) {
+      parsedStr = `${parsedStr}T00:00:00`;
+    }
+    if (parsedStr.includes('T') && !parsedStr.includes('-03:00') && !parsedStr.endsWith('Z')) {
+      parsedStr = `${parsedStr}-03:00`;
+    }
+    return new Date(parsedStr).toLocaleDateString('es-AR', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
+  };
+  
   const itemId = item.identificador || item.id;
 
   useEffect(() => {
@@ -344,7 +362,7 @@ function AuctionCard({ item, navigation, colors, radius }) {
               {title}
             </Text>
             <Text style={[styles.cardSubtitle, { color: colors.muted }]} numberOfLines={1}>
-              {item.fecha ? `Empieza ${item.fecha}` : 'Fecha pendiente'}
+              {item.fecha ? `Empieza ${formatDate(item.fecha)}` : 'Fecha pendiente'}
             </Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   Modal,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
-import { fetchMetodosPago } from '../api/paymentApi';
+import { fetchMetodosPago, completarPago } from '../api/paymentApi';
 import { getUser } from '../auth/authManager';
 
 
@@ -26,15 +27,32 @@ export default function PaymentScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showMethodsModal, setShowMethodsModal] = useState(false);
+  const [completingPayment, setCompletingPayment] = useState(false);
 
   const precioGanador = winningBid || subasta?.precioBase || 0;
   const envio = 45;
   const total = precioGanador + comision + envio;
   const currentUser = getUser();
+  const paymentCompletedRef = useRef(false);
 
   useEffect(() => {
     loadPaymentMethods();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (paymentCompletedRef.current) {
+        return;
+      }
+      e.preventDefault();
+      Alert.alert(
+        'Pago Obligatorio',
+        'Debe completar el pago de la subasta ganada para poder salir de esta pantalla.',
+        [{ text: 'Entendido', style: 'cancel' }]
+      );
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const loadPaymentMethods = async () => {
     try {
@@ -57,16 +75,27 @@ export default function PaymentScreen({ navigation, route }) {
     }
   };
 
-  const handleCompletePayment = () => {
-    setShowSuccess(true);
+  const handleCompletePayment = async () => {
+    if (!selectedMethod) return;
+    try {
+      setCompletingPayment(true);
+      await completarPago(subasta?.id);
+      paymentCompletedRef.current = true;
+      setShowSuccess(true);
 
-    setTimeout(() => {
-      setShowSuccess(false);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Home' }],
-      });
-    }, 2500);
+      setTimeout(() => {
+        setShowSuccess(false);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }, 10000);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'No se pudo completar el pago. Por favor intente nuevamente.');
+    } finally {
+      setCompletingPayment(false);
+    }
   };
 
   return (
@@ -284,17 +313,23 @@ export default function PaymentScreen({ navigation, route }) {
             },
           ]}
           onPress={handleCompletePayment}
-          disabled={!selectedMethod}
+          disabled={!selectedMethod || completingPayment}
         >
-          <Text style={styles.completeButtonText}>
-            Completar Pago
-          </Text>
+          {completingPayment ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <>
+              <Text style={styles.completeButtonText}>
+                Completar Pago
+              </Text>
 
-          <Icon
-            name="arrow-forward"
-            size={20}
-            color="#FFF"
-          />
+              <Icon
+                name="arrow-forward"
+                size={20}
+                color="#FFF"
+              />
+            </>
+          )}
         </TouchableOpacity>
       </ScrollView>
 

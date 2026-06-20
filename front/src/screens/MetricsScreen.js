@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppTheme } from '../theme/AppTheme';
-import { fetchHomeDashboard, fetchPujas, fetchRegistrosSubasta } from '../api/auctionApi';
+import { fetchClienteEstadisticas } from '../api/auctionApi';
 import { getToken } from '../auth/authManager';
 import AppFooterNav from '../components/AppFooterNav';
 import { Ionicons as Icon } from '@expo/vector-icons';
@@ -19,14 +19,10 @@ function compactMoney(value) {
   return `$${amount.toFixed(0)}`;
 }
 
-function getItemTitle(puja) {
-  return (
-    puja?.item?.producto?.descripcionCompleta ||
-    puja?.item?.producto?.descripcionCatalogo ||
-    puja?.item?.catalogo?.descripcion ||
-    puja?.item?.descripcion ||
-    'Subasta'
-  );
+function formatCurrency(amount, currency) {
+  const value = Number(amount || 0);
+  const formatted = value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${currency || 'USD'} ${formatted}`;
 }
 
 export default function MetricsScreen() {
@@ -35,9 +31,7 @@ export default function MetricsScreen() {
   const token = getToken();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [home, setHome] = useState(null);
-  const [pujas, setPujas] = useState([]);
-  const [registros, setRegistros] = useState([]);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -45,17 +39,10 @@ export default function MetricsScreen() {
     async function loadData() {
       try {
         setLoading(true);
-        const [homeData, pujasData, registrosData] = await Promise.all([
-          fetchHomeDashboard(token),
-          fetchPujas(),
-          fetchRegistrosSubasta(),
-        ]);
-
+        const authHeader = token ? `Bearer ${token}` : null;
+        const data = await fetchClienteEstadisticas(authHeader);
         if (!mounted) return;
-
-        setHome(homeData);
-        setPujas(Array.isArray(pujasData) ? pujasData : []);
-        setRegistros(Array.isArray(registrosData) ? registrosData : []);
+        setStats(data);
       } catch (loadError) {
         if (mounted) {
           setError(loadError.message || 'No se pudieron cargar las métricas.');
@@ -71,36 +58,6 @@ export default function MetricsScreen() {
       mounted = false;
     };
   }, [token]);
-
-  const assisted = home?.metricas?.subastasActivas ?? home?.subastasActivas?.length ?? 0;
-  const wins = home?.metricas?.subastasGanadas ?? 0;
-  const totalOffered = useMemo(() => pujas.reduce((sum, puja) => sum + Number(puja?.importe || 0), 0), [pujas]);
-  const totalSpent = useMemo(() => registros.reduce((sum, registro) => sum + Number(registro?.importe || 0), 0), [registros]);
-  const winRate = '-';
-  const assistedDelta = '-';
-  const winsDelta = '-';
-  const offeredDelta = '-';
-  const spentDelta = '-';
-  const winInsight = 'Tu eficiencia de victoria ha mejorado un - comparado con el trimestre anterior.';
-
-  const participatedItems = useMemo(() => {
-    const seen = new Map();
-
-    pujas.forEach((puja, index) => {
-      const key = puja?.item?.identificador ?? puja?.item?.id ?? `${getItemTitle(puja)}-${index}`;
-      if (seen.has(key)) return;
-
-      seen.set(key, {
-        id: String(key),
-        title: getItemTitle(puja),
-        category: puja?.item?.catalogo?.descripcion || puja?.item?.categoria || 'General',
-        amount: puja?.importe,
-        status: String(puja?.ganador || '').toLowerCase() === 'si' ? 'Ganada' : 'Perdida',
-      });
-    });
-
-    return Array.from(seen.values()).slice(0, 3);
-  }, [pujas]);
 
   if (loading) {
     return (
@@ -122,58 +79,119 @@ export default function MetricsScreen() {
     );
   }
 
+  const participatedItems = stats?.participadas || [];
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon
-            name="arrow-back"
-            size={24}
-            color={colors.text}
-          />
+      
+      {/* Header matching the style */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Icon name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>Métricas de Subastas</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Métricas de Subastas</Text>
+      </View>
+      <View style={[styles.headerDivider, { backgroundColor: colors.border }]} />
 
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        
+        {/* Grid cards */}
         <View style={styles.grid}>
-          <MetricCard title="Subastas asistidas" value={assisted} delta={assistedDelta} note="vs último período" colors={colors} radius={radius} />
-          <MetricCard title="Subastas ganadas" value={wins} delta={winsDelta} note="verificación de eficiencia" colors={colors} radius={radius} />
-          <MetricCard title="Monto total ofertado" value={compactMoney(totalOffered)} delta={offeredDelta} note="tasa de ejecución" colors={colors} radius={radius} />
-          <MetricCard title="Total gastado" value={compactMoney(totalSpent)} delta={spentDelta} note="capital utilizado" colors={colors} radius={radius} />
+          <MetricCard 
+            title="Subastas asistidas" 
+            value={stats?.subastasAsistidas ?? 0} 
+            delta={stats?.subastasAsistidasDelta} 
+            note={stats?.subastasAsistidasPeriodo} 
+            iconName="calendar" 
+            colors={colors} 
+            radius={radius} 
+          />
+          <MetricCard 
+            title="Subastas ganadas" 
+            value={stats?.subastasGanadas ?? 0} 
+            delta={stats?.subastasGanadasDelta} 
+            note={stats?.subastasGanadasPeriodo} 
+            iconName="trophy" 
+            colors={colors} 
+            radius={radius} 
+          />
+          <MetricCard 
+            title="Monto total ofertado" 
+            value={compactMoney(stats?.montoTotalOfertado)} 
+            delta={stats?.montoTotalOfertadoDelta} 
+            note={stats?.montoTotalOfertadoPeriodo} 
+            iconName="wallet" 
+            colors={colors} 
+            radius={radius} 
+          />
+          <MetricCard 
+            title="Total gastado" 
+            value={compactMoney(stats?.totalGastado)} 
+            delta={stats?.totalGastadoDelta} 
+            note={stats?.totalGastadoPeriodo} 
+            iconName="cash" 
+            colors={colors} 
+            radius={radius} 
+          />
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderColor: colors.border, borderRadius: radius.lg }]}>
+        {/* General Win Rate card with Ring chart */}
+        <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderRadius: radius.lg }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Tasa de victorias general</Text>
+          
           <View style={styles.ringOuter}>
-            <View style={[styles.ringInner, { borderColor: colors.primarySoft }]}>
-              <Text style={[styles.ringValue, { color: colors.text }]}>{winRate}</Text>
+            <View style={[
+              styles.ringInner, 
+              { 
+                borderColor: colors.primarySoft, 
+                borderRightColor: (stats?.tasaVictorias ?? 0) >= 25 ? colors.primary : colors.primarySoft,
+                borderBottomColor: (stats?.tasaVictorias ?? 0) >= 50 ? colors.primary : colors.primarySoft,
+                borderLeftColor: (stats?.tasaVictorias ?? 0) >= 75 ? colors.primary : colors.primarySoft,
+                borderTopColor: (stats?.tasaVictorias ?? 0) >= 99 ? colors.primary : colors.primarySoft,
+              }
+            ]}>
+              <View style={styles.ringValueContainer}>
+                <Text style={[styles.ringValue, { color: colors.text }]}>{stats?.tasaVictorias ?? 0}%</Text>
+              </View>
             </View>
           </View>
-          <Text style={[styles.insight, { color: colors.muted }]}>{winInsight}</Text>
+          
+          <Text style={[styles.insight, { color: colors.text }]}>{stats?.tasaVictoriasInsight}</Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderColor: colors.border, borderRadius: radius.lg }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Subastas participadas</Text>
+        {/* Participated auctions list */}
+        <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderRadius: radius.lg, marginBottom: 24 }]}>
+          <Text style={[styles.listTitle, { color: colors.text }]}>Subastas participadas</Text>
+          <View style={[styles.listDivider, { backgroundColor: colors.text }]} />
+          
           <View style={styles.participatedList}>
             {participatedItems.map((item) => (
-              <View key={item.id} style={styles.participatedRow}>
+              <View key={item.identificador} style={[styles.participatedRow, { backgroundColor: colors.surface }]}>
                 <View style={styles.participatedLeft}>
-                  <View style={[styles.thumb, { backgroundColor: colors.primarySoft }]} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.participatedTitle, { color: colors.text }]}>{item.title}</Text>
-                    <Text style={[styles.participatedSubtitle, { color: colors.muted }]}>{item.category}</Text>
+                  {item.imagenUrl ? (
+                    <Image source={{ uri: item.imagenUrl }} style={styles.thumb} />
+                  ) : (
+                    <View style={[styles.thumb, { backgroundColor: colors.primarySoft }]} />
+                  )}
+                  <View style={styles.detailsContainer}>
+                    <Text style={[styles.participatedTitle, { color: colors.text }]} numberOfLines={1}>{item.titulo}</Text>
+                    <Text style={[styles.participatedSubtitle, { color: colors.muted }]}>{item.categoria}</Text>
                   </View>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.participatedAmount, { color: colors.primary }]}>{compactMoney(item.amount)}</Text>
-                  <Text style={[styles.participatedStatus, { color: colors.text }]}>{item.status}</Text>
+                <View style={styles.participatedRight}>
+                  <Text style={[styles.participatedAmount, { color: colors.primary }]}>{formatCurrency(item.monto, item.moneda)}</Text>
+                  <View style={[styles.badge, { backgroundColor: colors.metricsBackground }]}>
+                    <Text style={[styles.badgeText, { color: colors.primary }]}>{item.estado}</Text>
+                  </View>
                 </View>
               </View>
             ))}
           </View>
         </View>
       </ScrollView>
-      <View style={{ backgroundColor: colors.surface}}>
+
+      <View style={{ backgroundColor: colors.surface }}>
         <AppFooterNav
           navigation={navigation}
           colors={colors}
@@ -184,15 +202,25 @@ export default function MetricsScreen() {
   );
 }
 
-function MetricCard({ title, value, delta, note, colors, radius }) {
-  const deltaColor = delta === '-' ? colors.muted : colors.success;
+function MetricCard({ title, value, delta, note, iconName, colors, radius }) {
+  const isNegative = delta ? delta.startsWith('-') : false;
+  const deltaColor = isNegative ? '#D32F2F' : '#176F5B';
+  const deltaSymbol = isNegative ? '↓' : '↑';
+  const cleanDelta = delta ? delta.replace('+', '').replace('-', '') : '';
 
   return (
-    <View style={[styles.metricCard, { backgroundColor: colors.metricsBackground, borderColor: colors.border, borderRadius: radius.lg }]}>
-      <Text style={[styles.metricTitle, { color: colors.text }]}>{title}</Text>
+    <View style={[styles.metricCard, { backgroundColor: colors.metricsBackground, borderRadius: radius.lg }]}>
+      <View style={styles.metricCardHeader}>
+        <Text style={[styles.metricTitle, { color: colors.text }]}>{title}</Text>
+        <Icon name={iconName} size={22} color={colors.primary} />
+      </View>
       <View style={styles.metricRow}>
         <Text style={[styles.metricValue, { color: colors.primary }]}>{value}</Text>
-        <Text style={[styles.metricDelta, { color: deltaColor }]}>{delta}</Text>
+        {delta && (
+          <Text style={[styles.metricDelta, { color: deltaColor }]}>
+            {deltaSymbol}{cleanDelta}
+          </Text>
+        )}
       </View>
       <Text style={[styles.metricNote, { color: colors.muted }]}>{note}</Text>
     </View>
@@ -201,29 +229,112 @@ function MetricCard({ title, value, delta, note, colors, radius }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, marginTop: 40 },
-  content: { padding: 16, paddingBottom: 24 },
-  title: { fontSize: 26, fontWeight: '500', marginBottom: 14 },
-  grid: { gap: 12, marginBottom: 14 },
-  metricCard: { borderWidth: 1, padding: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  metricTitle: { fontSize: 14, marginBottom: 8 },
-  metricRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  metricValue: { fontSize: 34, fontWeight: '800' },
-  metricDelta: { fontSize: 12, marginBottom: 6 },
-  metricNote: { fontSize: 12, marginTop: 2 },
-  card: { borderWidth: 1, padding: 14, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  cardTitle: { fontSize: 14, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
-  ringOuter: { alignItems: 'center', marginBottom: 12 },
-  ringInner: { width: 132, height: 132, borderRadius: 66, borderWidth: 10, alignItems: 'center', justifyContent: 'center' },
-  ringValue: { fontSize: 24, fontWeight: '700' },
-  insight: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
-  participatedList: { gap: 10 },
-  participatedRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  participatedLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  thumb: { width: 42, height: 42, borderRadius: 10 },
-  participatedTitle: { fontSize: 13, fontWeight: '600' },
-  participatedSubtitle: { fontSize: 11, marginTop: 2 },
-  participatedAmount: { fontSize: 13, fontWeight: '700' },
-  participatedStatus: { fontSize: 12, marginTop: 2 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   error: { fontSize: 16, textAlign: 'center' },
+  
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    paddingVertical: 14,
+  },
+  backButton: {
+    padding: 4,
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  headerDivider: {
+    height: 1,
+    width: '100%',
+  },
+
+  content: { padding: 16, paddingBottom: 24 },
+  grid: { gap: 12, marginBottom: 14 },
+  
+  metricCard: { 
+    paddingHorizontal: 18, 
+    paddingVertical: 16,
+    shadowColor: '#000', 
+    shadowOpacity: 0.04, 
+    shadowRadius: 3, 
+    shadowOffset: { width: 0, height: 1 }, 
+    elevation: 1 
+  },
+  metricCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  metricTitle: { fontSize: 13, fontWeight: '500' },
+  metricRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  metricValue: { fontSize: 32, fontWeight: '800' },
+  metricDelta: { fontSize: 12, fontWeight: '600', marginLeft: 2 },
+  metricNote: { fontSize: 12, marginTop: 4 },
+  
+  card: { 
+    padding: 18, 
+    marginBottom: 14, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.04, 
+    shadowRadius: 3, 
+    shadowOffset: { width: 0, height: 1 }, 
+    elevation: 1 
+  },
+  cardTitle: { fontSize: 14, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
+  listTitle: { fontSize: 14, fontWeight: '700', marginBottom: 8, paddingHorizontal: 4 },
+  listDivider: { height: 1, width: '100%', marginBottom: 14, opacity: 0.15 },
+
+  ringOuter: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginVertical: 12 
+  },
+  ringInner: { 
+    width: 120, 
+    height: 120, 
+    borderRadius: 60, 
+    borderWidth: 10, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    transform: [{ rotate: '-45deg' }]
+  },
+  ringValueContainer: {
+    transform: [{ rotate: '45deg' }]
+  },
+  ringValue: { fontSize: 24, fontWeight: '800' },
+  insight: { fontSize: 13, lineHeight: 18, textAlign: 'center', marginTop: 12, paddingHorizontal: 12 },
+  
+  participatedList: { gap: 10 },
+  participatedRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 10, 
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: 2,
+    elevation: 1
+  },
+  participatedLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  thumb: { width: 44, height: 44, borderRadius: 12 },
+  detailsContainer: { flex: 1 },
+  participatedTitle: { fontSize: 13, fontWeight: '700' },
+  participatedSubtitle: { fontSize: 11, marginTop: 2 },
+  participatedRight: { alignItems: 'flex-end', gap: 4 },
+  participatedAmount: { fontSize: 13, fontWeight: '800' },
+  
+  badge: {
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  }
 });

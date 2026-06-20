@@ -103,8 +103,19 @@ function AuctionCard({ item, colors, radius, onPress, isGuest }) {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Próximamente';
-    return new Date(dateStr).toLocaleDateString('es-ES', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    let parsedStr = dateStr;
+    if (parsedStr.length === 10) {
+      parsedStr = `${parsedStr}T00:00:00`;
+    }
+    if (parsedStr.includes('T') && !parsedStr.includes('-03:00') && !parsedStr.endsWith('Z')) {
+      parsedStr = `${parsedStr}-03:00`;
+    }
+    return new Date(parsedStr).toLocaleDateString('es-AR', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Argentina/Buenos_Aires',
     });
   };
 
@@ -323,5 +334,5 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '500' },
   cardSubtitle: { fontSize: 11, marginTop: 2 },
   cardPrice: { fontSize: 15, fontWeight: '700', textAlign: 'right' },
-  cardBtn: { alignSelf: 'center', minWidth: 140, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, paddingHorizontal: 18 },
+  cardBtn: { alignSelf: 'center', minWidth: 350, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, paddingHorizontal: 18 },
 });

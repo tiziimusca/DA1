@@ -90,17 +90,18 @@ function CatalogCard({ item, loggedIn, catalogoData, colors, radius }) {
             {item.titulo}
           </Text>
           {loggedIn && item.precioBase != null && (
-            <Text style={[styles.price, { color: colors.primary }]}>
-              {item.moneda || 'USD'} {item.precioBase.toFixed(2)}
-            </Text>
+            <View style={styles.priceContainer}> 
+              <Text style={[styles.price, { color: colors.primary }]}>
+                {item.moneda || 'USD'} {item.precioBase.toFixed(2)}
+              </Text>
+              <Text style={{ color: colors.textMuted }}>
+                Precio Inicial
+              </Text>
+            </View>
           )}
         </View>
-
-        <Text
-          style={[styles.subTitle, { color: colors.muted }]}
-          numberOfLines={1}
-        >
-          {item.categoria ? item.categoria.toUpperCase() : 'Colección exclusiva'}
+        <Text style={[styles.startDate, { color: colors.muted }]}>
+          Empieza: {catalogoData?.fecha || 'hoy, 20:00'}
         </Text>
 
         <Text
@@ -110,9 +111,6 @@ function CatalogCard({ item, loggedIn, catalogoData, colors, radius }) {
           {item.descripcion}
         </Text>
 
-        <Text style={[styles.startDate, { color: colors.muted }]}>
-          Termina: {catalogoData?.fecha || 'hoy, 20:00'}
-        </Text>
       </View>
     </View>
   );
@@ -233,7 +231,6 @@ export default function CatalogScreen({ route, navigation }) {
             )}
             ListFooterComponent={
               <View>
-                <View style={[styles.guestBanner, { borderColor: colors.border }]}>
                   <TouchableOpacity
                     style={[
                       styles.guestBannerBtn,
@@ -246,7 +243,6 @@ export default function CatalogScreen({ route, navigation }) {
                   >
                     <Text style={styles.guestBannerBtnText}>{actionLabel}</Text>
                   </TouchableOpacity>
-                </View>
                 <View style={{ height: 16 }} />
               </View>
             }
@@ -294,23 +290,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
   },
   title: { fontSize: 18, fontWeight: '600', flex: 1, marginRight: 10 },
   subTitle: { fontSize: 13, marginBottom: 10 },
   description: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
-  startDate: { fontSize: 12, marginTop: 4, fontWeight: '600' },
+  startDate: { fontSize: 12, marginBottom: 10, fontWeight: '600' },
   price: { fontSize: 16, fontWeight: '700' },
 
   // Footer banner
-  guestBanner: {
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 16,
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#fff',
-  },
   guestBannerBtn: {
     paddingVertical: 14,
     paddingHorizontal: 18,
