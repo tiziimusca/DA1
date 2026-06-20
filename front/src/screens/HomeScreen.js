@@ -7,16 +7,17 @@ import { SERVER_BASE_URL } from '../config/apiConfig';
 import AppFooterNav from '../components/AppFooterNav';
 import PhotoCarousel from '../components/PhotoCarousel';
 import { decodeImageUri } from '../utils/imageUtils';
+import { Ionicons } from '@expo/vector-icons';
 
 const HOST_URL = SERVER_BASE_URL;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_IMAGE_WIDTH = SCREEN_WIDTH - 28; // 14px padding cada lado
 
 const quickActions = [
-  { id: 'metrics', title: 'Métricas', direccion: 'metricas', icon: '◔' },
-  { id: 'item', title: 'Proponer Item', direccion: 'MisPropuestas', icon: '+' },
-  { id: 'payments', title: 'Métodos de pago', direccion: 'MetodosDePago', icon: '▤' },
-  { id: 'profile', title: 'Perfil', direccion: 'Profile', icon: '◉' },
+  { id: 'metrics', title: 'Métricas', direccion: 'Metrics', iconName: 'pie-chart-outline' },
+  { id: 'item', title: 'Proponer item', direccion: 'MisPropuestas', iconName: 'add-circle-outline' },
+  { id: 'payments', title: 'Métodos de pago', direccion: 'MetodosDePago', iconName: 'card-outline' },
+  { id: 'profile', title: 'Perfil', direccion: 'Profile', iconName: 'person-outline' },
 ];
 
 const defaultImages = [
@@ -210,8 +211,13 @@ export default function HomeScreen({ navigation, route }) {
                   <TouchableOpacity
                     style={styles.profileRow}
                     activeOpacity={0.8}
-                    disabled={!isGuest}
-                    onPress={() => { if (isGuest) navigation.navigate('Login'); }}
+                    onPress={() => {
+                      if (isGuest) {
+                        navigation.navigate('Login');
+                      } else {
+                        navigation.navigate('Profile');
+                      }
+                    }}
                   >
                     <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
                       <Text style={{ color: colors.primary, fontWeight: '700' }}>{isGuest ? 'i' : 'LG'}</Text>
@@ -229,18 +235,36 @@ export default function HomeScreen({ navigation, route }) {
                       <StatCard title="Subastas Ganadas" value={metricas.subastasGanadas || '0'} colors={colors} radius={radius} />
                     </View>
 
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Acceso rápido</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontWeight: '700', fontSize: 24, marginTop: 10 }]}>Acceso rápido</Text>
                     <View style={styles.quickGrid}>
                       {quickActions.map((action) => (
                         <TouchableOpacity
                           key={action.id}
-                          style={[styles.quickCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md }]}
+                          style={[
+                            styles.quickCard,
+                            {
+                              backgroundColor: colors.metricsBackground,
+                              borderColor: colors.text,
+                              borderRadius: 22,
+                              shadowColor: '#000',
+                              shadowOpacity: 0.08,
+                              shadowRadius: 4,
+                              shadowOffset: { width: 0, height: 2 },
+                              elevation: 2,
+                            }
+                          ]}
                           onPress={() => {
-                            if (action.id === 'metrics') { navigation.navigate('Metrics'); return; }
                             navigation.navigate(action.direccion);
                           }}
                         >
-                          <Text style={styles.quickIcon}>{action.icon}</Text>
+                          {action.id === 'payments' ? (
+                            <View style={{ width: 36, height: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 6 }}>
+                              <Ionicons name="card-outline" size={28} color="#8E94A0" style={{ position: 'absolute', left: 0, top: 4 }} />
+                              <Ionicons name="card-outline" size={28} color={colors.text} style={{ position: 'absolute', left: 6, top: 0 }} />
+                            </View>
+                          ) : (
+                            <Ionicons name={action.iconName} size={30} color={colors.text} style={{ marginBottom: 6 }} />
+                          )}
                           <Text style={[styles.quickText, { color: colors.text }]}>{action.title}</Text>
                         </TouchableOpacity>
                       ))}
@@ -322,12 +346,12 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 22, fontWeight: '400', marginBottom: 10 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 12 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
-  quickCard: { width: '48.5%', minHeight: 74, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
+  quickCard: { width: '48.5%', minHeight: 106, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12 },
   quickIcon: { fontSize: 24, marginBottom: 4 },
-  quickText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  quickText: { fontSize: 14, fontWeight: '700', textAlign: 'center', marginTop: 2 },
   guestBanner: { borderTopWidth: 1, borderBottomWidth: 1, marginHorizontal: -14, marginBottom: 14, paddingVertical: 6, alignItems: 'center', backgroundColor: '#E5E5E5' },
-  guestBannerBtn: { paddingHorizontal: 22, paddingVertical: 8, minWidth: 175, alignItems: 'center' },
-  guestBannerBtnText: { color: '#fff', fontWeight: '600', fontSize: 11, textAlign: 'center', lineHeight: 14 },
+  guestBannerBtn: { paddingHorizontal: 22, paddingVertical: 8, minWidth: 350, alignItems: 'center' },
+  guestBannerBtnText: { color: '#fff', fontWeight: '700', fontSize: 14, textAlign: 'center', lineHeight: 14 },
   card: { borderWidth: 1, overflow: 'hidden', marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
   cardBody: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12 },
   cardTextRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 12 },

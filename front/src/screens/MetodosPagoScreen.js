@@ -17,7 +17,7 @@ import { useAppTheme } from '../theme/AppTheme';
 import { useMetodosPagoViewModel } from '../hooks/useMetodoPagoViewModel';
 import { useRoute } from '@react-navigation/native';
 import AppFooterNav from '../components/AppFooterNav';
- 
+import { Ionicons as Icon } from '@expo/vector-icons';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function tipoLabel(tipo) {
   return { banco: 'Banco', tarjeta: 'Tarjeta', cheque: 'Cheque' }[tipo] ?? tipo;
@@ -225,7 +225,7 @@ export default function MetodosDePago() {
   const activos = listaMetodos.length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, marginTop: 40 }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <ModalEliminar
@@ -237,9 +237,13 @@ export default function MetodosDePago() {
 
       {/* Header */}
       <View style={[h.wrap, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[h.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[h.arrow, { color: colors.text }]}>‹</Text>
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon
+              name="arrow-back"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
       </View>
 
       {/* Pill header: Metodos Guardados + X activos */}
@@ -295,7 +299,13 @@ export default function MetodosDePago() {
 
         <Text style={[fab.disclaimer, { color: colors.muted }]}>
           Sus datos estan cifrados. Al agregar un nuevo metodo de pago acepta nuestros{' '}
-          <Text style={{ color: colors.primary, fontWeight: '600' }}>terminos y condiciones</Text>.
+          <Text
+            onPress={() => navigation.navigate('TermsAndConditions')}
+            style={{ color: colors.primary, fontWeight: '600' }}
+          >
+            terminos y condiciones
+          </Text>
+          .
         </Text>
       </View>
 

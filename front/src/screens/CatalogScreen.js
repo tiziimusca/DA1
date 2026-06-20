@@ -72,12 +72,7 @@ function CatalogCard({ item, loggedIn, catalogoData, colors, radius }) {
     >
       {/* Carrusel de fotos */}
       <View style={{ borderRadius: radius.lg, overflow: 'hidden' }}>
-        <PhotoCarousel uris={imageUris} height={220} tag={item.categoria} />
-
-        {/* Tag categoría */}
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>{item.categoria || 'PLATINO'}</Text>
-        </View>
+        <PhotoCarousel uris={imageUris} height={220} tag={item.categoria} />        
       </View>
 
       {/* Cuerpo */}
@@ -275,16 +270,6 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginBottom: 18,
   },
-  tag: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: '#111',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 18,
-  },
-  tagText: { color: '#F8D66D', fontSize: 11, fontWeight: '700' },
   body: { padding: 14 },
   titleRow: {
     flexDirection: 'row',

@@ -1,13 +1,13 @@
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { isAuthenticated } from '../auth/authManager';
  
 const defaultItems = [
-  { key: 'Home', label: 'Inicio', icon: 'home-outline', routeName: 'Home' },
-  { key: 'Auctions', label: 'Subastas', icon: 'hammer-outline', routeName: 'Auctions' },
-  { key: 'MisPropuestas', label: 'Vender', icon: 'add-circle-outline', routeName: 'MisPropuestas' },
-  { key: 'Profile', label: 'Perfil', icon: 'person-outline', routeName: 'Profile' },
+  { key: 'Home', label: 'Inicio', icon: 'home-outline', routeName: 'Home', provider: 'Ionicons' },
+  { key: 'Auctions', label: 'Subastas', icon: 'gavel', routeName: 'Auctions', provider: 'MaterialCommunityIcons' },
+  { key: 'MisPropuestas', label: 'Vender', icon: 'add-circle-outline', routeName: 'MisPropuestas', provider: 'Ionicons' },
+  { key: 'Profile', label: 'Perfil', icon: 'person-outline', routeName: 'Profile', provider: 'Ionicons' },
 ];
  
 export default function AppFooterNav({ navigation, colors, activeRouteName, items = defaultItems }) {
@@ -22,6 +22,7 @@ export default function AppFooterNav({ navigation, colors, activeRouteName, item
     >
       {items.map((item) => {
         const isActive = activeRouteName === item.routeName;
+        const IconComponent = item.provider === 'MaterialCommunityIcons' ? MaterialCommunityIcons : Ionicons;
         return (
           <TouchableOpacity
             key={item.key}
@@ -29,7 +30,7 @@ export default function AppFooterNav({ navigation, colors, activeRouteName, item
             activeOpacity={0.7}
             onPress={() => navigation.navigate(item.routeName)}
           >
-            <Ionicons
+            <IconComponent
               name={item.icon}
               size={22}
               color={isActive ? (colors?.primary ?? '#2449B8') : (colors?.muted ?? '#4B5563')}
