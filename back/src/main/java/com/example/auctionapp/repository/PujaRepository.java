@@ -13,4 +13,8 @@ public interface PujaRepository extends JpaRepository<Puja, Integer> {
     Optional<Puja> findTopByItem_IdentificadorOrderByImporteDesc(Integer itemId);
 
     List<Puja> findByItem_IdentificadorOrderByImporteDesc(Integer itemId);
+
+    List<Puja> findByAsistente_Cliente_Identificador(Integer clienteId);
+
+    long countByAsistente_Cliente_IdentificadorAndGanadorIgnoreCase(Integer clienteId, String ganador);
 }

@@ -3,7 +3,160 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView,
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { createWebSocket, enviarPujaRest, fetchEstadoVivo, fetchDetalleEstatico } from '../api/auctionApi';
-import { getToken } from '../auth/authManager';
+import { completarPago } from '../api/paymentApi';
+import { getToken, getUser } from '../auth/authManager';
+import Svg, { Path, Line } from 'react-native-svg';
+
+function CategoryBadgeIcon({ category }) {
+  if (!category) return null;
+  const name = category.trim().toUpperCase();
+
+  if (name.includes('COMUN') || name.includes('COMÚN')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M12,3 L21,10.5 L21,20.5 L12,16 L3,20.5 L3,10.5 Z"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('ESPECIAL')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M12,3 L21,10.5 L21,20.5 L12,16 L3,20.5 L3,10.5 Z"
+          fill="#F8D66D"
+          stroke="#F8D66D"
+          strokeWidth={1}
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('PLATA')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M7,2.5 L8.2,5.2 L11.1,5.5 L8.9,7.5 L9.5,10.3 L7,8.8 L4.5,10.3 L5.1,7.5 L2.9,5.5 L5.8,5.2 Z"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={1.2}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M17,2.5 L18.2,5.2 L21.1,5.5 L18.9,7.5 L19.5,10.3 L17,8.8 L14.5,10.3 L15.1,7.5 L12.9,5.5 L15.8,5.2 Z"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={1.2}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,13 L12,19 L20,13"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,17 L12,23 L20,17"
+          fill="none"
+          stroke="#C0C0C0"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('ORO')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M7,2.5 L8.2,5.2 L11.1,5.5 L8.9,7.5 L9.5,10.3 L7,8.8 L4.5,10.3 L5.1,7.5 L2.9,5.5 L5.8,5.2 Z"
+          fill="#F8D66D"
+          stroke="#F8D66D"
+          strokeWidth={1}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M17,2.5 L18.2,5.2 L21.1,5.5 L18.9,7.5 L19.5,10.3 L17,8.8 L14.5,10.3 L15.1,7.5 L12.9,5.5 L15.8,5.2 Z"
+          fill="#F8D66D"
+          stroke="#F8D66D"
+          strokeWidth={1}
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,13 L12,19 L20,13"
+          fill="none"
+          stroke="#F8D66D"
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M4,17 L12,23 L20,17"
+          fill="none"
+          stroke="#F8D66D"
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (name.includes('PLATINO')) {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24">
+        <Path
+          d="M4,3 L20,3 L20,18 L12,23 L4,18 Z"
+          fill="#F8D66D"
+        />
+        <Line
+          x1={4}
+          y1={5.5}
+          x2={20}
+          y2={5.5}
+          stroke="#111"
+          strokeWidth={1}
+        />
+        <Path
+          d="M12,7 L12.8,8.8 L14.8,9 L13.3,10.3 L13.7,12.2 L12,11.2 L10.3,12.2 L10.7,10.3 L9.2,9 L11.2,8.8 Z"
+          fill="#111"
+        />
+        <Path
+          d="M8,14.5 L12,17.5 L16,14.5"
+          fill="none"
+          stroke="#111"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M8,17 L12,20 L16,17"
+          fill="none"
+          stroke="#111"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M8,19.5 L12,22.5 L16,19.5"
+          fill="none"
+          stroke="#111"
+          strokeWidth={1.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  return null;
+}
 
 export default function BidScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
@@ -15,6 +168,36 @@ export default function BidScreen({ navigation, route }) {
   const [liveState, setLiveState] = useState(null);
   const [staticDetails, setStaticDetails] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(120);
+  const [hasStarted, setHasStarted] = useState(() => {
+    if (!subasta?.fecha) return true;
+    const startDate = new Date(
+      subasta.hora && !subasta.fecha.includes('T')
+        ? `${subasta.fecha}T${subasta.hora}`
+        : subasta.fecha
+    );
+    return new Date() >= startDate;
+  });
+
+  const currentUser = getUser();
+
+  useEffect(() => {
+    if (hasStarted || !subasta?.fecha) return;
+
+    const checkStartInterval = setInterval(() => {
+      const startDate = new Date(
+        subasta.hora && !subasta.fecha.includes('T')
+          ? `${subasta.fecha}T${subasta.hora}`
+          : subasta.fecha
+      );
+      if (new Date() >= startDate) {
+        setHasStarted(true);
+        clearInterval(checkStartInterval);
+      }
+    }, 1000);
+
+    return () => clearInterval(checkStartInterval);
+  }, [hasStarted, subasta?.fecha, subasta?.hora]);
 
   const descripcion =
     staticDetails?.descripcion ||
@@ -33,6 +216,7 @@ export default function BidScreen({ navigation, route }) {
       ]);
       console.log('Datos vivo:', vivoData);
       console.log('Datos estático:', estaticoData);
+      console.log('Subasta actual:', subasta);
       setLiveState(vivoData);
       setStaticDetails(estaticoData);
     } catch (error) {
@@ -41,9 +225,9 @@ export default function BidScreen({ navigation, route }) {
   };
 
   const loadLiveState = async () => {
-    if (!subasta?.identificador) return;
+    if (!subasta?.id) return;
     try {
-      const data = await fetchEstadoVivo(subasta.identificador);
+      const data = await fetchEstadoVivo(subasta.id);
       setLiveState(data);
     } catch (error) {
       console.error('Error fetching live state:', error);
@@ -56,8 +240,10 @@ export default function BidScreen({ navigation, route }) {
     const ws = createWebSocket(
       (data) => {
         console.log('Bid recibido:', data);
-        if (data && data.type === 'NEW_BID' && data.subastaId === subasta?.identificador) {
-          // If a new bid is placed on this auction, we refresh the live state from the server
+        console.log('Subasta actual:', subasta);
+        if (data && data.type === 'NEW_BID' && data.subastaId === subasta?.id) {
+          setTimeLeft(120);
+          setHasStarted(true);
           loadLiveState();
         }
       },
@@ -73,17 +259,84 @@ export default function BidScreen({ navigation, route }) {
     return () => {
       if (ws) ws.close();
     };
-  }, [subasta?.identificador]);
+  }, [subasta?.id]);
+
+  const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
+  const isHighestBidder = bidHistory.length > 0 && bidHistory[0].nombreAsistente === currentUser?.nombre;
+
+  useEffect(() => {
+    if (!conectado || !hasStarted || timeLeft <= 0) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [conectado, hasStarted, timeLeft]);
+
+  useEffect(() => {
+    const handleAuctionEnd = async () => {
+      if (isHighestBidder) {
+        console.log('Navegando a Payment con subasta:', subasta);
+        navigation.replace('Payment', { subasta, winningBid: currentPrice, image: staticDetails?.items?.[0]?.fotos?.[0], comision: staticDetails?.items?.[0]?.comision });
+      } else {
+        try {
+          console.log('Finalizando subasta en BD para no ganador:', subasta?.id);
+          if (subasta?.id) {
+            await completarPago(subasta.id);
+          }
+        } catch (error) {
+          console.error('Error al finalizar subasta para no ganador:', error);
+        } finally {
+          navigation.replace('Home');
+        }
+      }
+    };
+
+    if (timeLeft === 0) {
+      handleAuctionEnd();
+    }
+  }, [timeLeft, isHighestBidder, navigation, subasta, currentPrice, staticDetails]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (isHighestBidder && timeLeft > 0) {
+        e.preventDefault();
+        Alert.alert('Espera', 'No puedes salir mientras seas la mayor puja.');
+      }
+    });
+    return unsubscribe;
+  }, [navigation, isHighestBidder, timeLeft]);
 
   const formatDate = (value) => {
     if (!value) return 'Próximamente';
-    const date = new Date(value);
-    return date.toLocaleDateString('es-ES', {
+    let parsedStr = value;
+    if (parsedStr.length === 10) {
+      parsedStr = `${parsedStr}T00:00:00`;
+    }
+    if (parsedStr.includes('T') && !parsedStr.includes('-03:00') && !parsedStr.endsWith('Z')) {
+      parsedStr = `${parsedStr}-03:00`;
+    }
+    const date = new Date(parsedStr);
+    return date.toLocaleDateString('es-AR', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/Argentina/Buenos_Aires',
     });
+  };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   const getImageUri = () => {
@@ -94,26 +347,31 @@ export default function BidScreen({ navigation, route }) {
       imageSource = Array.isArray(subasta?.fotos) ? subasta.fotos[0] : subasta?.imagen || subasta?.foto;
     }
 
-    if (!imageSource) {
-      return 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80';
-    }
     if (typeof imageSource === 'string') {
       if (imageSource.startsWith('http')) return imageSource;
-      if (imageSource.startsWith('/api/')) return `https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80`;
       return `data:image/jpeg;base64,${imageSource}`;
     }
-    return 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=900&q=80';
   };
-
-  const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
 
   const currentPrice = bidHistory.length > 0 ? bidHistory[0].importe : (staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || 0);
   const basePrice = staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || subasta?.precio || 0;
-  const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subasta?.identificador}`;
+  const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subasta?.id}`;
   const itemStatus = String(liveState?.estado || subasta?.estado || 'ATENCIÓN').toUpperCase();
   const itemLocation = subasta?.ubicacion || 'Ubicación no definida';
   const itemCatalog = subasta?.categoria || 'comun';
   const categoria = (itemCatalog || '').toLowerCase();
+
+  const categoryRank = {
+    'comun': 1,
+    'especial': 2,
+    'plata': 3,
+    'oro': 4,
+    'platino': 5
+  };
+  const userCategory = (currentUser?.categoria || 'comun').toLowerCase();
+  const auctionCategoryRank = categoryRank[categoria] || 1;
+  const userCategoryRank = categoryRank[userCategory] || 1;
+  const isCategoryAllowed = userCategoryRank >= auctionCategoryRank;
 
   const enviarPuja = async () => {
     if (!monto || isNaN(monto)) {
@@ -144,7 +402,6 @@ export default function BidScreen({ navigation, route }) {
       const firstItemId = staticDetails?.items?.[0]?.id || 1;
 
       const bidData = {
-        asistenteId: 1, 
         itemId: firstItemId,
         importe: bidValue,
       };
@@ -152,6 +409,7 @@ export default function BidScreen({ navigation, route }) {
       await enviarPujaRest(bidData, token ? `Bearer ${token}` : null);
       Alert.alert('Éxito', 'Puja enviada');
       setMonto('');
+      setTimeLeft(120);
       loadLiveState();
     } catch (error) {
       Alert.alert('Error al pujar', error.message || 'No se pudo enviar la puja');
@@ -172,17 +430,23 @@ export default function BidScreen({ navigation, route }) {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}> 
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+            if (isHighestBidder) {
+              Alert.alert('Espera', 'No puedes salir mientras seas la mayor puja.');
+            } else {
+              navigation.goBack();
+            }
+          }} style={styles.backButton}>
             <Icon name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={[styles.statusPill, { backgroundColor: conectado ? '#E6F5EC' : '#FDEDEA' }]}> 
             <Text style={[styles.statusPillText, { color: conectado ? colors.success : '#D14343' }]}>
-              {conectado ? 'VIVO' : 'DESCONECTADO'}
+              {conectado ? '● VIVO' : 'DESCONECTADO'}
             </Text>
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.lg }]}> 
+        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border, borderRadius: radius.lg }]}> 
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false} 
@@ -203,9 +467,10 @@ export default function BidScreen({ navigation, route }) {
               );
             })}
           </ScrollView>
-          <View style={[styles.tagRow, { backgroundColor: colors.surface }]}> 
-            <View style={[styles.chip, { backgroundColor: colors.primarySoft }]}> 
-              <Text style={[styles.chipText, { color: colors.primary }]}>{itemCatalog.toUpperCase()}</Text>
+          <View style={[styles.tagRow, { backgroundColor: colors.background }]}> 
+            <View style={[styles.chip, { backgroundColor: '#111', flexDirection: 'row', alignItems: 'center', gap: 4 }]}> 
+              <CategoryBadgeIcon category={itemCatalog} />
+              <Text style={[styles.chipText, { color: '#FFF' }]}>{itemCatalog.trim().toUpperCase()}</Text>
             </View>
             <Text style={[styles.detailLabel, { color: colors.muted }]}>{formatDate(subasta?.fecha)}</Text>
             <TouchableOpacity
@@ -219,14 +484,38 @@ export default function BidScreen({ navigation, route }) {
           </View>
 
           <View style={styles.cardBody}>
-            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{itemTitle}</Text>
-            <Text style={styles.ownerText}>
-              DUEÑO ACTUAL: {staticDetails?.duenio || 'Sin información'}
-            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <Text style={[styles.title, { color: colors.primary, flex: 1, marginRight: 10}]}>
+                {itemTitle}
+              </Text>
 
-            <Text style={styles.ownerText}>
-              REMATADOR: {staticDetails?.rematador || 'Sin información'}
-            </Text>
+              <View
+                style={{ backgroundColor: '#E9D4DC', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, minWidth: 90, alignItems: 'center' }}>
+                <Text style={{ color: '#8A1F4A', fontSize: 12, fontWeight: '600' }}>
+                  Termina en
+                </Text>
+
+                <Text style={{ color: '#8A1F4A', fontSize: 18, fontWeight: '800', marginTop: 2 }}>
+                  {formatTime(timeLeft)}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={styles.ownerText}>
+                DUEÑO ACTUAL:
+              </Text>
+              <Text style={styles.ownerText2}>
+                {staticDetails?.duenio || 'Sin información'}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={styles.ownerText}>
+                REMATADOR:
+              </Text>
+              <Text style={styles.ownerText2}>
+                {staticDetails?.rematador || 'Sin información'}
+              </Text>
+            </View>
             <TouchableOpacity
               style={styles.detailsButton}
               onPress={() => setShowDetails(!showDetails)}
@@ -258,28 +547,29 @@ export default function BidScreen({ navigation, route }) {
 
               <View style={styles.bidPriceCard}>
                 <Text style={styles.cardLabel}>MAYOR PUJA</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.cardAmountBlue}>
+                    ${Number(currentPrice).toLocaleString()}
+                  </Text>
 
-                <Text style={styles.cardAmountBlue}>
-                  ${Number(currentPrice).toLocaleString()}
-                </Text>
-
-                <View style={styles.topBadge}>
-                  <Text style={styles.topBadgeText}>TOP</Text>
+                  <View style={styles.topBadge}>
+                    <Text style={styles.topBadgeText}>TOP</Text>
+                  </View>
                 </View>
               </View>
             </View>
           </View>
         </View>
 
-        <View style={[styles.section, { backgroundColor: colors.surface, borderRadius: radius.lg }]}> 
+        <View style={[styles.section, { backgroundColor: colors.background, borderRadius: radius.lg }]}> 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Últimas pujas</Text>
           {bidHistory.length === 0 ? (
             <Text style={[styles.noHistoryText, { color: colors.muted }]}>Aún no hay pujas para este lote.</Text>
           ) : (
             bidHistory.slice(0, 3).map((puja, index) => {
-              const userName = puja.usuario?.nombre || puja.nombre || puja.bidder || `Usuario ${index + 1}`;
-              const amount = puja.monto || puja.importe || puja.valor || puja.amount || 0;
-              const when = puja.fecha || puja.timestamp || puja.createdAt;
+              const userName = puja.nombreAsistente || `Usuario ${index + 1}`;
+              const amount = puja.importe || 0;
+              const when = puja.fecha;
               return (
               <View key={index} style={styles.historyRow}>
                 <View style={styles.historyLeft}>
@@ -290,16 +580,29 @@ export default function BidScreen({ navigation, route }) {
                   </View>
 
                   <View>
-                    <Text style={styles.historyName}>{userName}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={styles.historyName}>{userName}</Text>
+                    </View>
                     <Text style={styles.historyTime}>
                       {formatDate(when)}
                     </Text>
                   </View>
                 </View>
-
-                <Text style={styles.historyAmount}>
+                    <View style={{ flexDirection: 'column', alignItems: 'center' }}>
+                <Text style={[styles.historyAmount, {color: colors.primary}]}>
                   ${Number(amount).toLocaleString()}
                 </Text>
+                {index === 0 && (
+                  <View style={styles.winnerBadge}>
+                    <Text style={styles.winnerText}>PRINCIPAL</Text>
+                  </View>
+                )}
+                {index === 1 && (
+                  <View style={[styles.winnerBadge, { backgroundColor: '#F1F3F5' }]}>
+                    <Text style={[styles.winnerText, { color: '#39538C' }]}>ANTERIOR</Text>
+                  </View>
+                )}
+                </View>
               </View>
               );
             })
@@ -307,10 +610,10 @@ export default function BidScreen({ navigation, route }) {
         </View>
 
       </ScrollView>
-        <View style={[styles.inputCard, { backgroundColor: colors.surface, borderRadius: radius.lg, borderColor: colors.border }]}> 
+        <View style={[styles.inputCard, { backgroundColor: colors.background, borderRadius: radius.lg, borderColor: colors.border }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
             <TextInput
-              style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 12, borderColor: colors.border, backgroundColor: '#F8F9FD', color: colors.text }]}
+              style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 12, borderColor: colors.border, backgroundColor: '#E3DFD8', color: colors.text }]}
               placeholder="Ingresa tu monto"
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
@@ -318,11 +621,11 @@ export default function BidScreen({ navigation, route }) {
               onChangeText={setMonto}
             />
             <TouchableOpacity
-              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado ? colors.primary : '#A0A7B3' }]}
+              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado && hasStarted && !isHighestBidder && isCategoryAllowed ? colors.primary : '#A0A7B3' }]}
               onPress={enviarPuja}
-              disabled={!conectado}
+              disabled={!hasStarted || !conectado || isHighestBidder || !isCategoryAllowed}
             >
-              <Text style={styles.bidButtonText}>Pujar</Text>
+              <Text style={styles.bidButtonText}>{!hasStarted ? 'Bloqueado' : isHighestBidder ? 'Ganando' : !isCategoryAllowed ? 'Bloqueado' : 'Pujar'}</Text>
             </TouchableOpacity>
           </View>
           <Text style={[styles.inputLabel, { color: colors.muted }]}>
@@ -348,17 +651,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   backButton: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignSelf: 'flex-start',
   },
   statusPill: {
     paddingHorizontal: 12,
@@ -381,10 +676,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actionButton: {
-  flex: 0.6,
-  paddingVertical: 12,
+  flex: 0.5,
+  paddingVertical: 8,
+  paddingHorizontal: 6,
   marginHorizontal: 6,
-  borderRadius: 12,
+  borderRadius: 999,
   alignItems: 'center',
   justifyContent: 'center',
   shadowColor: '#000',
@@ -393,7 +689,7 @@ const styles = StyleSheet.create({
   shadowOffset: { width: 0, height: 2 },
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   mainImage: {
@@ -408,12 +704,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 18,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   detailLabel: {
@@ -433,6 +729,7 @@ const styles = StyleSheet.create({
   },
   pricesRow: {
     flexDirection: 'row',
+    marginTop: 20,
   },
   priceBox: {
     flex: 1,
@@ -554,6 +851,7 @@ const styles = StyleSheet.create({
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
+  backgroundColor: '#FFF',
 },
 
 detailsButtonText: {
@@ -574,6 +872,13 @@ detailsText: {
 },
 
 ownerText: {
+  fontSize: 11,
+  color: '#000000',
+  fontWeight: '600',
+  marginBottom: 2,
+  marginRight: 6,
+},
+ownerText2: {
   fontSize: 11,
   color: '#666',
   fontWeight: '600',
@@ -620,7 +925,7 @@ cardAmountBlue: {
 
 topBadge: {
   position: 'absolute',
-  right: 10,
+  right: 2,
   bottom: 10,
   backgroundColor: '#2244AA',
   borderRadius: 12,
@@ -650,6 +955,20 @@ avatar: {
 },
 
 avatarText: {
+  fontWeight: '700',
+},
+
+winnerBadge: {
+  backgroundColor: '#E6F5EC',
+  borderRadius: 12,
+  paddingHorizontal: 8,
+  paddingVertical: 2,
+  marginLeft: 8,
+},
+
+winnerText: {
+  color: '#28A745',
+  fontSize: 10,
   fontWeight: '700',
 },
 

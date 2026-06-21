@@ -33,7 +33,7 @@ public class SubastaService {
     private final FotoRepository fotoRepository;
     private final PujaRepository pujaRepository;
 
-    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public SubastaService(SubastaRepository subastaRepository,
             CatalogoRepository catalogoRepository,
@@ -191,7 +191,8 @@ public class SubastaService {
                             if (fotos != null && !fotos.isEmpty()) {
                                 itemDto.setFotos(fotos.stream().map(f -> {
                                     byte[] bytes = f.getFoto();
-                                    if (bytes == null) return null;
+                                    if (bytes == null)
+                                        return null;
                                     String str = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
                                     if (str.startsWith("http")) {
                                         return str;
@@ -204,6 +205,7 @@ public class SubastaService {
                         }
                         itemDto.setPrecioBase(item.getPrecioBase());
                         itemDto.setMoneda("USD");
+                        itemDto.setComision(item.getComision());
                         return itemDto;
                     }).toList();
                     dto.setItems(itemDtos);

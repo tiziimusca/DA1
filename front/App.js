@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Provider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { store } from './src/redux/store';
 import LoadingScreen from './src/screens/LoadingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -21,7 +19,7 @@ import MisPropuestasScreen from './src/screens/MisPropuestasScreen';
 import ProponerProductoScreen from './src/screens/ProponerProductoScreen';
 import AgregarMetodoPagoScreen from './src/screens/AgregarMetodoPagoScreen';
 import MetodosDePagoScreen from './src/screens/MetodosPagoScreen';
-import FinalizarCompraScreen from './src/screens/FinalizarCompraScreen';
+import PaymentScreen from './src/screens/PaymentScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -55,7 +53,7 @@ function RootNavigator() {
         <Stack.Screen name="MisPropuestas" component={MisPropuestasScreen} options={{ title: 'Mis Propuestas', headerShown: false}} />
         <Stack.Screen name="AgregarMetodoPago" component={AgregarMetodoPagoScreen} options={{ title: 'Agregar Método de Pago', headerShown: false}} />
         <Stack.Screen name="MetodosDePago" component={MetodosDePagoScreen} options={{ title: 'Métodos de Pago', headerShown: false}} />
-        <Stack.Screen name="FinalizarCompra" component={FinalizarCompraScreen} options={{ title: 'Resumen de Compra/Devolución', headerShown: false}} />
+        <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: 'Pago', headerShown: false}} />
 
       </Stack.Navigator>
     </NavigationContainer>
@@ -75,7 +73,7 @@ export default function App() {
 
   return (
     <AppThemeProvider>
-      <Provider store={store}>{isReady ? <RootNavigator /> : <LoadingScreen />}</Provider>
+      {isReady ? <RootNavigator /> : <LoadingScreen />}
     </AppThemeProvider>
   );
 }

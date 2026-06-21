@@ -14,9 +14,10 @@ import {
 } from 'react-native';
 import { useNavigation} from '@react-navigation/native';
 import { useAppTheme } from '../theme/AppTheme';
-import { useMetodosPagoViewModel } from '../hooks/useMetodoPagoViewModel';
+import { fetchMetodosPago, deleteMetodoPago } from '../api/paymentApi';
 import { useRoute } from '@react-navigation/native';
- 
+import AppFooterNav from '../components/AppFooterNav';
+import { Ionicons as Icon } from '@expo/vector-icons';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function tipoLabel(tipo) {
   return { banco: 'Banco', tarjeta: 'Tarjeta', cheque: 'Cheque' }[tipo] ?? tipo;
@@ -183,15 +184,40 @@ export default function MetodosDePago() {
   const { colors, spacing, radius } = theme;
   const navigation = useNavigation();
 
-  const { metodosPago, loading, cargarTodos, borrarMetodoPago } = useMetodosPagoViewModel();
-
+  const [metodosPago, setMetodosPago] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [paraEliminar, setParaEliminar] = useState(null); 
+  
   const route = useRoute();
-  const idDelCliente = 11;
 
-  // 2. Disparamos la carga inicial al entrar a la pantalla
+  const cargarTodos = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchMetodosPago();
+      setMetodosPago(data || []);
+    } catch (err) {
+      Alert.alert('Error', err.message || 'No se pudieron cargar los métodos de pago.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBorrarMetodoPago = async (id, tipo) => {
+    try {
+      setLoading(true);
+      await deleteMetodoPago(id, tipo);
+      setMetodosPago(prev => prev.filter(item => !(item.id == id && item.tipo === tipo)));
+    } catch (err) {
+      Alert.alert('Error', err.message || 'No se pudo eliminar el método de pago.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Disparamos la carga inicial al entrar a la pantalla.
+  //    El cliente lo deriva el back del token (Authorization), no hace falta clienteId.
   useEffect(() => {
-    cargarTodos(11);
+    cargarTodos();
   }, [route.params?.refresh]);
 
     async function confirmarEliminar() {
@@ -205,7 +231,7 @@ export default function MetodosDePago() {
       
       if (!paraEliminar) return;
       try {
-        await borrarMetodoPago(idReal, paraEliminar.tipo); // ← id + tipo: el clienteId lo agrega el ViewModel
+        await handleBorrarMetodoPago(idReal, paraEliminar.tipo);
       } catch (e) {
         Alert.alert('Error', 'No se pudo eliminar el metodo de pago.');
       } finally {
@@ -223,7 +249,7 @@ export default function MetodosDePago() {
   const activos = listaMetodos.length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, marginTop: 40 }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <ModalEliminar
@@ -235,9 +261,13 @@ export default function MetodosDePago() {
 
       {/* Header */}
       <View style={[h.wrap, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[h.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[h.arrow, { color: colors.text }]}>‹</Text>
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon
+              name="arrow-back"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
       </View>
 
       {/* Pill header: Metodos Guardados + X activos */}
@@ -293,22 +323,18 @@ export default function MetodosDePago() {
 
         <Text style={[fab.disclaimer, { color: colors.muted }]}>
           Sus datos estan cifrados. Al agregar un nuevo metodo de pago acepta nuestros{' '}
-          <Text style={{ color: colors.primary, fontWeight: '600' }}>terminos y condiciones</Text>.
+          <Text
+            onPress={() => navigation.navigate('TermsAndConditions')}
+            style={{ color: colors.primary, fontWeight: '600' }}
+          >
+            terminos y condiciones
+          </Text>
+          .
         </Text>
       </View>
 
-      <View style={[nav.bar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-        {[
-          { icon: '⌂', label: 'Inicio' },
-          { icon: '◈', label: 'Subastas' },
-          { icon: '◎', label: 'Vender' },
-          { icon: '◉', label: 'Perfil', active: true },
-        ].map(item => (
-          <TouchableOpacity key={item.label} style={nav.item}>
-            <Text style={[nav.icon,  { color: item.active ? colors.primary : colors.muted }]}>{item.icon}</Text>
-            <Text style={[nav.label, { color: item.active ? colors.primary : colors.muted, fontWeight: item.active ? '700' : '400' }]}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={{ backgroundColor: colors.surface}}>
+        <AppFooterNav navigation={navigation} colors={colors} activeRouteName="MetodosDePago" />
       </View>
     </SafeAreaView>
   );

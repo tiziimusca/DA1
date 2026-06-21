@@ -12,7 +12,10 @@ import {
   Modal,
   FlatList,
   Platform,
+  ActionSheetIOS,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import countries from '../data/countries';
@@ -25,6 +28,8 @@ export default function EditProfileScreen({ navigation, route }) {
 
   const initialProfile = route?.params?.profile || null;
 
+  console.log("LOL",initialProfile)
+
   const [fullName, setFullName] = useState('');
   const [pais, setPais] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -34,12 +39,20 @@ export default function EditProfileScreen({ navigation, route }) {
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
+  const [avatarUri, setAvatarUri] = useState(initialProfile?.avatarUrl);
+  // Foto en base64 puro, lista para mandar al backend como byte[] (varbinary).
+  // Se completa solo cuando el usuario elige una foto nueva; si queda null,
+  // significa que no se tocó el avatar y no se manda ese campo al guardar.
+  const [avatarBase64, setAvatarBase64] = useState(null);
 
   useEffect(() => {
     if (initialProfile) {
       setFullName(initialProfile.nombre || '');
       setPais(initialProfile.pais || '');
       setDireccion(initialProfile.direccion || '');
+      if (initialProfile.foto) {
+        setAvatarUri(`data:image/jpeg;base64,${initialProfile.foto}`);
+      }
     }
   }, [initialProfile]);
 
@@ -48,6 +61,110 @@ export default function EditProfileScreen({ navigation, route }) {
     const idx = countries.findIndex(c => c.name === name);
     return idx >= 0 ? Math.max(1, idx + 1) : 1;
   }
+
+  // ─── Selector de foto de perfil ────────────────────────────────────────────
+
+  /**
+   * A veces (sobre todo en Android con allowsEditing:true) el picker no
+   * devuelve el campo base64 del resultado, aunque se haya pedido
+   * { base64: true }. Como fallback, leemos el archivo del uri directamente
+   * con expo-file-system y lo codificamos a mano.
+   */
+  const resolveBase64 = async (asset) => {
+    if (asset.base64) return asset.base64;
+    try {
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding:  'base64',
+      });
+      return base64;
+    } catch (err) {
+      console.log('[EditProfileScreen] No se pudo generar base64 de la foto:', err.message);
+      return null;
+    }
+  };
+
+  const pickFromCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        'Permiso requerido',
+        'Necesitamos acceso a la cámara para tomar una foto. Podés habilitarlo en los ajustes del dispositivo.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      const asset = result.assets[0];
+      setAvatarUri(asset.uri);
+      const base64 = await resolveBase64(asset);
+      console.log('[EditProfileScreen] avatarBase64 length (cámara):', base64?.length || 0);
+      setAvatarBase64(base64);
+    }
+  };
+
+  const pickFromLibrary = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        'Permiso requerido',
+        'Necesitamos acceso a tus fotos para elegir una imagen. Podés habilitarlo en los ajustes del dispositivo.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets?.[0]) {
+      const asset = result.assets[0];
+      setAvatarUri(asset.uri);
+      const base64 = await resolveBase64(asset);
+      console.log('[EditProfileScreen] avatarBase64 length (galería):', base64?.length || 0);
+      setAvatarBase64(base64);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    // En iOS usamos el ActionSheet nativo, más prolijo visualmente.
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancelar', 'Tomar foto', 'Elegir de la galería'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) pickFromCamera();
+          if (buttonIndex === 2) pickFromLibrary();
+        }
+      );
+      return;
+    }
+
+    // En Android (y web) usamos Alert con botones, que se ve como un diálogo.
+    Alert.alert(
+      'Foto de perfil',
+      '¿Cómo querés actualizar tu foto?',
+      [
+        { text: 'Tomar foto', onPress: pickFromCamera },
+        { text: 'Elegir de la galería', onPress: pickFromLibrary },
+        { text: 'Cancelar', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
+  };
 
   async function handleSave() {
     const errors = {};
@@ -98,6 +215,14 @@ export default function EditProfileScreen({ navigation, route }) {
       payload.password = password;
     }
 
+    // Solo mandamos el campo foto si el usuario realmente eligió una nueva imagen.
+    // Si avatarBase64 es null significa que no tocó el avatar, y no queremos
+    // pisar la foto existente en el backend con un valor vacío.
+    if (avatarBase64) {
+      payload.foto = avatarBase64;
+    }
+    console.log('[EditProfileScreen] avatarBase64 al guardar:', avatarBase64 ? `${avatarBase64.length} chars` : 'null/vacío');
+
     try {
       setIsSaving(true);
       const token = getToken();
@@ -141,13 +266,14 @@ export default function EditProfileScreen({ navigation, route }) {
         <View style={styles.avatarWrapper}>
           <Image
             source={{
-              uri:
-                'https://randomuser.me/api/portraits/women/44.jpg',
-            }}
+                uri:
+                  avatarUri ||
+                  'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+              }}
             style={styles.avatar}
           />
 
-          <TouchableOpacity style={styles.editAvatar}>
+          <TouchableOpacity style={styles.editAvatar} onPress={handleAvatarPress}>
             <Icon
               name="pencil"
               size={18}
@@ -247,7 +373,7 @@ export default function EditProfileScreen({ navigation, route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-<View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20}}>
+      <View style={{ backgroundColor: colors.surface }}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Profile" />
       </View>
     </SafeAreaView>

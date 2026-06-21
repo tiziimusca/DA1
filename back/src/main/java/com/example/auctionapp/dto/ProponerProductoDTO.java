@@ -3,6 +3,7 @@ package com.example.auctionapp.dto;
 import java.time.LocalDate;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,8 +20,12 @@ public class ProponerProductoDTO {
     @Size(max = 300)
     private String descripcionCompleta;
 
+    // El revisor lo asigna el sistema (ver MapperUtil: default al empleado 1), no viene del body.
+    @Schema(hidden = true)
     private Integer revisorId;
 
+    // El dueño se deriva del token (Authorization) en el controller, no del body.
+    @Schema(hidden = true)
     private Integer duenioId;
 
     @Size(max = 500)

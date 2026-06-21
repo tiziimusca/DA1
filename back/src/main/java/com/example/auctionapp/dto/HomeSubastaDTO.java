@@ -1,7 +1,7 @@
 package com.example.auctionapp.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class HomeSubastaDTO {
     private Integer id;
@@ -9,14 +9,14 @@ public class HomeSubastaDTO {
     private String moneda;
     private String categoria;
     private BigDecimal precioBase;
-    private LocalDate fecha;
+    private LocalDateTime fecha;
     private byte[] foto;
 
     public HomeSubastaDTO() {
     }
 
     public HomeSubastaDTO(Integer id, String titulo, String moneda, String categoria, BigDecimal precioBase,
-            LocalDate fecha, byte[] foto) {
+            LocalDateTime fecha, byte[] foto) {
         this.id = id;
         this.titulo = titulo;
         this.moneda = moneda;
@@ -66,11 +66,11 @@ public class HomeSubastaDTO {
         this.precioBase = precioBase;
     }
 
-    public LocalDate getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(LocalDate fecha) {
+    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 

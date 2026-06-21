@@ -8,19 +8,22 @@ import com.example.auctionapp.dto.ProductoDTO;
 import com.example.auctionapp.model.Producto;
 import com.example.auctionapp.model.ProductoDetalle;
 import com.example.auctionapp.dto.ProponerProductoDTO;
+import com.example.auctionapp.model.Dueno;
+import com.example.auctionapp.model.Empleado;
 import com.example.auctionapp.model.Foto;
 import com.example.auctionapp.model.HistorialEstado;
-import com.example.auctionapp.model.Dueno;
-import com.example.auctionapp.model.Cliente;
 import com.example.auctionapp.model.Usuario;
+import com.example.auctionapp.model.Persona;
 import com.example.auctionapp.repository.ProductoRepository;
 import com.example.auctionapp.util.MapperUtil;
 import com.example.auctionapp.repository.ProductoDetalleRepository;
+import com.example.auctionapp.repository.DuenoRepository;
+import com.example.auctionapp.repository.EmpleadoRepository;
 import com.example.auctionapp.repository.FotoRepository;
 import com.example.auctionapp.repository.HistorialEstadoRepository;
-import com.example.auctionapp.repository.DuenoRepository;
 import com.example.auctionapp.repository.ClienteRepository;
 import com.example.auctionapp.repository.UsuarioRepository;
+import com.example.auctionapp.repository.PersonaRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -44,19 +47,23 @@ public class ProductoService {
     private final ProductoDetalleRepository productoDetalleRepository;
     private final FotoRepository fotoRepository;
     private final HistorialEstadoRepository historialEstadoRepository;
-    private final DuenoRepository duenoRepository;
     private final ClienteRepository clienteRepository;
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
+    private final DuenoRepository duenoRepository;
+    private final PersonaRepository personaRepository;
+    private final EmpleadoRepository empleadoRepository;
 
-    public ProductoService(ProductoRepository productoRepository, 
-                           ProductoDetalleRepository productoDetalleRepository, 
+    public ProductoService(ProductoRepository productoRepository,
+                           ProductoDetalleRepository productoDetalleRepository,
                            FotoRepository fotoRepository,
                            HistorialEstadoRepository historialEstadoRepository,
                            DuenoRepository duenoRepository,
                            ClienteRepository clienteRepository,
                            JwtService jwtService,
-                           UsuarioRepository usuarioRepository) {
+                           UsuarioRepository usuarioRepository,
+                           PersonaRepository personaRepository,
+                           EmpleadoRepository empleadoRepository) {
         this.productoRepository = productoRepository;
         this.productoDetalleRepository = productoDetalleRepository;
         this.fotoRepository = fotoRepository;
@@ -65,7 +72,11 @@ public class ProductoService {
         this.clienteRepository = clienteRepository;
         this.jwtService = jwtService;
         this.usuarioRepository = usuarioRepository;
+        this.personaRepository = personaRepository;
+        this.empleadoRepository = empleadoRepository;
     }
+
+    // ─── Helpers privados ────────────────────────────────────────────────────────
 
     private Usuario obtenerUsuarioDesdeToken(String authorizationHeader) {
         String token = jwtService.extraerToken(authorizationHeader);
@@ -77,6 +88,33 @@ public class ProductoService {
                 .orElseThrow(() -> new SecurityException("Token inválido o sesión expirada"));
     }
 
+    private void asegurarDueno(Integer duenioId) {
+        if (duenioId == null || duenoRepository.existsById(duenioId)) return;
+        Persona persona = personaRepository.findById(duenioId)
+                .orElseThrow(() -> new IllegalArgumentException("No existe una persona para el dueño " + duenioId));
+        Empleado verificador = empleadoRepository.findFirstByOrderByIdentificadorAsc();
+        if (verificador == null) {
+            throw new IllegalStateException("No hay empleados disponibles para asignar como verificador del dueño");
+        }
+        Dueno dueno = new Dueno();
+        dueno.setPersona(persona);
+        dueno.setVerificador(verificador);
+        duenoRepository.save(dueno);
+    }
+
+    private String fotoBytesToString(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return null;
+        try {
+            if (bytes.length < 1000) {
+                String str = new String(bytes, StandardCharsets.UTF_8);
+                if (str.startsWith("http")) return str;
+            }
+        } catch (Exception ignored) {}
+        return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    // ─── Consultas ───────────────────────────────────────────────────────────────
+
     public List<Producto> obtenerTodos() {
         return productoRepository.findAll();
     }
@@ -86,61 +124,34 @@ public class ProductoService {
     }
 
     public List<Producto> obtenerDisponibles() {
-        return productoRepository.findAll()
-                .stream()
+        return productoRepository.findAll().stream()
                 .filter(p -> "si".equalsIgnoreCase(p.getDisponible()))
                 .toList();
     }
 
+    public List<Producto> obtenerPorUsuario(Integer usuarioId) {
+        return productoRepository.findByDuenio(usuarioId);
+    }
+
+    public List<ProductoDetalle> obtenerDetallesPorUsuario(Integer usuarioId) {
+        return productoDetalleRepository.findByDuenio(usuarioId);
+    }
+
+    // ─── Creación ────────────────────────────────────────────────────────────────
+
     @Transactional
     public Map<String, Object> crearProductoDetalle(ProponerProductoDTO requestDto, String authorizationHeader) {
-        
         Usuario usuario = obtenerUsuarioDesdeToken(authorizationHeader);
         Integer usuarioId = usuario.getPersonaId();
 
-        // 1. Verificar y Crear el Dueño si no existe
-        Optional<Dueno> duenoOpt = duenoRepository.findById(usuarioId);
-        if (duenoOpt.isEmpty()) {
-            Cliente cliente = clienteRepository.findById(usuarioId)
-                    .orElseThrow(() -> new RuntimeException(
-                            "Cliente no encontrado para asignar como dueño"));
+        asegurarDueno(usuarioId);
 
-            if (cliente.getPersona() == null) {
-                throw new IllegalStateException("El cliente no tiene una Persona asociada");
-            }
-
-            Dueno nuevoDueno = new Dueno();
-            System.out.print("id: "+ cliente.getPersona().getIdentificador());
-            nuevoDueno.setPersona(cliente.getPersona()); // @MapsId usa este ID
-            nuevoDueno.setNumeroPais(
-                    cliente.getNumeroPais() != null
-                            ? cliente.getNumeroPais().getNumero()
-                            : null
-            );
-            nuevoDueno.setVerificacionFinanciera("no");
-            nuevoDueno.setVerificacionJudicial("no");
-            nuevoDueno.setCalificacionRiesgo(null);
-            nuevoDueno.setVerificador(cliente.getVerificador());
-
-            duenoRepository.save(nuevoDueno);
-        }
-
-        // 2. Crear y guardar el Producto
-        Producto p = new Producto();
-        p.setDisponible(null);
+        Producto p = MapperUtil.toProductoEntity(requestDto);
         p.setDuenio(usuarioId);
         p.setFecha(LocalDate.now());
-        p.setRevisor(1);
-        p.setSeguro(null);
-        p.setDescripcionCompleta(requestDto.getDescripcionCompleta());
-        p.setDescripcionCatalogo(requestDto.getTitulo());
-
         Producto productoGuardado = productoRepository.save(p);
 
-        // 3. Crear y guardar ProductoDetalle (relacionado al producto)
         ProductoDetalle detalle = new ProductoDetalle();
-        detalle.setCostoVerificacion(null);
-        detalle.setDeclaracionPropiedad(true);
         detalle.setProducto(productoGuardado);
         detalle.setFechaAceptado(null);
         detalle.setFechaEnviado(LocalDateTime.now());
@@ -150,26 +161,22 @@ public class ProductoService {
         detalle.setEstado("enviado");
         detalle.setSeguroEntity(null);
         detalle.setHistoria(requestDto.getHistoria());
-        detalle.setDeposito(null);
-        detalle.setTitulo(null);
-        
+        Boolean declPropiedad = requestDto.getDeclaracionPropiedad();
+        detalle.setDeclaracionPropiedad(declPropiedad != null ? declPropiedad : true);
+        detalle.setEstado("enviado");
+        detalle.setFechaEnviado(LocalDateTime.now());
         productoDetalleRepository.save(detalle);
-        
-        // 4. Procesar y guardar fotos como varbinary
+
         if (requestDto.getFotos() != null) {
             for (String fotoBase64 : requestDto.getFotos()) {
-                if (fotoBase64.contains(",")) {
-                    fotoBase64 = fotoBase64.split(",")[1];
-                }
-                byte[] imagenBytes = Base64.getDecoder().decode(fotoBase64);
+                if (fotoBase64.contains(",")) fotoBase64 = fotoBase64.split(",")[1];
                 Foto foto = new Foto();
-                foto.setFoto(imagenBytes);
+                foto.setFoto(Base64.getDecoder().decode(fotoBase64));
                 foto.setProducto(productoGuardado);
                 fotoRepository.save(foto);
             }
         }
 
-        // 5. Crear el registro en HistorialEstado
         HistorialEstado historial = new HistorialEstado();
         historial.setEstado("enviado");
         historial.setFechaCambio(LocalDateTime.now());
@@ -182,127 +189,70 @@ public class ProductoService {
         return response;
     }
 
-    public Producto crearProducto(Producto producto, List<String> fotosBase64, Boolean declaracionPropiedad) {
-        
-        if (producto.getDisponible() == null) {
-            producto.setDisponible("no");
-        }
-        if (producto.getDescripcionCatalogo() == null) {
-            producto.setDescripcionCatalogo("No Posee");
-        }
+    // ─── Actualización ───────────────────────────────────────────────────────────
 
-        Producto productoGuardado = productoRepository.save(producto);
-        
-        for (String fotoBase64 : fotosBase64) {
-            Foto foto = new Foto();
-            
-            byte[] imagenBytes = Base64.getDecoder().decode(fotoBase64);
-            
-            foto.setFoto(imagenBytes); 
-            
-            foto.setProducto(productoGuardado);
-            fotoRepository.save(foto);
-        }
-        
-        return productoGuardado;
-    }
-
-    public Producto actualizar(Integer id, Producto producto) {
+    // Método interno reutilizado por actualizarProducto
+    private Producto actualizar(Integer id, Producto producto) {
         return productoRepository.findById(id)
                 .map(existing -> {
-                    if (producto.getDisponible() != null) {
-                        existing.setDisponible(producto.getDisponible());
-                    }
-                    if (producto.getDescripcionCatalogo() != null) {
-                        existing.setDescripcionCatalogo(producto.getDescripcionCatalogo());
-                    }
-                    if (producto.getDescripcionCompleta() != null) {
-                        existing.setDescripcionCompleta(producto.getDescripcionCompleta());
-                    }
-                    if (producto.getRevisor() != null) {
-                        existing.setRevisor(producto.getRevisor());
-                    }
-                    if (producto.getDuenio() != null) {
-                        existing.setDuenio(producto.getDuenio());
-                    }
-                    
+                    if (producto.getDisponible() != null) existing.setDisponible(producto.getDisponible());
+                    if (producto.getDescripcionCatalogo() != null) existing.setDescripcionCatalogo(producto.getDescripcionCatalogo());
+                    if (producto.getDescripcionCompleta() != null) existing.setDescripcionCompleta(producto.getDescripcionCompleta());
+                    if (producto.getRevisor() != null) existing.setRevisor(producto.getRevisor());
+                    if (producto.getDuenio() != null) existing.setDuenio(producto.getDuenio());
                     return productoRepository.save(existing);
                 })
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
     }
 
-    public ProductoDTO actualizarProducto(Integer id, ProductoDTO productoDto) {
+    public ProductoDTO actualizarProducto(Integer id, ProductoDTO productoDto, String authorizationHeader) {
+        obtenerUsuarioDesdeToken(authorizationHeader); // valida sesión activa
         Producto p = MapperUtil.toProductoEntity(productoDto);
-        Producto updated = actualizar(id, p);
-        return MapperUtil.toProductoDTO(updated);
+        return MapperUtil.toProductoDTO(actualizar(id, p));
     }
+
+    // ─── Eliminación ─────────────────────────────────────────────────────────────
 
     public void eliminar(Integer id) {
         productoRepository.deleteById(id);
     }
 
-    public List<Producto> obtenerPorUsuario(Integer usuarioId) {
-        return productoRepository.findByDuenio(usuarioId);
-    }
+    // ─── Mis propuestos ──────────────────────────────────────────────────────────
 
-    public List<ProductoDetalle> obtenerDetallesPorUsuario(Integer usuarioId) {
-        return productoDetalleRepository.findByDuenio(usuarioId);
-    }
-    
     public MisPropuestosResponseDTO obtenerMisPropuestos(String authorizationHeader) {
         Usuario usuario = obtenerUsuarioDesdeToken(authorizationHeader);
         Integer usuarioId = usuario.getPersonaId();
 
-        long t0 = System.currentTimeMillis();
-
-        
-        List<productoPropuestoDTO> productos = obtenerDetallesPorUsuario(usuarioId)
-                .stream()
+        List<productoPropuestoDTO> productos = obtenerDetallesPorUsuario(usuarioId).stream()
                 .map(detalle -> {
                     productoPropuestoDTO dto = new productoPropuestoDTO();
                     dto.setIdentificador(detalle.getProducto().getIdentificador());
                     dto.setTitulo(detalle.getProducto().getDescripcionCatalogo());
                     dto.setFechaEnvio(detalle.getFechaEnviado().toLocalDate());
                     dto.setEstado(detalle.getEstado());
-                    
-                    // Recuperamos solo la primera imagen y la convertimos a Base64
-                    Optional<Foto> fotoOpt = fotoRepository.findFirstByProducto_IdentificadorOrderByIdentificadorAsc(detalle.getProducto().getIdentificador());
-                    if (fotoOpt.isPresent() && fotoOpt.get().getFoto() != null) {
-                        byte[] bytes = fotoOpt.get().getFoto();
-                        try {
-                            if (bytes.length > 0 && bytes.length < 1000) {
-                                String str = new String(bytes, StandardCharsets.UTF_8);
-                                if (str.startsWith("http")) {
-                                    dto.setImagenUrl(str);
-                                } else {
-                                    dto.setImagenUrl(Base64.getEncoder().encodeToString(bytes));
-                                }
-                            } else {
-                                dto.setImagenUrl(Base64.getEncoder().encodeToString(bytes));
-                            }
-                        } catch (Exception e) {
-                            dto.setImagenUrl(Base64.getEncoder().encodeToString(bytes));
-                        }
-                    }
+                    // Solo la primera foto para el listado
+                    fotoRepository.findFirstByProducto_IdentificadorOrderByIdentificadorAsc(
+                            detalle.getProducto().getIdentificador())
+                            .ifPresent(foto -> dto.setImagenUrl(fotoBytesToString(foto.getFoto())));
                     return dto;
                 })
                 .collect(Collectors.toList());
-                
+
         MisPropuestosResponseDTO responseDto = new MisPropuestosResponseDTO();
         responseDto.setUsuarioId(usuarioId);
         responseDto.setProductos(productos);
         return responseDto;
     }
 
-    public ProductoDetalle obtenerSeguimiento(Integer productoId, Integer usuarioId) {
+    // ─── Seguimiento ─────────────────────────────────────────────────────────────
+
+    // Método interno reutilizado por obtenerSeguimientoDTO
+    private ProductoDetalle obtenerSeguimiento(Integer productoId, Integer usuarioId) {
         ProductoDetalle productoDetalle = productoDetalleRepository.findByProductoIdentificador(productoId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-        Producto producto = productoDetalle.getProducto();
-        if (!producto.getDuenio().equals(usuarioId)) {
+        if (!productoDetalle.getProducto().getDuenio().equals(usuarioId)) {
             throw new SecurityException("El usuario solicitante no es el dueño original del bien");
         }
-
         return productoDetalle;
     }
 
@@ -369,24 +319,27 @@ public class ProductoService {
         return responseDto;
     }
 
-    public void confirmarProducto(Integer productoId) {
+    // ─── Confirmar / Devolver ────────────────────────────────────────────────────
+
+    public void confirmarProducto(Integer productoId, String authorizationHeader) {
+        obtenerUsuarioDesdeToken(authorizationHeader); // valida sesión activa
+
         ProductoDetalle productoDetalle = productoDetalleRepository.findByProductoIdentificador(productoId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-        
-        String estadoActual = productoDetalle.getEstado();
 
+        String estadoActual = productoDetalle.getEstado();
         if ("cancelado".equalsIgnoreCase(estadoActual) || "publicado".equalsIgnoreCase(estadoActual)) {
             throw new IllegalStateException("El producto ya ha sido cancelado o ya está publicado");
         }
 
-        productoDetalle.setEstado("confirmado"); 
+        productoDetalle.setEstado("confirmado");
         productoDetalleRepository.save(productoDetalle);
 
-        // También guardar en historial de estados
         HistorialEstado nuevoHistorial = new HistorialEstado();
         nuevoHistorial.setEstado("confirmado");
         nuevoHistorial.setFechaCambio(LocalDateTime.now());
         nuevoHistorial.setProducto(productoDetalle.getProducto());
+        historialEstadoRepository.save(nuevoHistorial);
     }
 
     public Map<String, Object> devolverProducto(Integer productoId, String opcion, String authorizationHeader) {
@@ -402,7 +355,6 @@ public class ProductoService {
         }
         
         String estadoActual = productoDetalle.getEstado();
-
         if ("cancelado".equalsIgnoreCase(estadoActual) || "publicado".equalsIgnoreCase(estadoActual)) {
             throw new IllegalStateException("El producto ya ha sido cancelado o ya está publicado");
         }
@@ -410,7 +362,6 @@ public class ProductoService {
         productoDetalle.setEstado("cancelado");
         productoDetalleRepository.save(productoDetalle);
 
-        // También guardar en historial de estados
         HistorialEstado nuevoHistorial = new HistorialEstado();
         nuevoHistorial.setEstado("cancelado");
         nuevoHistorial.setFechaCambio(LocalDateTime.now());

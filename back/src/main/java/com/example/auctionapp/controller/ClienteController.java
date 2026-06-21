@@ -3,6 +3,7 @@ package com.example.auctionapp.controller;
 import com.example.auctionapp.dto.ActualizarPerfilClienteRequestDTO;
 import com.example.auctionapp.dto.ErrorResponseDTO;
 import com.example.auctionapp.dto.PerfilClienteResponseDTO;
+import com.example.auctionapp.dto.EstadisticasClienteDTO;
 import com.example.auctionapp.model.Cliente;
 import com.example.auctionapp.service.ClienteService;
 import jakarta.validation.Valid;
@@ -48,6 +49,21 @@ public class ClienteController {
         } catch (IllegalArgumentException e) {
             ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
             return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @GetMapping("/me/estadisticas")
+    public ResponseEntity<Object> obtenerEstadisticas(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        try {
+            EstadisticasClienteDTO response = clienteService.obtenerEstadisticas(authorizationHeader);
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("unauthorized", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        } catch (Exception e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("server_error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 }

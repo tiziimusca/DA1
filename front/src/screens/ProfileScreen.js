@@ -37,6 +37,7 @@ export default function ProfileScreen({ navigation }) {
       try {
         const profileData = await fetchProfile(token);
         setProfile(profileData);
+        console.log('Perfil cargado:', profileData);
       } catch (error) {
         Alert.alert('Error', error.message || 'No se pudo cargar el perfil.');
       } finally {
@@ -65,6 +66,7 @@ export default function ProfileScreen({ navigation }) {
         estado: profile.estado || '-',
         direccion: profile.direccion || '-',
         membresia: profile.categoria ? `Miembro ${profile.categoria}` : 'Miembro',
+        foto: profile.foto ? `data:image/jpeg;base64,${profile.foto}` : null,
       }
     : {
         nombre: 'Cargando...',
@@ -72,13 +74,14 @@ export default function ProfileScreen({ navigation }) {
         estado: '-',
         direccion: '-',
         membresia: 'Miembro',
+        foto: null,
       };
 
   const menuItems = [
     {
       title: 'Métodos de Pago',
       icon: 'card-outline',
-      onPress: () => {},
+      onPress: () => navigation.navigate('MetodosDePago'),
     },
     {
       title: 'Métricas y Actividad',
@@ -151,7 +154,8 @@ export default function ProfileScreen({ navigation }) {
             <Image
               source={{
                 uri:
-                  'https://randomuser.me/api/portraits/women/44.jpg',
+                  user.foto ||
+                  'https://cdn-icons-png.flaticon.com/512/149/149071.png',
               }}
               style={styles.avatar}
             />
@@ -291,7 +295,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </ScrollView>
 
-<View style={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === 'android' ? 28 : 20}}>
+<View style={{ backgroundColor: colors.surface}}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Profile" />
       </View>
       </View>
