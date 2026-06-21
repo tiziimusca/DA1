@@ -16,28 +16,36 @@ import { useAppTheme } from '../theme/AppTheme';
 import AppFooterNav from '../components/AppFooterNav';
 import { getToken } from '../auth/authManager';
 import { fetchMisPropuestos } from '../api/auctionApi';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
  
 const TABS = [
-  { key: 'todos',    label: 'Todos' },
-  { key: 'revision', label: 'En revisión' },
-  { key: 'aceptado', label: 'Aceptados' },
-  { key: 'rechazado',label: 'Rechazados' },
+  { key: 'todos',      label: 'Todos' },
+  { key: 'enviado',    label: 'Enviados' },
+  { key: 'revision',   label: 'En revisión' },
+  { key: 'inspeccion', label: 'En inspección' },
+  { key: 'aceptado',   label: 'Aceptados' },
+  { key: 'rechazado',  label: 'Rechazados' },
 ];
  
 // ─── Badge ─────────────────────────────────────────────────────────────────────
 function EstadoBadge({ estado, theme }) {
   const { colors } = theme;
  
-  const normalizedState = (estado || '').replace('_', '');
-  const isRevision = ['revision', 'enviado', 'eninspeccion'].includes(normalizedState);
+  const normalizedState = (estado || '').replace('_', '').toLowerCase();
+  const isEnviado = normalizedState === 'enviado';
+  const isRevision = ['revision', 'enrevision'].includes(normalizedState);
+  const isInspeccion = ['eninspeccion', 'inspecciontecnica'].includes(normalizedState);
   const isAceptado = ['aceptado', 'confirmado', 'publicado'].includes(normalizedState);
   const isRechazado = ['rechazado', 'cancelado'].includes(normalizedState);
 
   let c = { label: 'Desconocido', bg: '#EEE', text: '#555', border: '#CCC' };
 
-  if (isRevision) {
-    c = { label: 'En Revisión', bg: '#EBF2FC', text: colors.primary, border: colors.accent };
+  if (isEnviado) {
+    c = { label: 'Enviado', bg: '#EBF2FC', text: colors.primary, border: colors.accent };
+  } else if (isRevision) {
+    c = { label: 'En Revisión', bg: '#E0E7FF', text: '#3730A3', border: '#818CF8' };
+  } else if (isInspeccion) {
+    c = { label: 'En Inspección', bg: '#FEF3C7', text: '#D97706', border: '#FCD34D' };
   } else if (isAceptado) {
     c = { label: 'Aceptado', bg: '#E4F4EF', text: colors.success, border: '#5BBD9F' };
   } else if (isRechazado) {
@@ -68,6 +76,7 @@ const badgeStyles = StyleSheet.create({
 // ─── Card ──────────────────────────────────────────────────────────────────────
 function ArticuloCard({ item, index, theme }) {
   const { colors, spacing, radius } = theme;
+  const navigation = useNavigation();
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -106,7 +115,8 @@ function ArticuloCard({ item, index, theme }) {
           </Text>
  
           {/* Ver progreso */}
-          <TouchableOpacity style={[cardStyles.link, { marginTop: spacing.xs + 2 }]}>
+          <TouchableOpacity style={[cardStyles.link, { marginTop: spacing.xs + 2 }]}
+          onPress={() => navigation.navigate('ProductDetails', { productoId: item.id, isPropuesto: true })}>
             <Text style={[cardStyles.linkText, { color: colors.primary }]}>VER PROGRESO</Text>
             <Text style={[cardStyles.linkArrow, { color: colors.primary }]}> ›</Text>
           </TouchableOpacity>
@@ -222,8 +232,10 @@ export default function ArticulosPropuestos({ navigation }) {
   const filtrados = tabActivo === 'todos' 
     ? articulos 
     : articulos.filter(a => {
-        const st = a.estado.replace('_', '');
-        if (tabActivo === 'revision') return ['revision', 'enviado', 'eninspeccion'].includes(st);
+        const st = (a.estado || '').replace('_', '').toLowerCase();
+        if (tabActivo === 'enviado') return st === 'enviado';
+        if (tabActivo === 'revision') return ['revision', 'enrevision'].includes(st);
+        if (tabActivo === 'inspeccion') return ['eninspeccion', 'inspecciontecnica'].includes(st);
         if (tabActivo === 'aceptado') return ['aceptado', 'confirmado', 'publicado'].includes(st);
         if (tabActivo === 'rechazado') return ['rechazado', 'cancelado'].includes(st);
         return false;

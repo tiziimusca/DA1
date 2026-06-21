@@ -33,6 +33,7 @@ export default function ProponerProductoScreen({ navigation }) {
   const [permissionError, setPermissionError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -92,11 +93,14 @@ export default function ProponerProductoScreen({ navigation }) {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!validateForm()) {
       return;
     }
+    setConfirmModalVisible(true);
+  };
 
+  const proceedSubmit = async () => {
     setIsSubmitting(true);
     try {
       const token = getToken();
@@ -256,6 +260,37 @@ export default function ProponerProductoScreen({ navigation }) {
             >
               <Text style={styles.modalButtonText}>Aceptar</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={confirmModalVisible} transparent animationType="fade" onRequestClose={() => setConfirmModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Información Importante</Text>
+            <Text style={[styles.modalText, { color: colors.muted, fontSize: 13, lineHeight: 18 }]}>
+              Recuerda: El proceso de proponer el producto tiene las siguientes instancias: Envio, revisión, inspección técnica y Aceptación / Rechazo. Para poder realizar la inspección técnica, te pediremos que envíes el producto a la dirección que aparezca debajo de "Revisión". Ten en cuenta que este costo no va por cuenta de la empresa, y de cualquier forma se cobrará al final del proceso un monto destinado a esta verificación. En caso de que el producto sea rechazado o cancelado, se le otorgarán dos opciones: retirar el producto o solicitar su envío. La empresa se desliga igualmente de este gasto.
+              {"\n\n"}
+              ¿Continúa con la propuesta?
+            </Text>
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#D6C5CB', alignSelf: 'auto' }]}
+                onPress={() => setConfirmModalVisible(false)}
+              >
+                <Text style={[styles.modalButtonText, { color: '#701A34' }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.primary, alignSelf: 'auto' }]}
+                onPress={() => {
+                  setConfirmModalVisible(false);
+                  proceedSubmit();
+                }}
+              >
+                <Text style={styles.modalButtonText}>Aceptar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

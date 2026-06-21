@@ -69,6 +69,16 @@ export async function fetchMisPropuestos(authToken) {
   return response.json();
 }
 
+export async function fetchSeguimientoProducto(id, authToken) {
+  const headers = {};
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/productos/${id}/seguimiento`, { headers });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
 export async function fetchRegistrosSubasta() {
   const response = await fetch(`${BASE_URL}/registros-subasta`);
   return response.json();
@@ -124,6 +134,24 @@ export async function fetchDetalleEstatico(subastaId, authToken) {
   const headers = {};
   if (authToken) headers.Authorization = authToken;
   const response = await fetch(`${BASE_URL}/subastas/${subastaId}/detalle-estatico`, { headers });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}
+
+export async function devolverProductoApi(id, opcion, authToken) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (authToken) headers.Authorization = authToken;
+  
+  const url = `${BASE_URL}/productos/${id}/devolver${opcion ? `?opcion=${opcion}` : ''}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ opcion })
+  });
   if (!response.ok) {
     throw new Error(await parseError(response));
   }

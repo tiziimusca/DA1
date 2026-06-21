@@ -51,6 +51,12 @@ public class ProductoDetalle {
     @Column
     private LocalDateTime fechaAceptado;
 
+    @Column
+    private LocalDateTime fechaRechazado;
+
+    @Column
+    private BigDecimal precioProvisorio;
+
     @ManyToOne
     @JoinColumn(name = "seguro_id", referencedColumnName = "nro_poliza")
     private Seguro seguroEntity;

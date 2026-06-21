@@ -21,6 +21,7 @@ import MisPropuestasScreen from './src/screens/MisPropuestasScreen';
 import ProponerProductoScreen from './src/screens/ProponerProductoScreen';
 import AgregarMetodoPagoScreen from './src/screens/AgregarMetodoPagoScreen';
 import MetodosDePagoScreen from './src/screens/MetodosPagoScreen';
+import FinalizarCompraScreen from './src/screens/FinalizarCompraScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -54,6 +55,7 @@ function RootNavigator() {
         <Stack.Screen name="MisPropuestas" component={MisPropuestasScreen} options={{ title: 'Mis Propuestas', headerShown: false}} />
         <Stack.Screen name="AgregarMetodoPago" component={AgregarMetodoPagoScreen} options={{ title: 'Agregar Método de Pago', headerShown: false}} />
         <Stack.Screen name="MetodosDePago" component={MetodosDePagoScreen} options={{ title: 'Métodos de Pago', headerShown: false}} />
+        <Stack.Screen name="FinalizarCompra" component={FinalizarCompraScreen} options={{ title: 'Resumen de Compra/Devolución', headerShown: false}} />
 
       </Stack.Navigator>
     </NavigationContainer>

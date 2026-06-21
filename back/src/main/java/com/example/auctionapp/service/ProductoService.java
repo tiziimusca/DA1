@@ -146,6 +146,7 @@ public class ProductoService {
         detalle.setFechaEnviado(LocalDateTime.now());
         detalle.setFechaInspeccionTecnica(null);
         detalle.setFechaRevision(null);
+        detalle.setFechaRechazado(null);
         detalle.setEstado("enviado");
         detalle.setSeguroEntity(null);
         detalle.setHistoria(requestDto.getHistoria());
@@ -305,29 +306,66 @@ public class ProductoService {
         return productoDetalle;
     }
 
-    public SeguimientoResponseDTO obtenerSeguimientoDTO(Integer productoId, String authorizationHeader) {
+    public Map<String, Object> obtenerSeguimientoDTO(Integer productoId, String authorizationHeader) {
         Usuario usuario = obtenerUsuarioDesdeToken(authorizationHeader);
         Integer usuarioSolicitanteId = usuario.getPersonaId();
 
         ProductoDetalle productoDetalle = obtenerSeguimiento(productoId, usuarioSolicitanteId);
 
-        SeguimientoResponseDTO responseDto = new SeguimientoResponseDTO();
-        responseDto.setTituloProducto(productoDetalle.getTitulo());
-        responseDto.setDeposito(productoDetalle.getDeposito());
-        responseDto.setFechaEnviado(productoDetalle.getFechaEnviado());
-        responseDto.setFechaRevision(productoDetalle.getFechaRevision());
-        responseDto.setFechaInspeccionTecnica(productoDetalle.getFechaInspeccionTecnica());
-        responseDto.setFechaAceptado(productoDetalle.getFechaAceptado());
-        responseDto.setCostoVerificacion(productoDetalle.getCostoVerificacion());
-        responseDto.setEstadoActual(productoDetalle.getEstado());
+        Producto producto = productoDetalle.getProducto();
+
+        Map<String, Object> responseDto = new HashMap<>();
+        
+        String titulo = producto.getDescripcionCatalogo();
+        if (titulo == null || titulo.isBlank() || titulo.equalsIgnoreCase("No posee")) {
+            titulo = producto.getDescripcionCompleta();
+        }
+        if (titulo == null || titulo.isBlank()) {
+            titulo = productoDetalle.getTitulo();
+        }
+
+        responseDto.put("tituloProducto", titulo);
+        
+        responseDto.put("deposito", productoDetalle.getDeposito());
+
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+        responseDto.put("fechaEnviado", productoDetalle.getFechaEnviado() != null ? productoDetalle.getFechaEnviado().format(formatter) : null);
+        responseDto.put("fechaRevision", productoDetalle.getFechaRevision() != null ? productoDetalle.getFechaRevision().format(formatter) : null);
+        responseDto.put("fechaInspeccionTecnica", productoDetalle.getFechaInspeccionTecnica() != null ? productoDetalle.getFechaInspeccionTecnica().format(formatter) : null);
+        responseDto.put("fechaAceptado", productoDetalle.getFechaAceptado() != null ? productoDetalle.getFechaAceptado().format(formatter) : null);
+        responseDto.put("fechaRechazado", productoDetalle.getFechaRechazado() != null ? productoDetalle.getFechaRechazado().format(formatter) : null);
+        responseDto.put("costoVerificacion", productoDetalle.getCostoVerificacion());
+        responseDto.put("estadoActual", productoDetalle.getEstado());
+        responseDto.put("comentario",productoDetalle.getTitulo());
+        responseDto.put("precioBase", productoDetalle.getPrecioProvisorio());
 
         if (productoDetalle.getSeguroEntity() != null) {
-            SeguroInfoDTO seguroDto = new SeguroInfoDTO();
-            seguroDto.setCompania(productoDetalle.getSeguroEntity().getCompania());
-            seguroDto.setPoliza(productoDetalle.getSeguroEntity().getNroPoliza());
-            seguroDto.setMonto(productoDetalle.getSeguroEntity().getImporte());
-            responseDto.setSeguro(seguroDto);
+            Map<String, Object> seguroDto = new HashMap<>();
+            seguroDto.put("compania", productoDetalle.getSeguroEntity().getCompania());
+            seguroDto.put("poliza", productoDetalle.getSeguroEntity().getNroPoliza());
+            seguroDto.put("monto", productoDetalle.getSeguroEntity().getImporte());
+            responseDto.put("seguro", seguroDto);
         }
+
+        Optional<Foto> fotoOpt = fotoRepository.findFirstByProducto_IdentificadorOrderByIdentificadorAsc(productoId);
+        if (fotoOpt.isPresent() && fotoOpt.get().getFoto() != null) {
+            byte[] bytes = fotoOpt.get().getFoto();
+            try {
+                if (bytes.length > 0 && bytes.length < 1000) {
+                    String str = new String(bytes, StandardCharsets.UTF_8);
+                    if (str.startsWith("http")) {
+                        responseDto.put("imagenUrl", str);
+                    } else {
+                        responseDto.put("imagenUrl", Base64.getEncoder().encodeToString(bytes));
+                    }
+                } else {
+                    responseDto.put("imagenUrl", Base64.getEncoder().encodeToString(bytes));
+                }
+            } catch (Exception e) {
+                responseDto.put("imagenUrl", Base64.getEncoder().encodeToString(bytes));
+            }
+        }
+
         return responseDto;
     }
 
@@ -351,9 +389,17 @@ public class ProductoService {
         nuevoHistorial.setProducto(productoDetalle.getProducto());
     }
 
-    public Map<String, Object> devolverProducto(Integer productoId) {
+    public Map<String, Object> devolverProducto(Integer productoId, String opcion, String authorizationHeader) {
+        Usuario usuario = obtenerUsuarioDesdeToken(authorizationHeader);
+        Integer usuarioId = usuario.getPersonaId();
+
         ProductoDetalle productoDetalle = productoDetalleRepository.findByProductoIdentificador(productoId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        Producto producto = productoDetalle.getProducto();
+        if (!producto.getDuenio().equals(usuarioId)) {
+            throw new SecurityException("El usuario solicitante no es el dueño original del bien");
+        }
         
         String estadoActual = productoDetalle.getEstado();
 
@@ -372,8 +418,19 @@ public class ProductoService {
         historialEstadoRepository.save(nuevoHistorial);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("opcion", "envio");
-        response.put("costoEnvio", new BigDecimal(String.valueOf(Math.random() * 4000 + 1000)));
+        
+        if ("enviado".equalsIgnoreCase(estadoActual) || "revision".equalsIgnoreCase(estadoActual) || "en_revision".equalsIgnoreCase(estadoActual)) {
+            response.put("opcion", null);
+            response.put("costoEnvio", null);
+        } else {
+            if ("envio".equalsIgnoreCase(opcion)) {
+                response.put("opcion", "envio");
+                response.put("costoEnvio", new BigDecimal("2500.00"));
+            } else {
+                response.put("opcion", "retiro");
+                response.put("costoEnvio", null);
+            }
+        }
         return response;
     }
 }

@@ -108,10 +108,20 @@ public class ProductoController {
     }
 
     @PostMapping("/{id}/devolver")
-    public ResponseEntity<Object> devolver(@PathVariable Integer id) {
+    public ResponseEntity<Object> devolver(
+            @PathVariable Integer id,
+            @RequestParam(value = "opcion", required = false) String queryOpcion,
+            @RequestBody(required = false) Map<String, String> body,
+            @RequestHeader(value = "Authorization", required = true) String authorizationHeader) {
         try {
-            Map<String, Object> response = productoService.devolverProducto(id);
+            String opcion = queryOpcion;
+            if (opcion == null && body != null) {
+                opcion = body.get("opcion");
+            }
+            Map<String, Object> response = productoService.devolverProducto(id, opcion, authorizationHeader);
             return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponseDTO("unauthorized", e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO("conflict", e.getMessage()));
         } catch (RuntimeException e) {

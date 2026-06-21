@@ -18,6 +18,9 @@ public class SeguimientoResponseDTO {
     
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime fechaAceptado;
+
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
+    private LocalDateTime fechaRechazado;
     
     private String tituloProducto;
     private String deposito;
@@ -32,6 +35,8 @@ public class SeguimientoResponseDTO {
     private BigDecimal comision;
     private BigDecimal costoVerificacion;
     private String estadoActual;
+
+    private String imagenUrl;
 
     public LocalDateTime getFechaEnviado() {
         return fechaEnviado;
@@ -63,6 +68,14 @@ public class SeguimientoResponseDTO {
     
     public void setFechaAceptado(LocalDateTime fechaAceptado) {
         this.fechaAceptado = fechaAceptado;
+    }
+
+    public LocalDateTime getFechaRechazado() {
+        return fechaRechazado;
+    }
+
+    public void setFechaRechazado(LocalDateTime fechaRechazado) {
+        this.fechaRechazado = fechaRechazado;
     }
 
     public String getTituloProducto() {
@@ -135,5 +148,13 @@ public class SeguimientoResponseDTO {
 
     public void setEstadoActual(String estadoActual) {
         this.estadoActual = estadoActual;
+    }
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
     }
 }

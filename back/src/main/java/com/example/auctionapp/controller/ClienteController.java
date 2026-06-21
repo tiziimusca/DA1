@@ -25,7 +25,7 @@ public class ClienteController {
 
     @GetMapping("/perfil")
     public ResponseEntity<Object> obtenerPerfil(
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+            @RequestHeader(value = "Authorization", required = true) String authorizationHeader) {
         try {
             PerfilClienteResponseDTO response = clienteService.obtenerPerfil(authorizationHeader);
             return ResponseEntity.ok(response);
