@@ -16,7 +16,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppTheme } from '../theme/AppTheme';
-import { useMetodosPagoViewModel } from '../hooks/useMetodoPagoViewModel';
+import { createMetodoPago, updateMetodoPago } from '../api/paymentApi';
 import { SafeAreaView } from 'react-native-safe-area-context';
  
 // ─── Helpers de imagen ────────────────────────────────────────────────────────
@@ -433,7 +433,7 @@ export default function AgregarMetodoPago() {
   const navigation = useNavigation();
   const route = useRoute();
  
-  const { agregarMetodoPago, editarMetodoPago, loading } = useMetodosPagoViewModel();
+  const [loading, setLoading] = useState(false);
  
   const metodoExistente = route.params?.metodoExistente ?? null;
   const modoEdicion = !!metodoExistente;
@@ -518,21 +518,18 @@ export default function AgregarMetodoPago() {
     const payload = { tipo: metodo.toLowerCase(), datos: datosLimpios };
  
     try {
-      let resultado;
+      setLoading(true);
       if (modoEdicion) {
-        resultado = await editarMetodoPago(metodoExistente.id, payload);
+        await updateMetodoPago(metodoExistente.id, payload);
       } else {
-        resultado = await agregarMetodoPago({ data: payload, clienteId: idDelCliente });
-      }
- 
-      if (resultado?.type?.endsWith('/rejected')) {
-        Alert.alert('Error del servidor', String(resultado.payload ?? 'No se pudo guardar.'));
-        return;
+        await createMetodoPago(payload);
       }
  
       setModalVisible(true);
     } catch (error) {
-      Alert.alert('Error inesperado', error?.message ?? 'Intentá de nuevo.');
+      Alert.alert('Error del servidor', error?.message ?? 'Intentá de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
  

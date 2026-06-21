@@ -180,6 +180,16 @@ public class DataSeeder implements CommandLineRunner {
 
                 jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
                                 "demo@gmail.com", passwordEncoder.encode("demo123"), personaUsuarioId);
+                jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
+                                "cliente1@gmail.com", passwordEncoder.encode("demo123"), clienteUnoId);
+                jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
+                                "cliente2@gmail.com", passwordEncoder.encode("demo123"), clienteDosId);
+                jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
+                                "cliente3@gmail.com", passwordEncoder.encode("demo123"), clienteTresId);
+                jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
+                                "cliente4@gmail.com", passwordEncoder.encode("demo123"), clienteCuatroId);
+                jdbcTemplate.update("INSERT INTO usuarios (email, contraseña, persona_id) VALUES (?, ?, ?)",
+                                "cliente5@gmail.com", passwordEncoder.encode("demo123"), clienteCincoId);
 
                 jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Verificador Demo", 100);
                 jdbcTemplate.update("INSERT INTO empleados (cargo, sector) VALUES (?, ?)", "Responsable Catalogo 1",
@@ -255,19 +265,19 @@ public class DataSeeder implements CommandLineRunner {
 
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
-                                clienteUnoId, chileId, "SI", "A", empleadoVerificadorId);
+                                clienteUnoId, chileId, "SI", "Platino", empleadoVerificadorId);
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
-                                clienteDosId, argentinaId, "SI", "B", empleadoVerificadorId);
+                                clienteDosId, argentinaId, "SI", "Oro", empleadoVerificadorId);
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
-                                clienteTresId, chileId, "SI", "C", empleadoVerificadorId);
+                                clienteTresId, chileId, "SI", "Comun", empleadoVerificadorId);
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
-                                clienteCuatroId, argentinaId, "SI", "A", empleadoVerificadorId);
+                                clienteCuatroId, argentinaId, "SI", "Platino", empleadoVerificadorId);
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
-                                clienteCincoId, chileId, "SI", "A", empleadoVerificadorId);
+                                clienteCincoId, chileId, "SI", "Plata", empleadoVerificadorId);
 
                 jdbcTemplate.update(
                                 "INSERT INTO clientes (identificador, numero_pais, admitido, categoria, verificador) VALUES (?, ?, ?, ?, ?)",
@@ -360,7 +370,7 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1590587754330-6fc06e3a9bb7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1558603655-491ecfa8324f?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                new BidSpec(clienteDosId, 2, new BigDecimal("6200.00"), "no"));
+                                null);
 
                 seedAuction(
                                 LocalDate.now().plusDays(14),
@@ -391,10 +401,10 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1528629297340-d1d466945dc5?q=80&w=1222&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                new BidSpec(clienteTresId, 3, new BigDecimal("1250.00"), "no"));
+                                null);
 
                 // Subasta Especial - Comienza en 5 minutos
-                LocalDateTime especialTime = LocalDateTime.now().plusMinutes(5);
+                LocalDateTime especialTime = LocalDateTime.now().plusMinutes(3);
                 LocalDate fechaEspecial = especialTime.toLocalDate();
                 LocalTime horaEspecial = especialTime.toLocalTime().withNano(0);
 
@@ -462,7 +472,7 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1677045419454-e8b201856472?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1481980235850-66e47651e431?q=80&w=388&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                new BidSpec(clienteCincoId, 5, new BigDecimal("16000.00"), "no"));
+                                null);
 
                 jdbcTemplate.update(
                                 "INSERT INTO metodos_pago_banco (cliente_id, nombre_titular, dni_titular, nombre_banco, numero_cuenta, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -731,19 +741,21 @@ public class DataSeeder implements CommandLineRunner {
                                 catalogoId, productoId, product.precioBase(), product.comision(), product.subastado());
                 Integer itemId = getInteger("SELECT identificador FROM items_catalogo WHERE producto = ?", productoId);
 
-                jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)",
-                                bid.numeroPostor(), bid.clienteId(), subastaId);
-                Integer asistenteId = getInteger(
-                                "SELECT identificador FROM asistentes WHERE cliente = ? AND subasta = ?",
-                                bid.clienteId(), subastaId);
+                if (bid != null) {
+                        jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)",
+                                        bid.numeroPostor(), bid.clienteId(), subastaId);
+                        Integer asistenteId = getInteger(
+                                        "SELECT identificador FROM asistentes WHERE cliente = ? AND subasta = ?",
+                                        bid.clienteId(), subastaId);
 
-                jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
-                                asistenteId, itemId, bid.importe(), bid.ganador());
+                        jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
+                                        asistenteId, itemId, bid.importe(), bid.ganador());
 
-                jdbcTemplate.update(
-                                "INSERT INTO registro_de_subasta (subasta, duenio, producto, cliente, importe, comision) VALUES (?, ?, ?, ?, ?, ?)",
-                                subastaId, product.duenioId(), productoId, bid.clienteId(), bid.importe(),
-                                product.comision());
+                        jdbcTemplate.update(
+                                        "INSERT INTO registro_de_subasta (subasta, duenio, producto, cliente, importe, comision) VALUES (?, ?, ?, ?, ?, ?)",
+                                        subastaId, product.duenioId(), productoId, bid.clienteId(), bid.importe(),
+                                        product.comision());
+                }
         }
 
         private record ProductSpec(

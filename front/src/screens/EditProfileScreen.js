@@ -23,8 +23,6 @@ import { getToken } from '../auth/authManager';
 import { updateProfile } from '../api/authApi';
 import AppFooterNav from '../components/AppFooterNav';
 
-const DEFAULT_AVATAR = 'https://randomuser.me/api/portraits/women/44.jpg';
-
 export default function EditProfileScreen({ navigation, route }) {
   const { colors } = useAppTheme();
 
@@ -41,7 +39,7 @@ export default function EditProfileScreen({ navigation, route }) {
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
-  const [avatarUri, setAvatarUri] = useState(initialProfile?.avatarUrl || DEFAULT_AVATAR);
+  const [avatarUri, setAvatarUri] = useState(initialProfile?.avatarUrl);
   // Foto en base64 puro, lista para mandar al backend como byte[] (varbinary).
   // Se completa solo cuando el usuario elige una foto nueva; si queda null,
   // significa que no se tocó el avatar y no se manda ese campo al guardar.

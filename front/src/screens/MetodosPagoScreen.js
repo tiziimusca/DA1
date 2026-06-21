@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useNavigation} from '@react-navigation/native';
 import { useAppTheme } from '../theme/AppTheme';
-import { useMetodosPagoViewModel } from '../hooks/useMetodoPagoViewModel';
+import { fetchMetodosPago, deleteMetodoPago } from '../api/paymentApi';
 import { useRoute } from '@react-navigation/native';
 import AppFooterNav from '../components/AppFooterNav';
 import { Ionicons as Icon } from '@expo/vector-icons';
@@ -184,11 +184,35 @@ export default function MetodosDePago() {
   const { colors, spacing, radius } = theme;
   const navigation = useNavigation();
 
-  const { metodosPago, loading, cargarTodos, borrarMetodoPago } = useMetodosPagoViewModel();
-
+  const [metodosPago, setMetodosPago] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [paraEliminar, setParaEliminar] = useState(null); 
   
   const route = useRoute();
+
+  const cargarTodos = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchMetodosPago();
+      setMetodosPago(data || []);
+    } catch (err) {
+      Alert.alert('Error', err.message || 'No se pudieron cargar los métodos de pago.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBorrarMetodoPago = async (id, tipo) => {
+    try {
+      setLoading(true);
+      await deleteMetodoPago(id, tipo);
+      setMetodosPago(prev => prev.filter(item => !(item.id == id && item.tipo === tipo)));
+    } catch (err) {
+      Alert.alert('Error', err.message || 'No se pudo eliminar el método de pago.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 2. Disparamos la carga inicial al entrar a la pantalla.
   //    El cliente lo deriva el back del token (Authorization), no hace falta clienteId.
@@ -207,7 +231,7 @@ export default function MetodosDePago() {
       
       if (!paraEliminar) return;
       try {
-        await borrarMetodoPago(idReal, paraEliminar.tipo); // ← id + tipo: el clienteId lo agrega el ViewModel
+        await handleBorrarMetodoPago(idReal, paraEliminar.tipo);
       } catch (e) {
         Alert.alert('Error', 'No se pudo eliminar el metodo de pago.');
       } finally {

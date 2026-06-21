@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView,
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { createWebSocket, enviarPujaRest, fetchEstadoVivo, fetchDetalleEstatico } from '../api/auctionApi';
+import { completarPago } from '../api/paymentApi';
 import { getToken, getUser } from '../auth/authManager';
 import Svg, { Path, Line } from 'react-native-svg';
 
@@ -280,15 +281,28 @@ export default function BidScreen({ navigation, route }) {
   }, [conectado, hasStarted, timeLeft]);
 
   useEffect(() => {
-    if (timeLeft === 0) {
+    const handleAuctionEnd = async () => {
       if (isHighestBidder) {
         console.log('Navegando a Payment con subasta:', subasta);
-        navigation.replace('Payment', { subasta, winningBid: currentPrice, image: staticDetails.items[0].fotos[0], comision: staticDetails.items[0].comision });
+        navigation.replace('Payment', { subasta, winningBid: currentPrice, image: staticDetails?.items?.[0]?.fotos?.[0], comision: staticDetails?.items?.[0]?.comision });
       } else {
-        navigation.replace('Home');
+        try {
+          console.log('Finalizando subasta en BD para no ganador:', subasta?.id);
+          if (subasta?.id) {
+            await completarPago(subasta.id);
+          }
+        } catch (error) {
+          console.error('Error al finalizar subasta para no ganador:', error);
+        } finally {
+          navigation.replace('Home');
+        }
       }
+    };
+
+    if (timeLeft === 0) {
+      handleAuctionEnd();
     }
-  }, [timeLeft, isHighestBidder, navigation, subasta]);
+  }, [timeLeft, isHighestBidder, navigation, subasta, currentPrice, staticDetails]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
@@ -911,7 +925,7 @@ cardAmountBlue: {
 
 topBadge: {
   position: 'absolute',
-  right: 10,
+  right: 2,
   bottom: 10,
   backgroundColor: '#2244AA',
   borderRadius: 12,

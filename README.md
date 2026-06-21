@@ -2,36 +2,6 @@
 
 Sistema de subastas en línea con backend Java Spring Boot y frontend React Native.
 
-## 📁 Estructura del Proyecto
-
-```
-DA1/
-├── back/              # Backend Spring Boot
-│   ├── src/main/java/com/example/auctionapp/
-│   │   ├── model/           # Entidades JPA
-│   │   ├── repository/      # Interfaces de acceso a datos
-│   │   ├── service/         # Lógica de negocio
-│   │   ├── controller/      # Endpoints REST
-│   │   ├── websocket/       # Manejo de WebSocket
-│   │   └── config/          # Configuraciones
-│   └── pom.xml
-│
-├── front/             # Frontend React Native
-│   ├── src/
-│   │   ├── screens/          # Pantallas de la app
-│   │   ├── components/       # Componentes reutilizables
-│   │   ├── api/              # Cliente HTTP y WebSocket
-│   │   ├── redux/
-│   │   │   ├── slices/       # Redux slices (estado)
-│   │   │   └── store.js      # Configuración Redux
-│   │   └── hooks/            # Custom hooks (ViewModels)
-│   ├── App.js
-│   ├── package.json
-│   └── app.json
-```
-
-## 🏗️ Arquitectura
-
 ### Backend: Arquitectura en Capas
 
 - **Model**: Entidades JPA
@@ -40,17 +10,13 @@ DA1/
 - **Controller**: Endpoints REST
 - **WebSocket**: Comunicación en tiempo real
 
-Ver [ARCHITECTURE.md](back/ARCHITECTURE.md)
+### Frontend:
 
-### Frontend: Arquitectura MVVM + Redux
+- **api**: Acceso a los endpoints
+- **screens**: Pantallas
+- **Theme**: Plantilla global
 
-- **Model**: Redux Slices (estado centralizado)
-- **ViewModel**: Custom Hooks (lógica de presentación)
-- **View**: React Components (pantallas)
-
-Ver [MVVM_ARCHITECTURE.md](front/MVVM_ARCHITECTURE.md)
-
-## 🚀 Arrancar el Proyecto
+## Arrancar el Proyecto
 
 ### Backend
 
@@ -71,35 +37,36 @@ npm install
 npx expo start
 si tira el error: Error: Cannot find module 'babel-preset-expo'
 ejecutar: npm install --save-dev babel-preset-expo@54.0.11
-npx expo start --clear
+npx expo start -c
 ```
 
-## 🔗 Integración
+## Integracion
 
-### URLs de conexión (Emulador Android)
+### URLs de conexion (expo)
 
-- REST API: `http://10.0.2.2:8080/api`
-- WebSocket: `ws://10.0.2.2:8080/ws/bids`
+En el archivo front/src/config/apiConfig.js:
 
-Para dispositivo físico, reemplaza `10.0.2.2` con la IP de tu máquina.
+const DEV_API_URL = 'http://192.168.0.13:8080/api';
+const DEV_SERVER_URL = 'http://192.168.0.13:8080';
+const PROD_API_URL = 'http://192.168.0.13:8080/api';
+const PROD_SERVER_URL = 'http://192.168.0.13:8080';
 
-## 🎨 Figma
+Reemplazar con la IP de su maquina.
 
-Diseño visual en: https://www.figma.com/design/ntcqS6JSVT0e4dEEvFJQcE/Desarrollo-de-apps-1
+## Figma
 
-## 📚 Documentación Adicional
+Diseño en: https://www.figma.com/design/ntcqS6JSVT0e4dEEvFJQcE/Desarrollo-de-apps-1
 
-- [Backend Architecture](back/ARCHITECTURE.md)
-- [Frontend MVVM Architecture](front/MVVM_ARCHITECTURE.md)
-- [Backend README](back/README.md)
-- [Frontend README](front/README.md)
+## Características Implementadas
 
-## ✨ Características Implementadas
+- Backend Spring Boot con MySQL (H2 en desarrollo)
+- API REST completa con CRUD
+- WebSocket para ofertas en tiempo real
+- Frontend React Native para Android
+- Validaciones y manejo de errores
+- Documentación completa
 
-✅ Backend Spring Boot con MySQL (H2 en desarrollo)
-✅ API REST completa con CRUD
-✅ WebSocket para ofertas en tiempo real
-✅ Frontend React Native para Android
-✅ Arquitectura MVVM con Redux
-✅ Validaciones y manejo de errores
-✅ Documentación completa
+## Test
+
+Usuario: demo@gmail.com
+Contraseña: demo123

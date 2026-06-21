@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  Image,
 } from 'react-native';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { useAppTheme } from '../theme/AppTheme';
@@ -16,6 +17,7 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import AppFooterNav from '../components/AppFooterNav';
 import PhotoCarousel from '../components/PhotoCarousel';
 import { decodeImageUri } from '../utils/imageUtils';
+import { fetchProfile } from '../api/authApi';
 
 // Ancho fijo en vez de Dimensions.get('window').width: en web ese valor
 // puede tomar el ancho de la ventana completa, no el del contenedor,
@@ -33,6 +35,7 @@ const DEFAULT_PRICE_CEIL = 200000;
 export default function AuctionListScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
   const [subastas, setSubastas] = useState([]);
+  const [profileFoto, setProfileFoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState('');
@@ -58,7 +61,7 @@ export default function AuctionListScreen({ navigation, route }) {
   }, [selectedCurrency]);
 
   useEffect(() => {
-    const loadSubastas = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -66,14 +69,25 @@ export default function AuctionListScreen({ navigation, route }) {
         const authHeader = token ? `Bearer ${token}` : null;
         const data = await fetchHomeDashboard(authHeader);
         setSubastas(data?.subastasActivas || []);
+
+        if (token) {
+          try {
+            const profileData = await fetchProfile(token);
+            if (profileData?.foto) {
+              setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
+            }
+          } catch (profileErr) {
+            console.log('[AuctionListScreen] Error fetching profile:', profileErr);
+          }
+        }
       } catch (err) {
         setError(err.message || 'Error al cargar subastas');
       } finally {
         setLoading(false);
       }
     };
-    loadSubastas();
-  }, []);
+    loadData();
+  }, [token]);
 
   const categories = useMemo(() => {
     const unique = new Set(subastas.map((item) => (item.categoria || 'GENERAL').toString().toUpperCase()));
@@ -156,8 +170,15 @@ export default function AuctionListScreen({ navigation, route }) {
             }
           }}
         >
-          <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
-            <Text style={{ color: colors.primary, fontWeight: '700' }}>{isGuest ? 'i' : 'LG'}</Text>
+          <View style={[styles.avatar]}>
+            <Image
+              source={{
+                uri:
+                  profileFoto ||
+                  'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+              }}
+              style={styles.avatar}
+            />
           </View>
           <Text style={[styles.userName, { color: colors.text }]}>
             {isGuest ? 'Inicie Sesión' : userName}

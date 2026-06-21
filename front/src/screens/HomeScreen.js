@@ -174,7 +174,9 @@ export default function HomeScreen({ navigation, route }) {
         const authHeader = isGuest ? null : (token ? `Bearer ${token}` : null);
         const data = await fetchHomeDashboard(authHeader);
         const profileData = await fetchProfile(token);
-        setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`)
+        if (profileData?.foto) {
+          setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
+        }
         console.log('[HomeScreen] homeData fetched:', data);
         setHomeData(data);
       } catch (err) {
