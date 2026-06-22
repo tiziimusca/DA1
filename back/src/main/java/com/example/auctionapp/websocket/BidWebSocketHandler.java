@@ -17,29 +17,26 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger(BidWebSocketHandler.class);
 
-    // concurrent set allows safe iteration without external synchronization
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
-        log.debug("WebSocket connected: {} (total={})", session.getId(), sessions.size());
+        log.debug("WebSocket conectado: {} (total={})", session.getId(), sessions.size());
     }
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) {
         String payload = message.getPayload();
-        // iterate over a concurrent set; avoid throwing on one failure
         for (WebSocketSession target : sessions) {
             if (target.isOpen()) {
                 try {
                     target.sendMessage(new TextMessage(payload));
                 } catch (IOException e) {
-                    log.warn("Failed to send message to session {}: {}", target.getId(), e.getMessage());
-                    // try to close and remove faulty session
+                    log.warn("Fallo {}: {}", target.getId(), e.getMessage());
                     safeCloseAndRemove(target);
                 } catch (Exception e) {
-                    log.warn("Unexpected error sending websocket message to {}: {}", target.getId(), e.getMessage());
+                    log.warn("Fallo inesperado {}: {}", target.getId(), e.getMessage());
                 }
             }
         }
@@ -51,10 +48,10 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
                 try {
                     target.sendMessage(new TextMessage(message));
                 } catch (IOException e) {
-                    log.warn("Failed to broadcast message to session {}: {}", target.getId(), e.getMessage());
+                    log.warn("Fallo {}: {}", target.getId(), e.getMessage());
                     safeCloseAndRemove(target);
                 } catch (Exception e) {
-                    log.warn("Unexpected error broadcasting to {}: {}", target.getId(), e.getMessage());
+                    log.warn("Fallo inesperado {}: {}", target.getId(), e.getMessage());
                 }
             }
         }
@@ -62,14 +59,14 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        log.warn("Transport error on session {}: {}", session.getId(), exception.getMessage());
+        log.warn("Error de transporte {}: {}", session.getId(), exception.getMessage());
         safeCloseAndRemove(session);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
-        log.debug("WebSocket closed: {} (status={}), remaining={} ", session.getId(), status, sessions.size());
+        log.debug("WebSocket cerrado: {} (status={}), remaining={} ", session.getId(), status, sessions.size());
     }
 
     private void safeCloseAndRemove(WebSocketSession session) {
@@ -78,7 +75,7 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
                 session.close(CloseStatus.SERVER_ERROR);
             }
         } catch (Exception e) {
-            log.debug("Error while closing session {}: {}", session.getId(), e.getMessage());
+            log.debug("Error {}: {}", session.getId(), e.getMessage());
         } finally {
             sessions.remove(session);
         }

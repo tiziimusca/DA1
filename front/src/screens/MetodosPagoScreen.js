@@ -18,12 +18,10 @@ import { fetchMetodosPago, deleteMetodoPago } from '../api/paymentApi';
 import { useRoute } from '@react-navigation/native';
 import AppFooterNav from '../components/AppFooterNav';
 import { Ionicons as Icon } from '@expo/vector-icons';
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function tipoLabel(tipo) {
   return { banco: 'Banco', tarjeta: 'Tarjeta', cheque: 'Cheque' }[tipo] ?? tipo;
 }
  
-// ─── Card de metodo ───────────────────────────────────────────────────────────
   function MetodoCard({ item, onEditar, onEliminar, theme, index }) {
     const { colors, spacing, radius } = theme;
     const fadeAnim  = useRef(new Animated.Value(0)).current;
@@ -36,30 +34,24 @@ function tipoLabel(tipo) {
       ]).start();
     }, []);
   
-    // ── Mapear campos del backend al display ──────────────────────────────────
     const datos = item.datos ?? {};
-    console.log(datos)
   
-    // Nombre principal según el tipo
     const nombre = {
       banco:   "Banco " + datos.nombreBanco    ?? 'Banco',
       tarjeta: "Tarjeta " + (datos.tipoTarjeta ? ` (${datos.tipoTarjeta})` : 'Tarjeta'),
       cheque:  'Cheque ',
     }[item.tipo] ?? item.tipo;
   
-    // Detalle secundario (dígitos enmascarados o titular)
     const detalle = {
       banco:   datos.numeroCuenta   ? `${datos.nombreTitular}  •  ${datos.numeroCuenta}` : datos.nombreTitular,
       tarjeta: datos.numeroTarjeta  ? `${datos.nombreTitular}  •  ${datos.numeroTarjeta}` : datos.nombreTitular,
       cheque:  datos.numeroCheque   ? `Cheque N° ${datos.numeroCheque}` : '',
     }[item.tipo] ?? '';
   
-    // Expira (solo tarjeta)
     const expira = item.tipo === 'tarjeta' && datos.fechaVencimiento
       ? datos.fechaVencimiento
       : null;
   
-    // Badge de estado
     const estadoConfig = {
       verificado:  { label: 'Verificado',   bg: '#4CAF9A' },
       en_revision: { label: 'En revisión',  bg: '#F59E0B' },
@@ -71,7 +63,6 @@ function tipoLabel(tipo) {
       <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], marginBottom: spacing.sm }}>
         <View style={[card.wrap, { backgroundColor: colors.primary, borderRadius: radius.sm }]}>
   
-          {/* Fila superior: nombre + badge estado */}
           <View style={card.topRow}>
             <Text style={card.nombre}>{nombre}</Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -88,13 +79,10 @@ function tipoLabel(tipo) {
             </View>
           </View>
   
-          {/* Detalle */}
           {detalle ? <Text style={card.detalle}>{detalle}</Text> : null}
   
-          {/* Divider */}
           <View style={card.divider} />
   
-          {/* Acciones */}
           <View style={card.actions}>
             <TouchableOpacity style={card.actionBtn} onPress={() => onEditar(item)}>
               <Text style={card.actionIcon}>✏️</Text>
@@ -128,7 +116,6 @@ const card = StyleSheet.create({
   actionLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' },
 });
  
-// ─── Modal confirmacion eliminar ──────────────────────────────────────────────
 function ModalEliminar({ item, onConfirmar, onCancelar, theme }) {
   const { colors, radius } = theme;
   if (!item) return null;
@@ -178,7 +165,6 @@ const del = StyleSheet.create({
   btnLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });
  
-// ─── Pantalla principal ───────────────────────────────────────────────────────
 export default function MetodosDePago() {
   const theme = useAppTheme();
   const { colors, spacing, radius } = theme;
@@ -214,8 +200,6 @@ export default function MetodosDePago() {
     }
   };
 
-  // 2. Disparamos la carga inicial al entrar a la pantalla.
-  //    El cliente lo deriva el back del token (Authorization), no hace falta clienteId.
   useEffect(() => {
     cargarTodos();
   }, [route.params?.refresh]);
@@ -239,12 +223,10 @@ export default function MetodosDePago() {
       }
     }
 
-  // ── Editar → navega a AgregarMetodoPago en modo edicion ──────────────────
   function handleEditar(item) {
     navigation.navigate('AgregarMetodoPago', { metodoExistente: item });
   }
 
-  // Nos aseguramos de que siempre sea un array para evitar errores al hacer .length
   const listaMetodos = metodosPago || [];
   const activos = listaMetodos.length;
 
@@ -259,7 +241,6 @@ export default function MetodosDePago() {
         theme={theme}
       />
 
-      {/* Header */}
       <View style={[h.wrap, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon
@@ -270,7 +251,6 @@ export default function MetodosDePago() {
           </TouchableOpacity>
       </View>
 
-      {/* Pill header: Metodos Guardados + X activos */}
       <View style={[h.pillRow, { paddingHorizontal: spacing.md, marginBottom: spacing.md }]}>
         <View style={[h.pill, { backgroundColor: colors.primary, borderRadius: radius.round }]}>
           <Text style={h.pillLabel}>Metodos Guardados</Text>
@@ -280,7 +260,6 @@ export default function MetodosDePago() {
         </TouchableOpacity>
       </View>
 
-      {/* Lista */}
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={colors.primary} />

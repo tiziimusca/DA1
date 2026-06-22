@@ -17,7 +17,7 @@ import AppFooterNav from '../components/AppFooterNav';
 import { getToken } from '../auth/authManager';
 import { fetchMisPropuestos } from '../api/auctionApi';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
- 
+import { Ionicons as Icon } from '@expo/vector-icons';
 const TABS = [
   { key: 'todos',      label: 'Todos' },
   { key: 'enviado',    label: 'Enviados' },
@@ -29,7 +29,6 @@ const TABS = [
   { key: 'cancelado',  label: 'Cancelados' },
 ];
  
-// ─── Badge ─────────────────────────────────────────────────────────────────────
 function EstadoBadge({ estado, theme }) {
   const { colors } = theme;
  
@@ -81,7 +80,6 @@ const badgeStyles = StyleSheet.create({
   },
 });
  
-// ─── Card ──────────────────────────────────────────────────────────────────────
 function ArticuloCard({ item, index, theme }) {
   const { colors, spacing, radius } = theme;
   const navigation = useNavigation();
@@ -104,12 +102,9 @@ function ArticuloCard({ item, index, theme }) {
       <TouchableOpacity activeOpacity={1} onPressIn={onPressIn} onPressOut={onPressOut}
         style={[cardStyles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.sm }]}
       >
-        {/* Imagen cuadrada */}
         <Image source={{ uri: item.imagen }} style={cardStyles.img} />
  
-        {/* Contenido */}
         <View style={[cardStyles.body, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 }]}>
-          {/* Fila título + badge */}
           <View style={cardStyles.row}>
             <Text style={[cardStyles.title, { color: colors.text, flex: 1 }]} numberOfLines={2}>
               {item.titulo || 'Sin título'}
@@ -117,12 +112,10 @@ function ArticuloCard({ item, index, theme }) {
             <EstadoBadge estado={item.estado} theme={theme} />
           </View>
  
-          {/* Fecha */}
           <Text style={[cardStyles.date, { color: colors.muted, marginTop: spacing.xs }]}>
             {item.fecha}
           </Text>
  
-          {/* Ver progreso */}
           <TouchableOpacity style={[cardStyles.link, { marginTop: spacing.xs + 2 }]}
           onPress={() => navigation.navigate('ProductDetails', { productoId: item.id, isPropuesto: true })}>
             <Text style={[cardStyles.linkText, { color: colors.primary }]}>VER PROGRESO</Text>
@@ -182,7 +175,6 @@ const cardStyles = StyleSheet.create({
   },
 });
  
-// ─── Pantalla principal ────────────────────────────────────────────────────────
 export default function ArticulosPropuestos({ navigation }) {
   const theme = useAppTheme();
   const { colors, spacing, radius } = theme;
@@ -255,16 +247,17 @@ export default function ArticulosPropuestos({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, marginTop: 40 }}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
  
-      {/* ── Header ── */}
       <View style={[hStyles.header, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, backgroundColor: colors.background }]}>
-        <TouchableOpacity style={[hStyles.back, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate('Home')}>
-          <Text style={[hStyles.backArrow, { color: colors.text }]}>‹</Text>
+        <TouchableOpacity
+          style={hStyles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[hStyles.title, { color: colors.text }]}>Artículos Propuestos</Text>
         <View style={{ width: 36 }} />
       </View>
  
-      {/* ── Tabs ── */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -297,7 +290,6 @@ export default function ArticulosPropuestos({ navigation }) {
         })}
       </ScrollView>
  
-      {/* ── Lista ── */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: spacing.md, paddingTop: spacing.xs }}
@@ -325,7 +317,6 @@ export default function ArticulosPropuestos({ navigation }) {
         <View style={{ height: 96 }} />
       </ScrollView>
  
-      {/* ── FAB ── */}
       <View style={[fabStyles.wrap, { bottom: Platform.OS === 'android' ? 110 : 100, left: spacing.md, right: spacing.md }]}>
         <TouchableOpacity
           activeOpacity={0.85}
@@ -349,8 +340,11 @@ export default function ArticulosPropuestos({ navigation }) {
  
 const hStyles = StyleSheet.create({
   header:    { flexDirection: 'row', alignItems: 'center'},
-  back:      { width: 36, height: 40, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { fontSize: 22, lineHeight: 26, marginTop: -1 },
+  backButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignSelf: 'flex-start',
+  },
   title:     { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', letterSpacing: 0.2 },
 });
  

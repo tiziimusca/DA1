@@ -86,7 +86,8 @@ public class MapperUtil {
     }
 
     public static Producto toProductoEntity(ProponerProductoDTO requestDto) {
-        if (requestDto == null) return null;
+        if (requestDto == null)
+            return null;
         Producto p = new Producto();
         String catalogDesc = requestDto.getTitulo();
         if (catalogDesc == null || catalogDesc.trim().isEmpty()) {
@@ -97,20 +98,21 @@ public class MapperUtil {
         if (requestDto.getRevisorId() != null) {
             p.setRevisor(requestDto.getRevisorId());
         } else {
-            p.setRevisor(1); // Asumiendo que el empleado con ID 1 existe gracias a tu DataSeeder
+            p.setRevisor(1);
         }
         if (requestDto.getDuenioId() != null) {
             p.setDuenio(requestDto.getDuenioId());
         } else {
-            p.setDuenio(2); // Dueño por defecto
+            p.setDuenio(2);
         }
-        
+
         return p;
     }
 
     public static Producto toProductoEntity(ProductoDTO requestDto) {
-        if (requestDto == null) return null;
-        
+        if (requestDto == null)
+            return null;
+
         Producto p = new Producto();
         p.setIdentificador(requestDto.getIdentificador());
         p.setFecha(requestDto.getFecha());
@@ -119,13 +121,14 @@ public class MapperUtil {
         p.setDescripcionCompleta(requestDto.getDescripcionCompleta());
         p.setRevisor(requestDto.getRevisorId());
         p.setDuenio(requestDto.getDuenioId());
-        
+
         return p;
     }
 
     public static ProductoDTO toProductoDTO(Producto p) {
-        if (p == null) return null;
-        
+        if (p == null)
+            return null;
+
         ProductoDTO dto = new ProductoDTO();
         dto.setIdentificador(p.getIdentificador());
         dto.setFecha(p.getFecha());
@@ -134,16 +137,17 @@ public class MapperUtil {
         dto.setDescripcionCompleta(p.getDescripcionCompleta());
         dto.setRevisorId(p.getRevisor());
         dto.setDuenioId(p.getDuenio());
-        
+
         return dto;
     }
 
     public static productoPropuestoDTO toProductoPropuestoDTO(Producto p) {
-        if (p == null) return null;
-        
+        if (p == null)
+            return null;
+
         productoPropuestoDTO dto = new productoPropuestoDTO();
         dto.setIdentificador(p.getIdentificador());
-        
+
         return dto;
     }
 
@@ -181,7 +185,6 @@ public class MapperUtil {
         u.setEmail(dto.getEmail());
         u.setDorso_doc(dto.getDorso_doc());
         u.setFrente_doc(dto.getFrente_doc());
-        // password hashing must be applied in service
         u.setPassword(dto.getPassword());
         u.setPersonaId(dto.getPersonaId());
         return u;

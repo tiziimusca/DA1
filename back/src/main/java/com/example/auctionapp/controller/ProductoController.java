@@ -44,7 +44,6 @@ import jakarta.validation.Valid;
 
 import com.example.auctionapp.dto.MisPropuestosResponseDTO;
 
-
 @RestController
 @RequestMapping("/api/productos")
 public class ProductoController {
@@ -59,11 +58,6 @@ public class ProductoController {
         this.authService = authService;
     }
 
-    // Resuelve el id de la persona autenticada a partir del header Authorization.
-    // Se resuelve vía Cliente (todo usuario logueado tiene fila en 'clientes'), no vía
-    // Dueno: ese id es el mismo número (Persona.identificador) que se usa como duenio.
-    // El registro en 'duenios' se crea recién al proponer un producto (ProductoService.asegurarDueno).
-    // Lanza SecurityException si el token es inválido o expiró (se traduce a 401).
     private Integer obtenerDuenioId(String authorizationHeader) {
         return authService.obtenerClienteDesdeToken(authorizationHeader).getIdentificador();
     }
@@ -72,17 +66,13 @@ public class ProductoController {
     public ResponseEntity<?> crear(
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ProponerProductoDTO requestDto) {
-        
+
         try {
-            // 1. Llamamos al Service pasándole el DTO y el Token. 
-            // El Service hace todo el trabajo y nos devuelve el Map listo.
             Map<String, Object> response = productoService.crearProductoDetalle(requestDto, authorizationHeader);
 
-            // 2. Retornamos la respuesta exitosa
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (SecurityException e) {
-            // Si falla el token en el Service, cae acá
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponseDTO("bad_request", e.getMessage()));
@@ -103,20 +93,20 @@ public class ProductoController {
         }
     }
 
-
     @GetMapping("/mis-propuestos")
     public ResponseEntity<Object> obtenerMisProductos(
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
             MisPropuestosResponseDTO responseDto = productoService.obtenerMisPropuestos(authorizationHeader);
-            return ResponseEntity.ok(responseDto); 
+            return ResponseEntity.ok(responseDto);
         } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponseDTO("unauthorized", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponseDTO("unauthorized", e.getMessage()));
         }
     }
 
     @GetMapping("/{id}/seguimiento")
-    public ResponseEntity<Object> obtenerSeguimiento(@PathVariable Integer id, 
+    public ResponseEntity<Object> obtenerSeguimiento(@PathVariable Integer id,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         try {
             Object responseDto = productoService.obtenerSeguimientoDTO(id, authorizationHeader);
@@ -162,7 +152,8 @@ public class ProductoController {
             Map<String, Object> response = productoService.devolverProducto(id, opcion, authorizationHeader);
             return ResponseEntity.ok(response);
         } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponseDTO("unauthorized", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponseDTO("unauthorized", e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO("conflict", e.getMessage()));
         } catch (RuntimeException e) {
@@ -170,17 +161,14 @@ public class ProductoController {
         }
     }
 
-
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> manejarErroresDeValidacion(MethodArgumentNotValidException ex) {
         Map<String, String> errores = new HashMap<>();
-        
-        // Recorremos todos los errores que saltaron en el DTO
+
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errores.put(error.getField(), error.getDefaultMessage());
         }
-        
+
         return ResponseEntity.badRequest().body(errores);
     }
 }

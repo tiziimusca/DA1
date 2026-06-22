@@ -28,12 +28,11 @@ public class RegistroRequestDTO {
     private String email;
 
     @NotNull(message = "La foto del frente es obligatoria")
-    private byte[] fotoDocumentoFrente; // Asumiendo base64 según tu documento
+    private byte[] fotoDocumentoFrente;
 
     @NotNull(message = "La foto del dorso es obligatoria")
     private byte[] fotoDocumentoDorso;
 
-    // Getters
     public String getDocumento() {
         return documento;
     }
@@ -62,7 +61,6 @@ public class RegistroRequestDTO {
         return fotoDocumentoDorso;
     }
 
-    // Setters
     public void setDocumento(String documento) {
         this.documento = documento;
     }

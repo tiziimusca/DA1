@@ -111,41 +111,25 @@ public class BidController {
                     return asistenteService.crear(nuevo);
                 });
 
-        System.out.println(cliente);
-        System.out.println("Hola");
         if (cliente == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El asistente no está asociado a un cliente válido");
         }
-        System.out.println(!tieneMetodoPagoAprobado(cliente.getIdentificador()));
-        System.out.println("gola");
         if (!tieneMetodoPagoAprobado(cliente.getIdentificador())) {
-            System.out.println("no tengo metodo de pago valido");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Debe tener al menos un método de pago verificado/aprobado para enviar una puja");
         }
-        System.out.println(item.getCatalogo().getDescripcion());
-        System.out.println(asistente.getSubasta().getEstado());
 
         if (!subastaItem.getIdentificador().equals(asistente.getSubasta().getIdentificador())) {
-            System.out.println(subastaItem);
-            System.out.println(asistente.getSubasta());
-            System.out.println(subastaItem.getIdentificador());
-            System.out.println(asistente.getSubasta().getIdentificador());
-            System.out.println("muere aca");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El item no pertenece a la subasta asociada al asistente");
         }
-        System.out.println("estoy aca");
         String categoriaCliente = normalizeCategoria(cliente.getCategoria());
         String categoriaSubasta = normalizeCategoria(subastaItem.getCategoria());
-        System.out.println(categoriaCliente);
-        System.out.println(categoriaSubasta);
         if (!permiteCategoria(categoriaCliente, categoriaSubasta)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "La categoría del cliente no es suficiente para participar en esta subasta");
         }
-        System.out.println(item.getPrecioBase());
         BigDecimal precioBase = item.getPrecioBase();
         if (precioBase == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El item no tiene precio base definido");
@@ -180,7 +164,6 @@ public class BidController {
 
         Puja savedPuja = pujaService.crear(puja);
 
-        // Notify all clients about the new bid
         String notification = String.format("{\"type\":\"NEW_BID\",\"subastaId\":%d,\"importe\":%s}",
                 subastaItem.getIdentificador(), savedPuja.getImporte().toString());
         bidWebSocketHandler.broadcast(notification);

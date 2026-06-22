@@ -22,8 +22,8 @@ public class MetodoPagoBancoResponseDTO {
     @AllArgsConstructor
     public static class MetodoPagoBancoDatosDTO {
         private String nombreTitular;
-        private String dniTitular; // Enmascarado o parcial
+        private String dniTitular;
         private String nombreBanco;
-        private String numeroCuenta; // Enmascarado
+        private String numeroCuenta;
     }
 }

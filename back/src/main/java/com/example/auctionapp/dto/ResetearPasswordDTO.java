@@ -16,7 +16,6 @@ public class ResetearPasswordDTO {
     @Size(min = 8, max = 255)
     private String confirmarPassword;
 
-    // Getters
     public String getTokenReseteo() {
         return tokenReseteo;
     }
@@ -29,7 +28,6 @@ public class ResetearPasswordDTO {
         return confirmarPassword;
     }
 
-    // Setters
     public void setTokenReseteo(String tokenReseteo) {
         this.tokenReseteo = tokenReseteo;
     }

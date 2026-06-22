@@ -19,14 +19,12 @@ import { useAppTheme } from '../theme/AppTheme';
 import { createMetodoPago, updateMetodoPago } from '../api/paymentApi';
 import { SafeAreaView } from 'react-native-safe-area-context';
  
-// ─── Helpers de imagen ────────────────────────────────────────────────────────
 async function seleccionarImagen(fuente) {
-  // Centralizamos las opciones para no repetir código
   const opcionesBase = {
     mediaTypes: ['images'],
     allowsEditing: true,
     quality: 0.85,
-    base64: true, // El picker hace la conversión a Base64
+    base64: true,
   };
 
   let result;
@@ -47,11 +45,8 @@ async function seleccionarImagen(fuente) {
     result = await ImagePicker.launchImageLibraryAsync(opcionesBase);
   }
 
-  // Si el usuario canceló, devolvemos null
   if (result.canceled) return null;
 
-  // Retornamos el string Base64 formateado. 
-  // Esto sirve tanto para el <Image source={{ uri: ... }} /> como para enviarlo al backend.
   return `data:image/jpeg;base64,${result.assets[0].base64}`;
 }
  
@@ -75,8 +70,6 @@ function abrirSelector(onUri) {
   }
 }
  
-// ─── Validaciones por campo ───────────────────────────────────────────────────
-// Devuelve un objeto { campo: 'mensaje de error' } con todos los errores presentes.
 function validarCampos({ metodo, formData, modoEdicion }) {
   const errores = {};
  
@@ -110,7 +103,6 @@ function validarCampos({ metodo, formData, modoEdicion }) {
       else if (formData.cvv.length < 3 || formData.cvv.length > 4)
         errores.cvv = 'El CVV debe tener 3 o 4 dígitos.';
     }
-    // Fecha — siempre requerida en creación y edición
     const mes = parseInt(formData.vencimientoMes, 10);
     let anio  = parseInt(formData.vencimientoAnio, 10);
     if (!formData.vencimientoMes || !formData.vencimientoAnio) {
@@ -120,7 +112,6 @@ function validarCampos({ metodo, formData, modoEdicion }) {
     } else if (isNaN(anio) || formData.vencimientoAnio.length !== 2) {
       errores.vencimiento = 'El año debe tener 2 dígitos (ej: 28).';
     } else {
-      // Comparar con fecha actual en formato YY
       const anioCompleto = anio + 2000;
       const hoy = new Date();
       const vencimiento = new Date(anioCompleto, mes - 1, 1);
@@ -140,7 +131,6 @@ function validarCampos({ metodo, formData, modoEdicion }) {
   return errores;
 }
  
-// ─── Selector de método ───────────────────────────────────────────────────────
 const METODOS = ['Banco', 'Tarjeta', 'Cheque'];
  
 function MetodoSelector({ activo, onChange, theme, bloqueado = false }) {
@@ -179,7 +169,6 @@ const sel = StyleSheet.create({
   label: { fontSize: 14 },
 });
  
-// ─── Campo con error inline ───────────────────────────────────────────────────
 function Campo({ label, placeholder, keyboardType, maxLength, theme, value, onChangeText, error }) {
   const { colors, spacing, radius } = theme;
   const tieneError = !!error;
@@ -214,7 +203,6 @@ const cmp = StyleSheet.create({
   error: { fontSize: 11, color: '#C62828', marginTop: 4, marginBottom: 8 },
 });
  
-// ─── FormBanco ────────────────────────────────────────────────────────────────
 function FormBanco({ theme, formData, onChange, errores }) {
   return (
     <View>
@@ -230,7 +218,6 @@ function FormBanco({ theme, formData, onChange, errores }) {
   );
 }
  
-// ─── FormTarjeta ──────────────────────────────────────────────────────────────
 function FormTarjeta({ theme, formData, onChange, modoEdicion = false, errores }) {
   const { colors, spacing, radius } = theme;
   const tipos = ['Visa', 'Mastercard', 'American Express'];
@@ -238,7 +225,6 @@ function FormTarjeta({ theme, formData, onChange, modoEdicion = false, errores }
  
   return (
     <View>
-      {/* Tipo de tarjeta */}
       <View style={{ marginBottom: errores.tipoTarjeta ? 4 : spacing.md }}>
         <Text style={[cmp.label, { color: colors.text, marginBottom: spacing.xs }]}>Tipo de tarjeta</Text>
         <TouchableOpacity
@@ -283,7 +269,6 @@ function FormTarjeta({ theme, formData, onChange, modoEdicion = false, errores }
         error={errores.numeroTarjeta}
       />
  
-      {/* Fecha MM/YY + CVV */}
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
         <View style={{ flex: 1 }}>
           <Text style={[cmp.label, { color: colors.text, marginBottom: spacing.xs }]}>Fecha de vencimiento</Text>
@@ -337,7 +322,6 @@ function FormTarjeta({ theme, formData, onChange, modoEdicion = false, errores }
   );
 }
  
-// ─── FormCheque ───────────────────────────────────────────────────────────────
 function CameraIcon({ color = '#667085', size = 28 }) {
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -393,7 +377,6 @@ function FormCheque({ theme, formData, onChange, errores }) {
   );
 }
  
-// ─── Modal verificación ───────────────────────────────────────────────────────
 function ModalVerificacion({ visible, onAceptar, theme }) {
   const { colors, radius } = theme;
   return (
@@ -426,7 +409,6 @@ const mdl = StyleSheet.create({
   btnLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });
  
-// ─── Pantalla principal ───────────────────────────────────────────────────────
 export default function AgregarMetodoPago() {
   const theme = useAppTheme();
   const { colors, spacing, radius } = theme;
@@ -443,8 +425,8 @@ export default function AgregarMetodoPago() {
  
   const [metodo, setMetodo] = useState(tabInicial);
   const [modalVisible, setModalVisible] = useState(false);
-  const [errores, setErrores] = useState({});         // ← errores inline por campo
-  const [intentoGuardar, setIntentoGuardar] = useState(false); // ← muestra errores solo tras primer intento
+  const [errores, setErrores] = useState({});
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
  
   const datosExistente = metodoExistente?.datos ?? {};
  
@@ -466,20 +448,17 @@ export default function AgregarMetodoPago() {
   const handleChange = (campo, valor) => {
     const nuevoFormData = { ...formData, [campo]: valor };
     setFormData(nuevoFormData);
-    // Revalidar en tiempo real solo si ya intentó guardar
     if (intentoGuardar) {
       setErrores(validarCampos({ metodo, formData: nuevoFormData, modoEdicion }));
     }
   };
- 
-  const idDelCliente = 11; // TODO: reemplazar con auth
- 
+  
   const handleGuardar = async () => {
     setIntentoGuardar(true);
     const erroresActuales = validarCampos({ metodo, formData, modoEdicion });
     setErrores(erroresActuales);
  
-    if (Object.keys(erroresActuales).length > 0) return; // hay errores, no continuar
+    if (Object.keys(erroresActuales).length > 0) return;
  
     let datosLimpios = {};
  
@@ -492,7 +471,6 @@ export default function AgregarMetodoPago() {
           ...(formData.cuenta ? { numeroCuenta: formData.cuenta }   : {}),
         };
       } else if (metodo === 'Tarjeta') {
-        // El backend espera MM/YY (2 dígitos de año)
         datosLimpios = {
           nombreTitular:    formData.titular,
           ...(formData.numeroTarjeta ? { numeroTarjeta: Number(formData.numeroTarjeta) } : {}),
@@ -501,7 +479,6 @@ export default function AgregarMetodoPago() {
           ...(formData.tipoTarjeta  ? { tipoTarjeta: formData.tipoTarjeta }            : {}),
         };
       } else if (metodo === 'Cheque') {
-        // Sacamos el prefijo "data:image/jpeg;base64," que el backend no acepta
         const limpiarBase64 = (str) => str?.replace(/^data:image\/\w+;base64,/, '') ?? null;
         
         datosLimpios = {
@@ -546,7 +523,6 @@ export default function AgregarMetodoPago() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <ModalVerificacion visible={modalVisible} onAceptar={handleAceptar} theme={theme} />
  
-      {/* Header */}
       <View style={[hdr.wrap, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[hdr.back, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[hdr.arrow, { color: colors.text }]}>‹</Text>
@@ -571,7 +547,6 @@ export default function AgregarMetodoPago() {
         </View>
       </ScrollView>
  
-      {/* Botón guardar */}
       <View style={[bot.wrap, { paddingHorizontal: spacing.md, paddingBottom: spacing.lg, backgroundColor: colors.background }]}>
         <TouchableOpacity
           activeOpacity={0.85}

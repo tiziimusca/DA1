@@ -11,23 +11,21 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    private static final String SECURITY_SCHEME_NAME = "bearerAuth";
+        private static final String SECURITY_SCHEME_NAME = "bearerAuth";
 
-    @Bean
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("Auction API")
-                        .version("v1")
-                        .description("API de subastas - documentación automática"))
-                // Hace aparecer el botón "Authorize" en Swagger UI y manda
-                // 'Authorization: Bearer <token>' en cada request automáticamente.
-                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
-                .components(new Components()
-                        .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()
-                                .name(SECURITY_SCHEME_NAME)
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")));
-    }
+        @Bean
+        public OpenAPI customOpenAPI() {
+                return new OpenAPI()
+                                .info(new Info()
+                                                .title("Auction API")
+                                                .version("v1")
+                                                .description("API de subastas - documentación automática"))
+                                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+                                .components(new Components()
+                                                .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()
+                                                                .name(SECURITY_SCHEME_NAME)
+                                                                .type(SecurityScheme.Type.HTTP)
+                                                                .scheme("bearer")
+                                                                .bearerFormat("JWT")));
+        }
 }

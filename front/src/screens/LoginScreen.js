@@ -178,7 +178,6 @@ export default function LoginScreen({ navigation }) {
                         style={[styles.modalBtn, { backgroundColor: colors.primary }]}
                         onPress={async () => {
                           const targetEmail = (pwEmail || email).trim();
-                          console.log('[LoginScreen] solicitarCodigo button pressed for', targetEmail);
                           if (!targetEmail || !isValidEmail(targetEmail)) {
                             setPwEmailError('Email inválido o inexistente');
                             return;
@@ -190,7 +189,6 @@ export default function LoginScreen({ navigation }) {
                             setPwModalVisible(false);
                             navigation.navigate('ResetPassword', { email: targetEmail });
                           } catch (error) {
-                            console.log('[LoginScreen] Error al solicitar código:', error.message);
                             setPwEmailError('Email inexistente');
                           }
                         }}

@@ -168,7 +168,7 @@ export default function BidScreen({ navigation, route }) {
   const [liveState, setLiveState] = useState(null);
   const [staticDetails, setStaticDetails] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(120);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [hasStarted, setHasStarted] = useState(() => {
     if (!subasta?.fecha) return true;
     const startDate = new Date(
@@ -206,7 +206,6 @@ export default function BidScreen({ navigation, route }) {
     'Sin descripción disponible';
 
   const loadData = async () => {
-    console.log('Cargando datos para subasta:', subasta.id);
     if (!subasta?.id) return;
     try {
       
@@ -214,9 +213,6 @@ export default function BidScreen({ navigation, route }) {
         fetchEstadoVivo(subasta.id),
         fetchDetalleEstatico(subasta.id)
       ]);
-      console.log('Datos vivo:', vivoData);
-      console.log('Datos estático:', estaticoData);
-      console.log('Subasta actual:', subasta);
       setLiveState(vivoData);
       setStaticDetails(estaticoData);
     } catch (error) {
@@ -239,10 +235,8 @@ export default function BidScreen({ navigation, route }) {
     
     const ws = createWebSocket(
       (data) => {
-        console.log('Bid recibido:', data);
-        console.log('Subasta actual:', subasta);
         if (data && data.type === 'NEW_BID' && data.subastaId === subasta?.id) {
-          setTimeLeft(120);
+          setTimeLeft(60);
           setHasStarted(true);
           loadLiveState();
         }
@@ -283,11 +277,9 @@ export default function BidScreen({ navigation, route }) {
   useEffect(() => {
     const handleAuctionEnd = async () => {
       if (isHighestBidder) {
-        console.log('Navegando a Payment con subasta:', subasta);
         navigation.replace('Payment', { subasta, winningBid: currentPrice, image: staticDetails?.items?.[0]?.fotos?.[0], comision: staticDetails?.items?.[0]?.comision });
       } else {
         try {
-          console.log('Finalizando subasta en BD para no ganador:', subasta?.id);
           if (subasta?.id) {
             await completarPago(subasta.id);
           }
@@ -383,7 +375,6 @@ export default function BidScreen({ navigation, route }) {
     const base = basePrice || 0;
     const lastBid = currentPrice || base;
 
-    // Reglas de validación (excepto oro/platino)
     if (categoria !== 'oro' && categoria !== 'platino') {
       const minBid = lastBid + base * 0.01;
       const maxBid = lastBid + base * 0.20;
@@ -409,7 +400,7 @@ export default function BidScreen({ navigation, route }) {
       await enviarPujaRest(bidData, token ? `Bearer ${token}` : null);
       Alert.alert('Éxito', 'Puja enviada');
       setMonto('');
-      setTimeLeft(120);
+      setTimeLeft(60);
       loadLiveState();
     } catch (error) {
       Alert.alert('Error al pujar', error.message || 'No se pudo enviar la puja');

@@ -19,13 +19,8 @@ import PhotoCarousel from '../components/PhotoCarousel';
 import { decodeImageUri } from '../utils/imageUtils';
 import { fetchProfile } from '../api/authApi';
 
-// Ancho fijo en vez de Dimensions.get('window').width: en web ese valor
-// puede tomar el ancho de la ventana completa, no el del contenedor,
-// haciendo que el slider se vea gigante.
 const MAX_SLIDER_WIDTH = 280;
 
-// Techo de precio por moneda — los rangos de ARS y USD no tienen la
-// misma escala, así que el slider se adapta según la moneda elegida.
 const PRICE_CEIL_BY_CURRENCY = {
   ARS: 200000,
   USD: 100000,
@@ -40,7 +35,7 @@ export default function AuctionListScreen({ navigation, route }) {
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [selectedCurrency, setSelectedCurrency] = useState('Todas'); // 'Todas' | 'ARS' | 'USD'
+  const [selectedCurrency, setSelectedCurrency] = useState('Todas');
 
   const token = getToken();
   const authUser = getUser();
@@ -49,11 +44,9 @@ export default function AuctionListScreen({ navigation, route }) {
 
   const priceCeil = PRICE_CEIL_BY_CURRENCY[selectedCurrency] || DEFAULT_PRICE_CEIL;
   const [priceRange, setPriceRange] = useState([0, DEFAULT_PRICE_CEIL]);
-  // Inputs de texto para escribir el precio a mano (más preciso que arrastrar el slider)
   const [minInput, setMinInput] = useState('0');
   const [maxInput, setMaxInput] = useState(String(DEFAULT_PRICE_CEIL));
 
-  // Si cambia la moneda seleccionada, reseteamos el rango al techo correspondiente
   useEffect(() => {
     setPriceRange([0, priceCeil]);
     setMinInput('0');
@@ -77,7 +70,6 @@ export default function AuctionListScreen({ navigation, route }) {
               setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
             }
           } catch (profileErr) {
-            console.log('[AuctionListScreen] Error fetching profile:', profileErr);
           }
         }
       } catch (err) {
@@ -110,8 +102,6 @@ export default function AuctionListScreen({ navigation, route }) {
       const matchesCurrency = selectedCurrency === 'Todas' || moneda === selectedCurrency;
 
       const precio = Number(item.precioBase ?? 0);
-      // El rango de precio solo aplica si la moneda coincide con la seleccionada
-      // (o si está en "Todas", en cuyo caso no filtramos por rango para no mezclar escalas).
       const matchesRange =
         selectedCurrency === 'Todas' || (precio >= priceRange[0] && precio <= priceRange[1]);
 
@@ -232,7 +222,6 @@ export default function AuctionListScreen({ navigation, route }) {
               })}
             </View>
 
-            {/* Selector de moneda */}
             <View style={styles.currencyRow}>
               {['Todas', 'ARS', 'USD'].map((currency) => {
                 const active = selectedCurrency === currency;
@@ -259,7 +248,6 @@ export default function AuctionListScreen({ navigation, route }) {
               </Text>
             ) : (
               <View style={styles.priceSliderWrap}>
-                {/* Inputs numéricos para precisión */}
                 <View style={styles.priceInputsRow}>
                   <View style={styles.priceInputBox}>
                     <Text style={[styles.priceInputLabel, { color: colors.muted }]}>Mínimo</Text>
@@ -335,9 +323,6 @@ export default function AuctionListScreen({ navigation, route }) {
 function AuctionCard({ item, navigation, colors, radius }) {
   const fallbackUris = ['https://images.unsplash.com/photo-1513602855647-7dbafac0f632?auto=format&fit=crop&w=900&q=80'];
 
-  // El endpoint /home solo trae UNA foto (campo "foto", singular), suficiente
-  // para mostrar algo de entrada sin esperar. La usamos como estado inicial
-  // y la completamos con todas las fotos del catálogo en segundo plano.
   const homeFoto = item.fotos && item.fotos.length > 0 ? item.fotos : (item.foto ? [item.foto] : []);
   const homeDecoded = homeFoto.map(decodeImageUri).filter(Boolean);
   const initialUris = homeDecoded.length > 0 ? homeDecoded : fallbackUris;
@@ -379,7 +364,6 @@ function AuctionCard({ item, navigation, colors, radius }) {
           setPhotoUris(decoded);
         }
       } catch {
-        // Si falla, nos quedamos con la foto única que ya vino de /home
       }
     };
 
@@ -387,9 +371,6 @@ function AuctionCard({ item, navigation, colors, radius }) {
     return () => { mounted = false; };
   }, [itemId]);
 
-  // Los items que llegan desde /home (subastasActivas) ya vienen pre-filtrados
-  // como activos por el backend y no traen un campo "estado". Si en algún momento
-  // sí lo trajeran, respetamos ese valor; si no existe, asumimos que está activa.
   const isActive = item.estado != null
     ? String(item.estado).toLowerCase() === 'abierta'
     : true;
@@ -440,7 +421,6 @@ const styles = StyleSheet.create({
   header: { fontSize: 26, fontWeight: '700' },
   listContent: { padding: 16, paddingBottom: 24 },
 
-  // Card
   card: {
     borderWidth: 1,
     overflow: 'hidden',
@@ -460,7 +440,6 @@ const styles = StyleSheet.create({
   priceLabel: { fontSize: 11, marginTop: 2 },
   buttonText: { fontSize: 14, fontWeight: '700' },
 
-  // Filters
   filtersContainer: { borderWidth: 1, borderRadius: 20, padding: 16, marginBottom: 16 },
   filterTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
   searchInput: { height: 46, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, marginBottom: 14 },
@@ -482,7 +461,6 @@ const styles = StyleSheet.create({
   },
   hintText: { fontSize: 12, fontStyle: 'italic', textAlign: 'center' },
 
-  // Price slider — ancho fijo (MAX_SLIDER_WIDTH) para que no se estire en web
   priceSliderWrap: { alignItems: 'center' },
   priceInputsRow: { flexDirection: 'row', gap: 10, marginBottom: 12, width: MAX_SLIDER_WIDTH },
   priceInputBox: { flex: 1 },
@@ -511,13 +489,11 @@ const styles = StyleSheet.create({
   },
   sliderMarkerPressed: { height: 26, width: 26, borderRadius: 13 },
 
-  // Misc
   loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 16, textAlign: 'center', margin: 16 },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
   emptyText: { fontSize: 16 },
 
-  // Profile Header
   profileHeaderRow: { marginBottom: 4 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },

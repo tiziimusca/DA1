@@ -22,9 +22,7 @@ import { decodeImageUri } from '../utils/imageUtils';
 
 const HOST_URL = SERVER_BASE_URL;
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_IMAGE_WIDTH = SCREEN_WIDTH - 32; // 16px padding a cada lado
-
-// ─── Carrusel de fotos por ítem ──────────────────────────────────────────────
+const CARD_IMAGE_WIDTH = SCREEN_WIDTH - 32;
 
 const carouselStyles = StyleSheet.create({
   wrap: { height: 220, position: 'relative', backgroundColor: '#ddd' },
@@ -56,7 +54,6 @@ const carouselStyles = StyleSheet.create({
   },
 });
 
-// ─── Card individual ─────────────────────────────────────────────────────────
 function CatalogCard({ item, loggedIn, catalogoData, colors, radius }) {
   const imageUris = (item.fotos || []).map(decodeImageUri).filter(Boolean);
   return (
@@ -70,12 +67,10 @@ function CatalogCard({ item, loggedIn, catalogoData, colors, radius }) {
         },
       ]}
     >
-      {/* Carrusel de fotos */}
       <View style={{ borderRadius: radius.lg, overflow: 'hidden' }}>
         <PhotoCarousel uris={imageUris} height={220} tag={item.categoria} />        
       </View>
 
-      {/* Cuerpo */}
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <Text
@@ -111,7 +106,6 @@ function CatalogCard({ item, loggedIn, catalogoData, colors, radius }) {
   );
 }
 
-// ─── Pantalla principal ───────────────────────────────────────────────────────
 export default function CatalogScreen({ route, navigation }) {
   const { colors, radius } = useAppTheme();
   const subasta = route?.params?.product;
@@ -186,7 +180,6 @@ export default function CatalogScreen({ route, navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <View style={{ flex: 1 }}>
-        {/* Botón atrás */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -248,7 +241,6 @@ export default function CatalogScreen({ route, navigation }) {
   );
 }
 
-// ─── Estilos ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, marginTop: 60 },
   backButton: {
@@ -259,7 +251,6 @@ const styles = StyleSheet.create({
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
   content: { paddingHorizontal: 16, paddingBottom: 24 },
 
-  // Card
   card: {
     borderWidth: 1,
     overflow: 'hidden',
@@ -282,7 +273,6 @@ const styles = StyleSheet.create({
   startDate: { fontSize: 12, marginBottom: 10, fontWeight: '600' },
   price: { fontSize: 16, fontWeight: '700' },
 
-  // Footer banner
   guestBannerBtn: {
     paddingVertical: 14,
     paddingHorizontal: 18,
@@ -296,7 +286,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Empty / error
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
   emptyTitle: { fontSize: 16, marginBottom: 12 },
   backBtn: { paddingHorizontal: 18, paddingVertical: 10 },

@@ -28,8 +28,6 @@ export default function EditProfileScreen({ navigation, route }) {
 
   const initialProfile = route?.params?.profile || null;
 
-  console.log("LOL",initialProfile)
-
   const [fullName, setFullName] = useState('');
   const [pais, setPais] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -40,9 +38,6 @@ export default function EditProfileScreen({ navigation, route }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [avatarUri, setAvatarUri] = useState(initialProfile?.avatarUrl);
-  // Foto en base64 puro, lista para mandar al backend como byte[] (varbinary).
-  // Se completa solo cuando el usuario elige una foto nueva; si queda null,
-  // significa que no se tocó el avatar y no se manda ese campo al guardar.
   const [avatarBase64, setAvatarBase64] = useState(null);
 
   useEffect(() => {
@@ -62,14 +57,6 @@ export default function EditProfileScreen({ navigation, route }) {
     return idx >= 0 ? Math.max(1, idx + 1) : 1;
   }
 
-  // ─── Selector de foto de perfil ────────────────────────────────────────────
-
-  /**
-   * A veces (sobre todo en Android con allowsEditing:true) el picker no
-   * devuelve el campo base64 del resultado, aunque se haya pedido
-   * { base64: true }. Como fallback, leemos el archivo del uri directamente
-   * con expo-file-system y lo codificamos a mano.
-   */
   const resolveBase64 = async (asset) => {
     if (asset.base64) return asset.base64;
     try {
@@ -78,7 +65,6 @@ export default function EditProfileScreen({ navigation, route }) {
       });
       return base64;
     } catch (err) {
-      console.log('[EditProfileScreen] No se pudo generar base64 de la foto:', err.message);
       return null;
     }
   };
@@ -105,7 +91,6 @@ export default function EditProfileScreen({ navigation, route }) {
       const asset = result.assets[0];
       setAvatarUri(asset.uri);
       const base64 = await resolveBase64(asset);
-      console.log('[EditProfileScreen] avatarBase64 length (cámara):', base64?.length || 0);
       setAvatarBase64(base64);
     }
   };
@@ -132,13 +117,11 @@ export default function EditProfileScreen({ navigation, route }) {
       const asset = result.assets[0];
       setAvatarUri(asset.uri);
       const base64 = await resolveBase64(asset);
-      console.log('[EditProfileScreen] avatarBase64 length (galería):', base64?.length || 0);
       setAvatarBase64(base64);
     }
   };
 
   const handleAvatarPress = () => {
-    // En iOS usamos el ActionSheet nativo, más prolijo visualmente.
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
@@ -153,7 +136,6 @@ export default function EditProfileScreen({ navigation, route }) {
       return;
     }
 
-    // En Android (y web) usamos Alert con botones, que se ve como un diálogo.
     Alert.alert(
       'Foto de perfil',
       '¿Cómo querés actualizar tu foto?',
@@ -215,13 +197,9 @@ export default function EditProfileScreen({ navigation, route }) {
       payload.password = password;
     }
 
-    // Solo mandamos el campo foto si el usuario realmente eligió una nueva imagen.
-    // Si avatarBase64 es null significa que no tocó el avatar, y no queremos
-    // pisar la foto existente en el backend con un valor vacío.
     if (avatarBase64) {
       payload.foto = avatarBase64;
     }
-    console.log('[EditProfileScreen] avatarBase64 al guardar:', avatarBase64 ? `${avatarBase64.length} chars` : 'null/vacío');
 
     try {
       setIsSaving(true);

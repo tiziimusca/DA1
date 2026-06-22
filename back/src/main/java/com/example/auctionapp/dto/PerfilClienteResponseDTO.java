@@ -7,7 +7,7 @@ public class PerfilClienteResponseDTO {
     private String pais;
     private String estado;
     private String direccion;
-    private String foto; // Base64 (o URL si así viene guardada), listo para <Image source={{ uri }} />
+    private String foto; // Base64
 
     public PerfilClienteResponseDTO() {
     }

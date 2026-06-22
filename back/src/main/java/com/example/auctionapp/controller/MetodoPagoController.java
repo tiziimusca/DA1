@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/clientes/me/metodos-pago")
 public class MetodoPagoController {
@@ -49,10 +48,9 @@ public class MetodoPagoController {
 
     @PostMapping
     public ResponseEntity<?> crearMetodoPago(
-            
+
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @Valid @RequestBody CrearMetodoPagoRequestDTO request
-            ) {
+            @Valid @RequestBody CrearMetodoPagoRequestDTO request) {
 
         try {
             String tipo = request.getTipo();
@@ -95,8 +93,8 @@ public class MetodoPagoController {
     public ResponseEntity<List<Object>> listarMetodosPago(
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
-            Cliente cliente = authService.obtenerClienteDesdeToken(authorizationHeader);
-            Integer clienteId = cliente.getIdentificador();
+        Cliente cliente = authService.obtenerClienteDesdeToken(authorizationHeader);
+        Integer clienteId = cliente.getIdentificador();
 
         List<Object> todosMétodos = new ArrayList<>();
 
@@ -113,8 +111,6 @@ public class MetodoPagoController {
             @RequestParam Integer clienteId,
             @RequestParam String tipo) {
 
-        // El id NO es único entre tablas: cada tipo tiene su propio autoincremental.
-        // Por eso necesitamos el 'tipo' para saber en qué tabla buscar.
         switch (tipo) {
             case "banco":
                 return bancoService.obtenerPorIdYCliente(id, clienteId)
@@ -168,8 +164,6 @@ public class MetodoPagoController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
 
-        // Sin 'tipo' este borrado era ambiguo: con ids repetidos entre tablas
-        // podía borrar el método equivocado (ej: borrar el banco id 2 al pedir la tarjeta id 2).
         try {
             switch (tipo) {
                 case "banco":
@@ -222,12 +216,14 @@ public class MetodoPagoController {
                     return ResponseEntity.ok(chequeService.actualizar(id, clienteId, chequeDTO));
 
                 default:
-                    return ResponseEntity.badRequest().body("Tipo de método de pago inválido. Debe ser 'banco', 'tarjeta' o 'cheque'");
+                    return ResponseEntity.badRequest()
+                            .body("Tipo de método de pago inválido. Debe ser 'banco', 'tarjeta' o 'cheque'");
             }
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Faltan datos obligatorios para el método seleccionado o el formato es incorrecto: " + e.getMessage());
+                    .body("Faltan datos obligatorios para el método seleccionado o el formato es incorrecto: "
+                            + e.getMessage());
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
             if (msg.contains("no encontrado") || msg.contains("no existe") || msg.contains("not found")) {

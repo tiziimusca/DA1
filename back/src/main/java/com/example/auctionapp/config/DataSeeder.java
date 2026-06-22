@@ -33,7 +33,6 @@ public class DataSeeder implements CommandLineRunner {
         @Override
         @Transactional
         public void run(String... args) {
-                // Reemplazamos/insertamos explícitamente la lista de países en el mismo orden
                 jdbcTemplate.update("DELETE FROM paises");
 
                 jdbcTemplate.update(
@@ -403,7 +402,6 @@ public class DataSeeder implements CommandLineRunner {
                                                 }),
                                 null);
 
-                // Subasta Especial - Comienza en 5 minutos
                 LocalDateTime especialTime = LocalDateTime.now().plusMinutes(3);
                 LocalDate fechaEspecial = especialTime.toLocalDate();
                 LocalTime horaEspecial = especialTime.toLocalTime().withNano(0);
@@ -437,9 +435,8 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1593494193844-c2bd6b1a0e16?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1591102972305-213abaa76d6f?q=80&w=436&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                new BidSpec(clienteCuatroId, 4, new BigDecimal("1300.00"), "no"));
+                                null);
 
-                // Subasta Platino - Comienza en 5 días
                 LocalDate fechaPlatino = LocalDate.now().plusDays(5);
                 LocalTime horaPlatino = LocalTime.of(15, 0);
 
@@ -504,8 +501,7 @@ public class DataSeeder implements CommandLineRunner {
                                 "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                 personaUsuarioId, "Usuario Demo", 5111111111112222L, "06/34", "123", "aprobado",
                                 System.currentTimeMillis());
-                // --- Agregar producto "Reloj de mano importante" al Catalogo 2 ("Catalogo
-                // futuro uno") ---
+
                 Integer catalogo2Id = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
                                 "Catalogo futuro uno");
 
@@ -518,8 +514,6 @@ public class DataSeeder implements CommandLineRunner {
                 Integer relojId = getInteger("SELECT identificador FROM productos WHERE descripcion_completa = ?",
                                 "Importante reloj de mano Rolex Daytona en oro de 18k, cronógrafo automático, modelo 2021 en estado de colección.");
 
-                // Guardamos la URL directamente como bytes UTF-8 para que se use como imagen
-                // remota
                 String relojUrl = "https://images.unsplash.com/photo-1639006570490-79c0c53f1080?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
                 byte[] fotoRelojBytes = relojUrl.getBytes(StandardCharsets.UTF_8);
                 jdbcTemplate.update("INSERT INTO fotos (producto, foto) VALUES (?, ?)", relojId, fotoRelojBytes);
@@ -543,9 +537,6 @@ public class DataSeeder implements CommandLineRunner {
                                 "INSERT INTO items_catalogo (catalogo, producto, precio_base, comision, subastado) VALUES (?, ?, ?, ?, ?)",
                                 catalogo2Id, relojId, new BigDecimal("25000.00"), new BigDecimal("2500.00"), "NO");
 
-                // --- Seed data for MetricsScreen Mockup for demo user ---
-                // 1. Reloj Rolex (Joyería Fina y relojes -> category "Oro", price USD 4.400,
-                // Ganada)
                 jdbcTemplate.update(
                                 "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                 LocalDate.now().minusDays(3), Time.valueOf(LocalTime.of(15, 0)), "finalizada",
@@ -586,8 +577,6 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
                                 asistenteRolexId, itemRolexId, new BigDecimal("4400.00"), "SI");
 
-                // 2. 1967 Mustang (Autos clásicos -> category "Autos", price USD 130.000,
-                // Ganada)
                 jdbcTemplate.update(
                                 "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                 LocalDate.now().minusDays(2), Time.valueOf(LocalTime.of(16, 0)), "finalizada",
@@ -628,8 +617,6 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
                                 asistenteMustangId, itemMustangId, new BigDecimal("130000.00"), "SI");
 
-                // 3. Horizonte No. 4 (Arte moderno -> category "Arte", price ARS 257.000,
-                // Perdida)
                 jdbcTemplate.update(
                                 "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                                 LocalDate.now().minusDays(1), Time.valueOf(LocalTime.of(17, 0)), "finalizada",
@@ -670,8 +657,6 @@ public class DataSeeder implements CommandLineRunner {
                 jdbcTemplate.update("INSERT INTO pujos (asistente, item, importe, ganador) VALUES (?, ?, ?, ?)",
                                 asistenteHorizonteUserId, itemHorizonteId, new BigDecimal("257000.00"), "no");
 
-                // Para simular la pérdida, registramos que otro cliente (clienteUnoId) ganó con
-                // 260.000
                 jdbcTemplate.update("INSERT INTO asistentes (numero_postor, cliente, subasta) VALUES (?, ?, ?)", 15,
                                 clienteUnoId, subastaHorizonteId);
                 Integer asistenteHorizonteOtherId = getInteger(

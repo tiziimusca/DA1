@@ -18,7 +18,7 @@ public class MetodoPagoTarjetaService {
     private final MetodoPagoTarjetaTipoRepository tipoRepository;
 
     public MetodoPagoTarjetaService(MetodoPagoTarjetaRepository repository,
-                                    MetodoPagoTarjetaTipoRepository tipoRepository) {
+            MetodoPagoTarjetaTipoRepository tipoRepository) {
         this.repository = repository;
         this.tipoRepository = tipoRepository;
     }
@@ -69,8 +69,6 @@ public class MetodoPagoTarjetaService {
         MetodoPagoTarjeta tarjeta = repository.findByIdAndClienteId(id, clienteId)
                 .orElseThrow(() -> new RuntimeException("Método de pago tarjeta no encontrado"));
 
-        System.out.println("[MetodoPagoTarjetaService] Actualizando tarjeta ID: " + id + " para cliente: " + clienteId);
-        
         if (dto.getNombreTitular() != null && !dto.getNombreTitular().isEmpty()) {
             tarjeta.setNombreTitular(dto.getNombreTitular());
         }
@@ -85,14 +83,12 @@ public class MetodoPagoTarjetaService {
         }
 
         MetodoPagoTarjeta actualizada = repository.save(tarjeta);
-        System.out.println("[MetodoPagoTarjetaService] Tarjeta actualizada con ID: " + actualizada.getId());
-        
+
         if (dto.getTipoTarjeta() != null && !dto.getTipoTarjeta().isEmpty()) {
             actualizarTipoTarjeta(actualizada.getId(), dto.getTipoTarjeta());
         }
-        
+
         MetodoPagoTarjetaResponseDTO response = mapearAResponseDTO(actualizada);
-        System.out.println("[MetodoPagoTarjetaService] Respuesta DTO: " + response.getId());
         return response;
     }
 
