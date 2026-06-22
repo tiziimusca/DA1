@@ -165,7 +165,6 @@ export default function HomeScreen({ navigation, route }) {
   const authUser = getUser();
   const token = getToken();
   const userName = authUser?.nombre || route?.params?.userName || 'Usuario';
-
   useEffect(() => {
     const loadHomeData = async () => {
       try {
@@ -173,12 +172,19 @@ export default function HomeScreen({ navigation, route }) {
         setError(null);
         const authHeader = isGuest ? null : (token ? `Bearer ${token}` : null);
         const data = await fetchHomeDashboard(authHeader);
-        const profileData = await fetchProfile(token);
-        if (profileData?.foto) {
-          setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
-        }
         console.log('[HomeScreen] homeData fetched:', data);
         setHomeData(data);
+
+        if (token) {
+          try {
+            const profileData = await fetchProfile(token);
+            if (profileData?.foto) {
+              setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
+            }
+          } catch (profileErr) {
+            console.log('[HomeScreen] Error fetching profile:', profileErr);
+          }
+        }
       } catch (err) {
         console.log('[HomeScreen] Error fetching home data:', err);
         setError(err.message);

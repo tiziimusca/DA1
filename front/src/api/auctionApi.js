@@ -32,8 +32,12 @@ export async function fetchProducto(id) {
 }
 
 export async function fetchCatalogo(subastaId, authHeader) {
+  const headers = {};
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
+  }
   const response = await fetch(`${BASE_URL}/subastas/${subastaId}/catalogo`, {
-    headers: authHeader ? { Authorization: authHeader } : undefined,
+    headers
   });
   if (response.status === 204) {
     return { items: [] };
@@ -45,8 +49,12 @@ export async function fetchCatalogo(subastaId, authHeader) {
 }
 
 export async function fetchHomeDashboard(authToken) {
+  const headers = {};
+  if (authToken) {
+    headers['Authorization'] = authToken;
+  }
   const response = await fetch(`${BASE_URL}/home`, {
-    headers: authToken ? { Authorization: authToken } : undefined,
+    headers
   });
   if (!response.ok) {
     throw new Error(await parseError(response));
@@ -55,8 +63,12 @@ export async function fetchHomeDashboard(authToken) {
 }
 
 export async function fetchClienteEstadisticas(authToken) {
+  const headers = {};
+  if (authToken) {
+    headers['Authorization'] = authToken;
+  }
   const response = await fetch(`${BASE_URL}/clientes/me/estadisticas`, {
-    headers: authToken ? { Authorization: authToken } : undefined,
+    headers
   });
   if (!response.ok) {
     throw new Error(await parseError(response));
