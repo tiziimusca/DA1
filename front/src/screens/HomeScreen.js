@@ -170,7 +170,6 @@ export default function HomeScreen({ navigation, route }) {
         setError(null);
         const authHeader = isGuest ? null : (token ? `Bearer ${token}` : null);
         const data = await fetchHomeDashboard(authHeader);
-        console.log('[HomeScreen] homeData fetched:', data);
         setHomeData(data);
 
         if (token) {
@@ -180,7 +179,6 @@ export default function HomeScreen({ navigation, route }) {
               setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
             }
           } catch (profileErr) {
-            console.log('[HomeScreen] Error fetching profile:', profileErr);
           }
         }
       } catch (err) {
