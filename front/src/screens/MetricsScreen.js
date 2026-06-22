@@ -78,14 +78,13 @@ export default function MetricsScreen() {
       </SafeAreaView>
     );
   }
-
   const participatedItems = stats?.participadas || [];
+  const hasParticipated = participatedItems.length > 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       
-      {/* Header matching the style */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color={colors.text} />
@@ -96,47 +95,45 @@ export default function MetricsScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         
-        {/* Grid cards */}
         <View style={styles.grid}>
           <MetricCard 
             title="Subastas asistidas" 
-            value={stats?.subastasAsistidas ?? 0} 
-            delta={stats?.subastasAsistidasDelta} 
-            note={stats?.subastasAsistidasPeriodo} 
+            value={hasParticipated ? (stats?.subastasAsistidas ?? 0) : '-'} 
+            delta={hasParticipated ? stats?.subastasAsistidasDelta : null} 
+            note={hasParticipated ? stats?.subastasAsistidasPeriodo : ''} 
             iconName="calendar" 
             colors={colors} 
             radius={radius} 
           />
           <MetricCard 
             title="Subastas ganadas" 
-            value={stats?.subastasGanadas ?? 0} 
-            delta={stats?.subastasGanadasDelta} 
-            note={stats?.subastasGanadasPeriodo} 
+            value={hasParticipated ? (stats?.subastasGanadas ?? 0) : '-'} 
+            delta={hasParticipated ? stats?.subastasGanadasDelta : null} 
+            note={hasParticipated ? stats?.subastasGanadasPeriodo : ''} 
             iconName="trophy" 
             colors={colors} 
             radius={radius} 
           />
           <MetricCard 
             title="Monto total ofertado" 
-            value={compactMoney(stats?.montoTotalOfertado)} 
-            delta={stats?.montoTotalOfertadoDelta} 
-            note={stats?.montoTotalOfertadoPeriodo} 
+            value={hasParticipated ? compactMoney(stats?.montoTotalOfertado) : '-'} 
+            delta={hasParticipated ? stats?.montoTotalOfertadoDelta : null} 
+            note={hasParticipated ? stats?.montoTotalOfertadoPeriodo : ''} 
             iconName="wallet" 
             colors={colors} 
             radius={radius} 
           />
           <MetricCard 
             title="Total gastado" 
-            value={compactMoney(stats?.totalGastado)} 
-            delta={stats?.totalGastadoDelta} 
-            note={stats?.totalGastadoPeriodo} 
+            value={hasParticipated ? compactMoney(stats?.totalGastado) : '-'} 
+            delta={hasParticipated ? stats?.totalGastadoDelta : null} 
+            note={hasParticipated ? stats?.totalGastadoPeriodo : ''} 
             iconName="cash" 
             colors={colors} 
             radius={radius} 
           />
         </View>
 
-        {/* General Win Rate card with Ring chart */}
         <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderRadius: radius.lg }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Tasa de victorias general</Text>
           
@@ -145,48 +142,53 @@ export default function MetricsScreen() {
               styles.ringInner, 
               { 
                 borderColor: colors.primarySoft, 
-                borderRightColor: (stats?.tasaVictorias ?? 0) >= 25 ? colors.primary : colors.primarySoft,
-                borderBottomColor: (stats?.tasaVictorias ?? 0) >= 50 ? colors.primary : colors.primarySoft,
-                borderLeftColor: (stats?.tasaVictorias ?? 0) >= 75 ? colors.primary : colors.primarySoft,
-                borderTopColor: (stats?.tasaVictorias ?? 0) >= 99 ? colors.primary : colors.primarySoft,
+                borderRightColor: hasParticipated && (stats?.tasaVictorias ?? 0) >= 25 ? colors.primary : colors.primarySoft,
+                borderBottomColor: hasParticipated && (stats?.tasaVictorias ?? 0) >= 50 ? colors.primary : colors.primarySoft,
+                borderLeftColor: hasParticipated && (stats?.tasaVictorias ?? 0) >= 75 ? colors.primary : colors.primarySoft,
+                borderTopColor: hasParticipated && (stats?.tasaVictorias ?? 0) >= 99 ? colors.primary : colors.primarySoft,
               }
             ]}>
               <View style={styles.ringValueContainer}>
-                <Text style={[styles.ringValue, { color: colors.text }]}>{stats?.tasaVictorias ?? 0}%</Text>
+                <Text style={[styles.ringValue, { color: colors.text }]}>{hasParticipated ? `${stats?.tasaVictorias ?? 0}%` : '-'}</Text>
               </View>
             </View>
           </View>
           
-          <Text style={[styles.insight, { color: colors.text }]}>{stats?.tasaVictoriasInsight}</Text>
+          <Text style={[styles.insight, { color: colors.text }]}>{hasParticipated ? stats?.tasaVictoriasInsight : 'Sin participaciones para generar análisis'}</Text>
         </View>
 
-        {/* Participated auctions list */}
         <View style={[styles.card, { backgroundColor: colors.metricsBackground, borderRadius: radius.lg, marginBottom: 24 }]}>
           <Text style={[styles.listTitle, { color: colors.text }]}>Subastas participadas</Text>
           <View style={[styles.listDivider, { backgroundColor: colors.text }]} />
           
           <View style={styles.participatedList}>
-            {participatedItems.map((item) => (
-              <View key={item.identificador} style={[styles.participatedRow, { backgroundColor: colors.surface }]}>
-                <View style={styles.participatedLeft}>
-                  {item.imagenUrl ? (
-                    <Image source={{ uri: item.imagenUrl }} style={styles.thumb} />
-                  ) : (
-                    <View style={[styles.thumb, { backgroundColor: colors.primarySoft }]} />
-                  )}
-                  <View style={styles.detailsContainer}>
-                    <Text style={[styles.participatedTitle, { color: colors.text }]} numberOfLines={1}>{item.titulo}</Text>
-                    <Text style={[styles.participatedSubtitle, { color: colors.muted }]}>{item.categoria}</Text>
+            {participatedItems.length === 0 ? (
+              <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13, fontStyle: 'italic', marginVertical: 10 }}>
+                No participaste en ninguna subasta todavía.
+              </Text>
+            ) : (
+              participatedItems.map((item) => (
+                <View key={item.identificador} style={[styles.participatedRow, { backgroundColor: colors.surface }]}>
+                  <View style={styles.participatedLeft}>
+                    {item.imagenUrl ? (
+                      <Image source={{ uri: item.imagenUrl }} style={styles.thumb} />
+                    ) : (
+                      <View style={[styles.thumb, { backgroundColor: colors.primarySoft }]} />
+                    )}
+                    <View style={styles.detailsContainer}>
+                      <Text style={[styles.participatedTitle, { color: colors.text }]} numberOfLines={1}>{item.titulo}</Text>
+                      <Text style={[styles.participatedSubtitle, { color: colors.muted }]}>{item.categoria}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.participatedRight}>
+                    <Text style={[styles.participatedAmount, { color: colors.primary }]}>{formatCurrency(item.monto, item.moneda)}</Text>
+                    <View style={[styles.badge, { backgroundColor: colors.metricsBackground }]}>
+                      <Text style={[styles.badgeText, { color: colors.primary }]}>{item.estado}</Text>
+                    </View>
                   </View>
                 </View>
-                <View style={styles.participatedRight}>
-                  <Text style={[styles.participatedAmount, { color: colors.primary }]}>{formatCurrency(item.monto, item.moneda)}</Text>
-                  <View style={[styles.badge, { backgroundColor: colors.metricsBackground }]}>
-                    <Text style={[styles.badgeText, { color: colors.primary }]}>{item.estado}</Text>
-                  </View>
-                </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         </View>
       </ScrollView>

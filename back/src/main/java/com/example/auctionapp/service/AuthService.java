@@ -51,8 +51,6 @@ public class AuthService {
     private final SmtpEmailService smtpEmailService;
     private final RecoveryCodeStore recoveryCodeStore;
 
-
-    // Rate limiter: map email -> deque of request timestamps
     private final ConcurrentHashMap<String, Deque<Instant>> requestTimestamps = new ConcurrentHashMap<>();
     private final int MAX_REQUESTS = 3;
     private final Duration WINDOW = Duration.ofMinutes(15);
@@ -83,7 +81,6 @@ public class AuthService {
 
     @Transactional
     public RegistroResponseDTO registrarUsuario(RegistroRequestDTO request) {
-        // 1. Validaciones
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email inválido");
         }
@@ -96,7 +93,6 @@ public class AuthService {
             throw new IllegalArgumentException("Documento inválido");
         }
 
-        // Validación simple para documento: solo dígitos entre 6 y 12
         if (!request.getDocumento().matches("\\d{6,12}")) {
             throw new IllegalArgumentException("Documento inválido");
         }
@@ -110,12 +106,10 @@ public class AuthService {
             throw new IllegalArgumentException("Faltan fotos obligatorias");
         }
 
-        // 2. Creamos la Persona -> Con los datos del request
         Persona nuevaPersona = new Persona();
         nuevaPersona.setDocumento(request.getDocumento());
         nuevaPersona.setNombre(request.getNombre());
         nuevaPersona.setDireccion(request.getDireccion());
-        // Si se registra con el email especial, marcar persona como Activo
         String specialEmail = "nina.12.6el@gmail.com";
         boolean isSpecial = request.getEmail() != null && request.getEmail().equalsIgnoreCase(specialEmail);
         nuevaPersona.setEstado(isSpecial ? "Activo" : "inactivo");
@@ -131,14 +125,12 @@ public class AuthService {
         nuevoUsuario.setEmail(request.getEmail());
         nuevoUsuario.setDorso_doc(request.getFotoDocumentoDorso());
         nuevoUsuario.setFrente_doc(request.getFotoDocumentoFrente());
-        // No password is assigned at registration. The user will create it later via "Generate new password".
         nuevoUsuario.setPassword("");
 
         Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
 
         Cliente nuevoCliente = new Cliente();
         nuevoCliente.setPersona(personaGuardada);
-        // Si se registra con el email especial, marcar cliente como admitido
         nuevoCliente.setAdmitido(isSpecial ? "si" : "no");
         nuevoCliente.setNumeroPais(paisRepository.getPaisByNumero(request.getNumeroPais()));
         nuevoCliente.setCategoria("comun");
@@ -164,7 +156,8 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Email inexistente"));
 
         if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
-            throw new IllegalArgumentException("Cuenta sin contraseña. Genere una nueva contraseña desde el apartado correspondiente.");
+            throw new IllegalArgumentException(
+                    "Cuenta sin contraseña. Genere una nueva contraseña desde el apartado correspondiente.");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
@@ -202,7 +195,6 @@ public class AuthService {
             throw new IllegalArgumentException("Usuario sin persona asociada");
         }
 
-        // Limita la cantidad de solicitudes por email
         Deque<Instant> deque = requestTimestamps.computeIfAbsent(email, k -> new ArrayDeque<>());
         Instant now = Instant.now();
         synchronized (deque) {
@@ -218,13 +210,10 @@ public class AuthService {
         Cliente cliente = clienteRepository.findById(personaId)
                 .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado"));
 
-        // Generar código de 6 letras
         String codigo = generarCodigoLetras(6);
 
-        // Guardamos el código en memoria, no en la base de datos
         recoveryCodeStore.save(email, codigo, Duration.ofMinutes(15));
 
-        // Enviar email con el código
         smtpEmailService.enviarCodigoRecuperacion(email, codigo);
     }
 
@@ -259,7 +248,6 @@ public class AuthService {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        // Generamos un token especial corto para el reseteo
         String tokenReseteo = jwtService.generarTokenReseteo(usuario.getEmail());
 
         return new VerificarCodigoResponseDTO(tokenReseteo);

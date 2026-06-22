@@ -20,12 +20,10 @@ export default function ResetPasswordScreen({ navigation, route }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit() {
-    console.log('[ResetPasswordScreen] handleSubmit start', { code, password, confirm });
     setCodeError('');
     setPasswordError('');
     setConfirmError('');
     if (!code.trim()) {
-      console.log('[ResetPasswordScreen] no code');
       setCodeError('Ingrese el código recibido por correo.');
       return;
     }
@@ -50,11 +48,9 @@ export default function ResetPasswordScreen({ navigation, route }) {
     try {
       setIsSubmitting(true);
       const data = await verificarCodigo(code.trim());
-      console.log('[ResetPasswordScreen] verificarCodigo returned', data);
       await resetPassword(data.tokenReseteo, password, confirm);
       navigation.replace('Login');
     } catch (error) {
-      console.log('[ResetPasswordScreen] submit rechazado:', error.message);
       setCodeError('Código inválido o expirado');
     } finally {
       setIsSubmitting(false);

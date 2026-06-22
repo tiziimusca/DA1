@@ -22,11 +22,11 @@ public class MetodoPagoCheque {
 
     @Lob
     @Column(nullable = false, columnDefinition = "LONGBLOB")
-    private byte[] fotoFrente; // Binary data (base64 decodificado)
+    private byte[] fotoFrente;
 
     @Lob
     @Column(nullable = false, columnDefinition = "LONGBLOB")
-    private byte[] fotoDorso; // Binary data (base64 decodificado)
+    private byte[] fotoDorso;
 
     @Column(nullable = false, length = 20)
     private String estado; // "en_revision", "aprobado", "rechazado"

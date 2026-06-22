@@ -19,11 +19,9 @@ public class ProponerProductoDTO {
     @Size(max = 300)
     private String descripcionCompleta;
 
-    // El revisor lo asigna el sistema (ver MapperUtil: default al empleado 1), no viene del body.
     @Schema(hidden = true)
     private Integer revisorId;
 
-    // El dueño se deriva del token (Authorization) en el controller, no del body.
     @Schema(hidden = true)
     private Integer duenioId;
 
@@ -36,7 +34,6 @@ public class ProponerProductoDTO {
 
     @AssertTrue(message = "No se aceptó la declaración legal")
     private Boolean declaracionPropiedad;
-
 
     public String getDescripcionCatalogo() {
         return descripcionCatalogo;
@@ -69,7 +66,6 @@ public class ProponerProductoDTO {
     public void setDuenioId(Integer duenioId) {
         this.duenioId = duenioId;
     }
-
 
     public List<String> getFotos() {
         return fotos;

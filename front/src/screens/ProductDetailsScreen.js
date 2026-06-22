@@ -16,12 +16,10 @@ export default function ProductDetailsScreen({ route, navigation }) {
   const [confirmPublishModalVisible, setConfirmPublishModalVisible] = useState(false);
   const [confirmingPublish, setConfirmingPublish] = useState(false);
 
-  // Extraemos el ID a una constante afuera del useEffect para poder renderizarlo
   const idActual = productoId || subasta?.id || subasta?.identificador;
 
   useEffect(() => {
     if (isPropuesto) {
-      console.log('[ProductDetails] Montando vista de propuesta. ID recibido:', idActual);
       if (!idActual) {
         setLoading(false);
         setError("ID de producto no válido");
@@ -32,9 +30,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
         try {
           const token = getToken();
           const authHeader = token ? `Bearer ${token}` : null;
-          console.log(`[ProductDetails] Llamando endpoint: /productos/${idActual}/seguimiento`);
           const data = await fetchSeguimientoProducto(idActual, authHeader);
-          console.log('[ProductDetails] Datos recibidos del backend:', data);
           if (mounted) setSeguimiento(data);
         } catch (err) {
           console.error('[ProductDetails] Error al obtener seguimiento:', err.message);
@@ -115,7 +111,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
       );
     }
 
-    // Formateador para parsear correctamente "dd-MM-yyyy HH:mm"
     const formatDate = (dateStr) => {
       if (!dateStr) return '---';
       let d;
@@ -239,7 +234,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
       );
     };
 
-    // Valores calculados basados en tu estructura previa
     const precioBase = seguimiento.precioBase ? parseFloat(seguimiento.precioBase) : 240.00;
     const comision = precioBase * 0.08;
     const costoVerif = seguimiento.costoVerificacion ? parseFloat(seguimiento.costoVerificacion) : 5.00;
@@ -263,7 +257,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          {/* Timeline de Seguimiento */}
           <View style={styles.timelineContainer}>
             {steps.map((step, index) => (
               <TimelineItem 
@@ -279,7 +272,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
             ))}
           </View>
 
-          {/* Tarjeta de Producto Estilo Imagen Superior */}
           <View style={styles.productCard}>
             <Image source={{ uri: resolveImageUri(seguimiento.imagenUrl) }} style={styles.productImage} />
             <View style={styles.productInfo}>
@@ -308,7 +300,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
             )}
             </View>
 
-            {/* Información de la Subasta Intercalada */}
             {(isAceptado || estadoNorm === 'revision' || estadoNorm === 'enrevision') && seguimiento.comentario && (
               <View style={styles.pubInfoBox}>
                 <Text style={styles.pubInfoText}>
@@ -317,7 +308,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* Desglose Financiero */}
             {showBilling && (
               <>
                 <View style={styles.billingContainer}>
@@ -356,7 +346,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
             )}
           </View>
 
-          {/* Botonera Inferior */}
           {!(isCancelado) && (
           <View style={styles.buttonsContainer}>
             {isAceptado && (
@@ -400,7 +389,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
             )}
           </View>
           )} 
-          {/* Modal de Cancelación/Devolución */}
           <Modal
             visible={cancelModalVisible}
             transparent
@@ -466,7 +454,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
             </View>
           </Modal>
 
-          {/* Modal de Confirmación de Publicación */}
           <Modal
             visible={confirmPublishModalVisible}
             transparent
@@ -502,7 +489,6 @@ export default function ProductDetailsScreen({ route, navigation }) {
     );
   }
 
-  // Fallback por si no es propuesto (Mantiene tu lógica original)
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Subasta #{subasta?.identificador}</Text>
@@ -513,14 +499,13 @@ export default function ProductDetailsScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#EFECE6' }, // Fondo tiza general de la imagen
+  safeArea: { flex: 1, backgroundColor: '#EFECE6', marginTop: 40 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#EFECE6' },
   backBtn: { padding: 4 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: '#1B2E58', textAlign: 'center', flex: 1 },
   headerRight: { width: 32 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
   
-  // Timeline Nodos circulares con check nativo
   timelineContainer: { marginTop: 16, marginBottom: 8, paddingHorizontal: 8 },
   timelineItem: { flexDirection: 'row', minHeight: 75 },
   timelineLeft: { width: 40, alignItems: 'center' },
@@ -537,7 +522,6 @@ const styles = StyleSheet.create({
   timelineDate: { fontSize: 13, color: '#6A768A', marginTop: 1 },
   timelineDesc: { fontSize: 12, color: '#556175', marginTop: 4, lineHeight: 16 },
 
-  // Tarjeta de Producto Unificada (Estilo Contenedor Único)
   productCard: { backgroundColor: '#EDEBE6', borderRadius: 24, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#E0DDD7' },
   productImage: { width: '100%', height: 140, borderRadius: 20, marginBottom: 12, resizeMode: 'cover' },
   productInfo: { paddingHorizontal: 4, marginBottom: 16 },
@@ -545,12 +529,10 @@ const styles = StyleSheet.create({
   productTitle: { fontSize: 19, fontWeight: '700', color: '#1F2937' },
   productSubtitle: { fontSize: 14, color: '#556175', marginTop: 4 },
   
-  // Caja de texto de subastas intercalado
   pubInfoBox: { borderTopWidth: 1, borderTopColor: '#DDDCD6', paddingVertical: 14, paddingHorizontal: 4 },
   pubInfoText: { fontSize: 14, color: '#444', lineHeight: 20 },
   boldText: { fontWeight: '700', color: '#000' },
 
-  // Bloque financiero
   billingContainer: { borderTopWidth: 1, borderTopColor: '#DDDCD6', paddingTop: 14, paddingHorizontal: 4 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   summaryLabel: { fontSize: 14, color: '#555' },
@@ -560,11 +542,10 @@ const styles = StyleSheet.create({
   summaryTotalLabel: { fontSize: 16, fontWeight: '700', color: '#222' },
   summaryTotalValue: { fontSize: 18, fontWeight: '700', color: '#1AAE6F' },
 
-  // Botonera de acciones
   buttonsContainer: { gap: 12, paddingHorizontal: 4 },
   btnConfirm: { backgroundColor: '#0B2A6B', borderRadius: 24, paddingVertical: 14, alignItems: 'center' },
   btnConfirmText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  btnCancel: { backgroundColor: '#D6C5CB', borderRadius: 24, paddingVertical: 14, alignItems: 'center' }, // Color rosa viejo opaco
+  btnCancel: { backgroundColor: '#D6C5CB', borderRadius: 24, paddingVertical: 14, alignItems: 'center' },
   btnCancelText: { color: '#701A34', fontSize: 15, fontWeight: '700' },
   
   container: { flex: 1, padding: 20, backgroundColor: '#fff', paddingTop: 50 },

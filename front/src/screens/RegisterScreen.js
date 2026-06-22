@@ -43,7 +43,6 @@ export default function RegisterScreen({ navigation }) {
 
 
   async function handleContinue() {
-    console.log('[RegisterScreen] Continuar a la verificación pressed');
     await submitRegistration();
   }
 
@@ -113,16 +112,6 @@ export default function RegisterScreen({ navigation }) {
         formData.append('fotoDocumentoDorso', backFile);
       }
 
-      console.log('[RegisterScreen] formData ->', {
-        documento,
-        nombre: `${nombre} ${apellido}`.trim(),
-        direccion: domicilio,
-        numeroPais: Math.max(1, countries.findIndex(c => c.name === pais) + 1),
-        email,
-        frontSelected: !!frontUri,
-        backSelected: !!backUri,
-      });
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
       let resp;
@@ -134,7 +123,6 @@ export default function RegisterScreen({ navigation }) {
         });
       } catch (err) {
         if (err.name === 'AbortError') {
-          console.log('[RegisterScreen] request aborted (timeout)');
           throw new Error('Tiempo de conexión agotado al enviar el registro. Intente nuevamente.');
         }
         throw err;
@@ -142,7 +130,6 @@ export default function RegisterScreen({ navigation }) {
         clearTimeout(timeoutId);
       }
 
-      console.log('[RegisterScreen] registrar response status ->', resp.status);
 
       if (resp.status === 201) {
           setVerifyModalVisible(true);
@@ -160,11 +147,6 @@ export default function RegisterScreen({ navigation }) {
           }
         }
 
-        console.log('[RegisterScreen] Backend error response', {
-          status: resp.status,
-          body: rawBody,
-        });
-
         const lowerMsg = String(msg).toLowerCase();
         if (lowerMsg.includes('email ya utilizado') || lowerMsg.includes('email ya registrado') || lowerMsg.includes('already exists') || lowerMsg.includes('already in use') || lowerMsg.includes('ya existe')) {
           setFieldErrors({ email: 'Email ya utilizado' });
@@ -174,7 +156,6 @@ export default function RegisterScreen({ navigation }) {
         setGeneralError(msg);
       }
     } catch (e) {
-      console.log('[RegisterScreen] Registration error', e);
       Alert.alert('Error', 'No se pudo completar el registro. Intente nuevamente.');
     } finally {
       setIsSubmitting(false);

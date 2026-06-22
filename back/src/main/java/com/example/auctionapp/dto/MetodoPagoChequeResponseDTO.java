@@ -21,7 +21,7 @@ public class MetodoPagoChequeResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MetodoPagoChequeDatosDTO {
-        private String numeroCheque; // Enmascarado: ********1564
+        private String numeroCheque;
         private MetodoPagoChequePhotosDTO fotos;
     }
 
@@ -30,7 +30,7 @@ public class MetodoPagoChequeResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MetodoPagoChequePhotosDTO {
-        private String frente; // URL o base64
-        private String dorso;  // URL o base64
+        private String frente;
+        private String dorso;
     }
 }

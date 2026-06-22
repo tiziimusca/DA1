@@ -57,8 +57,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     paddingTop: 6,
-    // antes: paddingBottom fijo de 20-28 generaba espacio muerto.
-    // Ahora se ajusta al safe-area real del dispositivo.
     paddingBottom: Platform.OS === 'ios' ? 6 : 8,
   },
   item: {

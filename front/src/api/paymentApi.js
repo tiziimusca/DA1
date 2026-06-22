@@ -20,7 +20,7 @@ async function extraerMensajeError(response) {
       const json = JSON.parse(texto);
       return json.mensaje ?? json.message ?? json.error ?? texto;
     } catch (_) {
-      return texto; // texto plano
+      return texto;
     }
   } catch (_) {
     return `Error ${response.status}`;

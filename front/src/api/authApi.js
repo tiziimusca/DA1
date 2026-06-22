@@ -46,7 +46,6 @@ export async function fetchProfile(token) {
 }
 
 export async function solicitarCodigo(email) {
-  console.log('[authApi] solicitarCodigo ->', email);
   const response = await fetch(`${BASE_URL}/auth/solicitar-codigo`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -55,7 +54,6 @@ export async function solicitarCodigo(email) {
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.log('[authApi] solicitarCodigo error:', response.status);
     throw new Error(error);
   }
 
@@ -63,7 +61,6 @@ export async function solicitarCodigo(email) {
 }
 
 export async function verificarCodigo(codigo) {
-  console.log('[authApi] verificarCodigo ->', codigo);
   const response = await fetch(`${BASE_URL}/auth/verificar-codigo`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -72,17 +69,14 @@ export async function verificarCodigo(codigo) {
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.log('[authApi] verificarCodigo error:',  error);
     throw new Error(error);
   }
 
   const json = await response.json();
-  console.log('[authApi] verificarCodigo OK ->', json);
   return json;
 }
 
 export async function resetPassword(tokenReseteo, nuevaPassword, confirmarPassword) {
-  console.log('[authApi] resetPassword -> token?', !!tokenReseteo);
   const response = await fetch(`${BASE_URL}/auth/resetear-password`, {
     method: 'POST',
     headers: {
@@ -94,16 +88,13 @@ export async function resetPassword(tokenReseteo, nuevaPassword, confirmarPasswo
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.log('[authApi] resetPassword error:', response.status, error);
     throw new Error(error);
   }
 
-  console.log('[authApi] resetPassword OK');
   return true;
 }
 
 export async function updateProfile(token, payload) {
-  console.log('[authApi] updateProfile ->', payload);
   const response = await fetch(`${BASE_URL}/clientes/perfil`, {
     method: 'PUT',
     headers: {
@@ -115,11 +106,9 @@ export async function updateProfile(token, payload) {
 
   if (!response.ok) {
     const error = await parseError(response);
-    console.log('[authApi] updateProfile error:', response.status, error);
     throw new Error(error);
   }
 
   const json = await response.json();
-  console.log('[authApi] updateProfile OK ->', json);
   return json;
 }

@@ -37,7 +37,6 @@ export default function ProfileScreen({ navigation }) {
       try {
         const profileData = await fetchProfile(token);
         setProfile(profileData);
-        console.log('Perfil cargado:', profileData);
       } catch (error) {
         Alert.alert('Error', error.message || 'No se pudo cargar el perfil.');
       } finally {
@@ -115,8 +114,6 @@ export default function ProfileScreen({ navigation }) {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.container}>
 
-          {/* Header */}
-
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Icon
@@ -148,8 +145,6 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Avatar */}
-
           <View style={styles.avatarContainer}>
             <Image
               source={{
@@ -180,8 +175,6 @@ export default function ProfileScreen({ navigation }) {
               </Text>
             </View>
           </View>
-
-          {/* Datos */}
 
           <View style={styles.row}>
             <View
@@ -223,8 +216,6 @@ export default function ProfileScreen({ navigation }) {
               <Text style={{ flex: 1 }}>{user.direccion}</Text>
             </View>
           </View>
-
-          {/* Menú */}
 
           <Text
             style={[

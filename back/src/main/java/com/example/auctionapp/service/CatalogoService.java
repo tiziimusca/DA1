@@ -33,18 +33,16 @@ public class CatalogoService {
     private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
 
     public CatalogoService(CatalogoRepository catalogoRepository,
-                           SubastaRepository subastaRepository,
-                           ItemCatalogoRepository itemCatalogoRepository,
-                           FotoRepository fotoRepository,
-                           JwtService jwtService) {
+            SubastaRepository subastaRepository,
+            ItemCatalogoRepository itemCatalogoRepository,
+            FotoRepository fotoRepository,
+            JwtService jwtService) {
         this.catalogoRepository = catalogoRepository;
         this.subastaRepository = subastaRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.fotoRepository = fotoRepository;
         this.jwtService = jwtService;
     }
-
-    // ─── CRUD básico ─────────────────────────────────────────────────────────────
 
     public List<Catalogo> obtenerTodos() {
         return catalogoRepository.findAll();
@@ -71,8 +69,6 @@ public class CatalogoService {
         catalogoRepository.deleteById(id);
     }
 
-    // ─── Endpoint principal ───────────────────────────────────────────────────────
-
     public CatalogoResponseDTO obtenerCatalogoPorSubasta(Integer subastaId, String authorizationHeader) {
         boolean autenticado = esTokenAutenticado(authorizationHeader);
 
@@ -93,15 +89,13 @@ public class CatalogoService {
                 .map(item -> toCatalogoItemDTO(item, subasta, autenticado))
                 .collect(Collectors.toList());
 
-        return new CatalogoResponseDTO(subasta.getIdentificador(), formatFecha(subasta), catalogo.getIdentificador(), itemDTOs);
+        return new CatalogoResponseDTO(subasta.getIdentificador(), formatFecha(subasta), catalogo.getIdentificador(),
+                itemDTOs);
     }
-
-    // ─── Helpers privados ────────────────────────────────────────────────────────
 
     private CatalogoItemDTO toCatalogoItemDTO(ItemCatalogo item, Subasta subasta, boolean autenticado) {
         Producto producto = item.getProducto();
 
-        // Se traen TODAS las fotos del producto (sin .limit)
         List<String> fotosData = fotoRepository
                 .findByProducto_IdentificadorOrderByIdentificadorAsc(producto.getIdentificador())
                 .stream()
@@ -124,20 +118,24 @@ public class CatalogoService {
     }
 
     private String fotoBytesToString(byte[] bytes) {
-        if (bytes == null || bytes.length == 0) return null;
+        if (bytes == null || bytes.length == 0)
+            return null;
         try {
             if (bytes.length < 1000) {
                 String str = new String(bytes, StandardCharsets.UTF_8);
-                if (str.startsWith("http")) return str;
+                if (str.startsWith("http"))
+                    return str;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return Base64.getEncoder().encodeToString(bytes);
     }
 
     private boolean esTokenAutenticado(String authorizationHeader) {
         try {
             String token = jwtService.extraerToken(authorizationHeader);
-            if (token == null || token.isBlank()) return false;
+            if (token == null || token.isBlank())
+                return false;
             jwtService.validarTokenAutenticacion(token);
             return true;
         } catch (RuntimeException ex) {
@@ -146,7 +144,8 @@ public class CatalogoService {
     }
 
     private String formatFecha(Subasta subasta) {
-        if (subasta.getFecha() == null) return null;
+        if (subasta.getFecha() == null)
+            return null;
         LocalDateTime fechaHora = subasta.getHora() == null
                 ? subasta.getFecha().atStartOfDay()
                 : subasta.getFecha().atTime(subasta.getHora());

@@ -114,7 +114,6 @@ export default function PaymentScreen({ navigation, route }) {
       ]}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
 
         <View style={styles.header}>
           <Text
@@ -139,8 +138,6 @@ export default function PaymentScreen({ navigation, route }) {
             ? 'Por favor verifique los costos finales de la devolución de su artículo antes de completar el pago.'
             : '¡Falta poco! Por favor verifique los costos finales antes de completar su pedido.'}
         </Text>
-
-        {/* Producto */}
 
         <View
           style={[
@@ -186,8 +183,6 @@ export default function PaymentScreen({ navigation, route }) {
             </View>
           </View>
         </View>
-
-        {/* Resumen */}
 
         <Text
           style={[
@@ -278,8 +273,6 @@ export default function PaymentScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Métodos */}
-
         <View style={styles.paymentHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             MÉTODO DE PAGO
@@ -336,8 +329,6 @@ export default function PaymentScreen({ navigation, route }) {
           </View>
         )}
 
-        {/* Botón */}
-
         <TouchableOpacity
           style={[
             styles.completeButton,
@@ -365,8 +356,6 @@ export default function PaymentScreen({ navigation, route }) {
           )}
         </TouchableOpacity>
       </ScrollView>
-
-      {/* Modal */}
 
       <Modal
         transparent

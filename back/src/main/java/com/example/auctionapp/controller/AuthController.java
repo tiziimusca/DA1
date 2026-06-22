@@ -26,25 +26,11 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         try {
             LoginResponseDTO response = authService.autenticar(request);
-            return ResponseEntity.ok(response); // 200 OK
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            // Ejemplo: Credenciales incorrectas o cuenta inactiva
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 Unauthorized
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
-/* 
-    @PostMapping(value = "/registrar", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> registrar(@Valid @RequestBody RegistroRequestDTO request) {
-        try {
-            RegistroResponseDTO response = authService.registrarUsuario(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response); // 201 Created
-        } catch (IllegalArgumentException e) {
-            // Retornamos un JSON con código y mensaje para facilitar el manejo en el front
-            ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
-            return ResponseEntity.badRequest().body(error); // 400 Bad Request
-        }
-    }
-        */
 
     @PostMapping(value = "/registrar")
     public ResponseEntity<Object> registrarMultipart(
@@ -71,7 +57,8 @@ public class AuthController {
             ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         } catch (IOException e) {
-            ErrorResponseDTO error = new ErrorResponseDTO("bad_request", "No se pudo procesar las fotos del documento.");
+            ErrorResponseDTO error = new ErrorResponseDTO("bad_request",
+                    "No se pudo procesar las fotos del documento.");
             return ResponseEntity.badRequest().body(error);
         }
     }
@@ -80,14 +67,13 @@ public class AuthController {
     public ResponseEntity<Object> solicitarCodigo(@Valid @RequestBody SolicitarCodigoDTO request) {
         try {
             authService.enviarCodigoRecuperacion(request.getEmail());
-            return ResponseEntity.ok().build(); // 200 OK
+            return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         } catch (IllegalStateException e) {
-            // Ejemplo: Demasiados intentos
             ErrorResponseDTO error = new ErrorResponseDTO("too_many_requests", e.getMessage());
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error); // 429 Too Many Requests
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
         }
     }
 
@@ -95,10 +81,10 @@ public class AuthController {
     public ResponseEntity<Object> verificarCodigo(@Valid @RequestBody VerificarCodigoDTO request) {
         try {
             VerificarCodigoResponseDTO response = authService.validarCodigo(request.getCodigo());
-            return ResponseEntity.ok(response); // 200 OK
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
-            return ResponseEntity.badRequest().body(error); // 400 Bad Request with message
+            return ResponseEntity.badRequest().body(error);
         }
     }
 
@@ -108,13 +94,13 @@ public class AuthController {
             @Valid @RequestBody ResetearPasswordDTO request) {
         try {
             authService.actualizarPassword(request, authorization);
-            return ResponseEntity.ok().build(); // 200 OK
+            return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             ErrorResponseDTO error = new ErrorResponseDTO("bad_request", e.getMessage());
-            return ResponseEntity.badRequest().body(error); // 400 Bad Request
+            return ResponseEntity.badRequest().body(error);
         } catch (SecurityException e) {
             ErrorResponseDTO error = new ErrorResponseDTO("unauthorized", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error); // 401 Unauthorized
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
     }
 }

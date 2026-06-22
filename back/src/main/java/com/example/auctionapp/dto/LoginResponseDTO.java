@@ -16,7 +16,6 @@ public class LoginResponseDTO {
         this.categoria = categoria;
     }
 
-    // Getters
     public String getToken() {
         return token;
     }
@@ -37,7 +36,6 @@ public class LoginResponseDTO {
         return categoria;
     }
 
-    // Setters
     public void setToken(String token) {
         this.token = token;
     }

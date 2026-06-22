@@ -32,7 +32,6 @@ public class UsuarioService {
     }
 
     public Usuario crear(Usuario usuario) {
-        // hash password before saving
         if (usuario.getPassword() != null) {
             usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         }

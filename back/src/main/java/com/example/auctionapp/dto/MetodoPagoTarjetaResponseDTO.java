@@ -22,7 +22,7 @@ public class MetodoPagoTarjetaResponseDTO {
     @AllArgsConstructor
     public static class MetodoPagoTarjetaDatosDTO {
         private String nombreTitular;
-        private String numeroTarjeta; // Enmascarado: **** **** **** 5421
+        private String numeroTarjeta;
         private String fechaVencimiento; // MM/YY
         private String tipoTarjeta; // visa, mastercard, etc.
     }

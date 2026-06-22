@@ -12,7 +12,7 @@ import { fetchProfile } from '../api/authApi';
 
 const HOST_URL = SERVER_BASE_URL;
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_IMAGE_WIDTH = SCREEN_WIDTH - 28; // 14px padding cada lado
+const CARD_IMAGE_WIDTH = SCREEN_WIDTH - 28;
 
 const quickActions = [
   { id: 'metrics', title: 'Métricas', direccion: 'Metrics', iconName: 'pie-chart-outline' },
@@ -64,9 +64,8 @@ const carouselStyles = StyleSheet.create({
   dot: { height: 7, borderRadius: 4 },
 });
 
-// ─── AuctionCard ─────────────────────────────────────────────────────────────
 function AuctionCard({ item, colors, radius, onPress, isGuest }) {
-  const [photoUris, setPhotoUris] = useState(null); // null = cargando
+  const [photoUris, setPhotoUris] = useState(null);
 
   const itemId = item.identificador || item.id;
   const fallbackIndex = (String(itemId || '').charCodeAt(0) || 0) % defaultImages.length;
@@ -151,7 +150,6 @@ function AuctionCard({ item, colors, radius, onPress, isGuest }) {
   );
 }
 
-// ─── HomeScreen ──────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
   const accessMode = route?.params?.accessMode || 'authenticated';
@@ -186,7 +184,6 @@ export default function HomeScreen({ navigation, route }) {
           }
         }
       } catch (err) {
-        console.log('[HomeScreen] Error fetching home data:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -339,7 +336,6 @@ export default function HomeScreen({ navigation, route }) {
   );
 }
 
-// ─── StatCard ────────────────────────────────────────────────────────────────
 function StatCard({ title, value, colors, radius }) {
   return (
     <View style={[styles.statCard, { backgroundColor: '#9FC7EB', borderColor: colors.text, borderRadius: radius.md }]}>
@@ -349,7 +345,6 @@ function StatCard({ title, value, colors, radius }) {
   );
 }
 
-// ─── Estilos ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, marginTop: 40 },
   listContent: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 18 },
