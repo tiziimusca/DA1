@@ -90,7 +90,6 @@ export default function ProfileScreen({ navigation }) {
     {
       title: 'Artículos Propuestos',
       icon: 'document-text-outline',
-      badge: 4,
       onPress: () => navigation.navigate('MisPropuestas'),
     },
   ];
@@ -252,22 +251,6 @@ export default function ProfileScreen({ navigation }) {
                 >
                   {item.title}
                 </Text>
-              </View>
-
-              <View style={styles.menuRight}>
-                {item.badge && (
-                  <View style={styles.numberBadge}>
-                    <Text style={styles.numberBadgeText}>
-                      {item.badge}
-                    </Text>
-                  </View>
-                )}
-
-                <Icon
-                  name="chevron-forward"
-                  size={18}
-                  color="#888"
-                />
               </View>
             </TouchableOpacity>
           ))}
