@@ -88,7 +88,11 @@ public class MapperUtil {
     public static Producto toProductoEntity(ProponerProductoDTO requestDto) {
         if (requestDto == null) return null;
         Producto p = new Producto();
-        p.setDescripcionCatalogo(requestDto.getDescripcionCatalogo());
+        String catalogDesc = requestDto.getTitulo();
+        if (catalogDesc == null || catalogDesc.trim().isEmpty()) {
+            catalogDesc = requestDto.getDescripcionCatalogo();
+        }
+        p.setDescripcionCatalogo(catalogDesc);
         p.setDescripcionCompleta(requestDto.getDescripcionCompleta());
         if (requestDto.getRevisorId() != null) {
             p.setRevisor(requestDto.getRevisorId());

@@ -13,14 +13,14 @@ import {
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
-import { fetchMetodosPago, completarPago } from '../api/paymentApi';
+import { fetchMetodosPago, completarPago, completarPagoDevolucion } from '../api/paymentApi';
 import { getUser } from '../auth/authManager';
 
 
 export default function PaymentScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
 
-  const { subasta, winningBid, image, comision } = route.params || {};
+  const { subasta, winningBid, image, comision, isProposal, costoEnvio, costoVerificacion, tituloProducto, productoId, opcion } = route.params || {};
 
   const [metodosPago, setMetodosPago] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -31,7 +31,9 @@ export default function PaymentScreen({ navigation, route }) {
 
   const precioGanador = winningBid || subasta?.precioBase || 0;
   const envio = 45;
-  const total = precioGanador + comision + envio;
+  const costoVerif = costoVerificacion ? parseFloat(costoVerificacion) : 0;
+  const costoEnv = (isProposal && opcion === 'envio') ? (costoEnvio ? parseFloat(costoEnvio) : 0) : 0;
+  const total = isProposal ? (costoVerif + costoEnv) : (precioGanador + comision + envio);
   const currentUser = getUser();
   const paymentCompletedRef = useRef(false);
 
@@ -47,12 +49,14 @@ export default function PaymentScreen({ navigation, route }) {
       e.preventDefault();
       Alert.alert(
         'Pago Obligatorio',
-        'Debe completar el pago de la subasta ganada para poder salir de esta pantalla.',
+        isProposal
+          ? 'Debe completar el pago de la devolución para poder salir de esta pantalla.'
+          : 'Debe completar el pago de la subasta ganada para poder salir de esta pantalla.',
         [{ text: 'Entendido', style: 'cancel' }]
       );
     });
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, isProposal]);
 
   const loadPaymentMethods = async () => {
     try {
@@ -79,7 +83,11 @@ export default function PaymentScreen({ navigation, route }) {
     if (!selectedMethod) return;
     try {
       setCompletingPayment(true);
-      await completarPago(subasta?.id);
+      if (isProposal) {
+        await completarPagoDevolucion(productoId);
+      } else {
+        await completarPago(subasta?.id);
+      }
       paymentCompletedRef.current = true;
       setShowSuccess(true);
 
@@ -127,8 +135,9 @@ export default function PaymentScreen({ navigation, route }) {
             { color: colors.muted },
           ]}
         >
-          ¡Falta poco! Por favor verifique los costos finales antes
-          de completar su pedido.
+          {isProposal 
+            ? 'Por favor verifique los costos finales de la devolución de su artículo antes de completar el pago.'
+            : '¡Falta poco! Por favor verifique los costos finales antes de completar su pedido.'}
         </Text>
 
         {/* Producto */}
@@ -144,10 +153,9 @@ export default function PaymentScreen({ navigation, route }) {
         >
           <Image
             source={{
-              uri:
-                image?.startsWith('http')
-                  ? image
-                  : `data:image/jpeg;base64,${image}`,
+              uri: image
+                ? (image.startsWith('http') || image.startsWith('data:') ? image : `data:image/jpeg;base64,${image}`)
+                : 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
             }}
             style={styles.productImage}
           />
@@ -159,7 +167,7 @@ export default function PaymentScreen({ navigation, route }) {
                 { color: colors.primary },
               ]}
             >
-              {subasta?.titulo}
+              {isProposal ? tituloProducto : subasta?.titulo}
             </Text>
 
             <Text
@@ -168,12 +176,12 @@ export default function PaymentScreen({ navigation, route }) {
                 { color: colors.muted },
               ]}
             >
-              SERIAL #{subasta?.id}
+              SERIAL #{isProposal ? productoId : subasta?.id}
             </Text>
 
-            <View style={styles.winnerBadge}>
-              <Text style={styles.winnerText}>
-                SUBASTA GANADA
+            <View style={[styles.winnerBadge, isProposal && { backgroundColor: '#F1F5F9' }]}>
+              <Text style={[styles.winnerText, isProposal && { color: '#475569' }]}>
+                {isProposal ? 'DEVOLUCIÓN DE PROPUESTA' : 'SUBASTA GANADA'}
               </Text>
             </View>
           </View>
@@ -199,33 +207,58 @@ export default function PaymentScreen({ navigation, route }) {
             },
           ]}
         >
-          <View style={styles.row}>
-            <Text style={styles.label}>
-              Oferta Ganadora
-            </Text>
+          {isProposal ? (
+            <>
+              {costoVerif > 0 && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Costo de Verificación</Text>
+                  <Text style={styles.value}>USD {costoVerif.toFixed(2)}</Text>
+                </View>
+              )}
+              {opcion === 'envio' && costoEnv > 0 && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Costo de Envío / Traslado</Text>
+                  <Text style={styles.value}>USD {costoEnv.toFixed(2)}</Text>
+                </View>
+              )}
+              {total === 0 && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Costos Asociados</Text>
+                  <Text style={[styles.value, { color: '#0F8A5F', fontWeight: '700' }]}>Sin costo de retorno</Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <View style={styles.row}>
+                <Text style={styles.label}>
+                  Oferta Ganadora
+                </Text>
 
-            <Text style={styles.value}>
-              USD {precioGanador.toFixed(2)}
-            </Text>
-          </View>
+                <Text style={styles.value}>
+                  USD {precioGanador.toFixed(2)}
+                </Text>
+              </View>
 
-          <View style={styles.row}>
-            <Text style={styles.label}>
-              Comisión
-            </Text>
+              <View style={styles.row}>
+                <Text style={styles.label}>
+                  Comisión
+                </Text>
 
-            <Text style={styles.value}>
-              USD {comision.toFixed(2)}
-            </Text>
-          </View>
+                <Text style={styles.value}>
+                  USD {(comision || 0).toFixed(2)}
+                </Text>
+              </View>
 
-          <View style={styles.row}>
-            <Text style={styles.label}>Envío</Text>
+              <View style={styles.row}>
+                <Text style={styles.label}>Envío</Text>
 
-            <Text style={styles.value}>
-              USD {envio.toFixed(2)}
-            </Text>
-          </View>
+                <Text style={styles.value}>
+                  USD {envio.toFixed(2)}
+                </Text>
+              </View>
+            </>
+          )}
 
           <View style={styles.separator} />
 
@@ -347,9 +380,9 @@ export default function PaymentScreen({ navigation, route }) {
             </Text>
 
             <Text style={styles.modalText}>
-              La compra se ha efectuado con éxito.
-              Nos contactaremos para organizar la
-              entrega.
+              {isProposal 
+                ? 'El pago de los costos de devolución se ha efectuado con éxito.'
+                : 'La compra se ha efectuado con éxito. Nos contactaremos para organizar la entrega.'}
             </Text>
 
             <TouchableOpacity

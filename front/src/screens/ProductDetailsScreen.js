@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, SafeAreaView, TouchableOpacity, Image, Alert } from 'react-native';
-import { fetchSeguimientoProducto, devolverProductoApi } from '../api/auctionApi';
+import { fetchSeguimientoProducto, devolverProductoApi, confirmarProductoApi } from '../api/auctionApi';
 import { getToken } from '../auth/authManager';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { Modal } from 'react-native';
@@ -13,6 +13,8 @@ export default function ProductDetailsScreen({ route, navigation }) {
   const [error, setError] = useState(null);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
+  const [confirmPublishModalVisible, setConfirmPublishModalVisible] = useState(false);
+  const [confirmingPublish, setConfirmingPublish] = useState(false);
 
   // Extraemos el ID a una constante afuera del useEffect para poder renderizarlo
   const idActual = productoId || subasta?.id || subasta?.identificador;
@@ -50,21 +52,45 @@ export default function ProductDetailsScreen({ route, navigation }) {
     setIsSubmittingCancel(true);
     try {
       const token = getToken();
-      const responseData = await devolverProductoApi(idActual, opcion, token);
+      const authHeader = token ? `Bearer ${token}` : null;
+      const responseData = await devolverProductoApi(idActual, opcion, authHeader);
       setCancelModalVisible(false);
       
-      navigation.navigate('FinalizarCompra', {
-        productoId: idActual,
-        opcion: responseData.opcion,
-        costoEnvio: responseData.costoEnvio,
-        costoVerificacion: seguimiento?.costoVerificacion,
-        tituloProducto: seguimiento?.tituloProducto
-      });
+      const estadoNorm = (seguimiento?.estadoActual || '').toLowerCase().replace('_', '');
+      if (estadoNorm === 'enviado' || estadoNorm === 'revision' || estadoNorm === 'enrevision') {
+        navigation.navigate('MisPropuestas');
+      } else {
+        navigation.navigate('Payment', {
+          isProposal: true,
+          productoId: idActual,
+          opcion: responseData.opcion,
+          costoEnvio: responseData.costoEnvio,
+          costoVerificacion: seguimiento?.costoVerificacion,
+          tituloProducto: seguimiento?.tituloProducto,
+          image: seguimiento?.imagenUrl
+        });
+      }
     } catch (err) {
       console.error('[ProductDetails] Error al cancelar/devolver:', err.message);
       Alert.alert('Error', err.message);
     } finally {
       setIsSubmittingCancel(false);
+    }
+  };
+
+  const handleConfirmarPublicacion = async () => {
+    setConfirmingPublish(true);
+    try {
+      const token = getToken();
+      const authHeader = token ? `Bearer ${token}` : null;
+      await confirmarProductoApi(idActual, authHeader);
+      setConfirmPublishModalVisible(false);
+      navigation.navigate('MisPropuestas');
+    } catch (err) {
+      console.error('[ProductDetails] Error al confirmar publicación:', err.message);
+      Alert.alert('Error', err.message);
+    } finally {
+      setConfirmingPublish(false);
     }
   };
 
@@ -118,6 +144,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
     let currentStepIndex = 0;
     let isRechazado = false;
     let isAceptado = false;
+    let isCancelado = false;
 
     if (estadoNorm === 'enviado') currentStepIndex = 0;
     else if (estadoNorm === 'revision' || estadoNorm === 'enrevision') currentStepIndex = 1;
@@ -125,9 +152,14 @@ export default function ProductDetailsScreen({ route, navigation }) {
     else if (estadoNorm === 'aceptado' || estadoNorm === 'confirmado' || estadoNorm === 'publicado') {
       currentStepIndex = 3;
       isAceptado = true;
-    } else if (estadoNorm === 'rechazado' || estadoNorm === 'cancelado') {
+    }
+    else if (estadoNorm === 'rechazado') {
       currentStepIndex = 3;
       isRechazado = true;
+    }
+    else if (estadoNorm === 'cancelado') {
+      currentStepIndex = 3;
+      isCancelado = true;
     }
 
     const steps = [
@@ -142,15 +174,27 @@ export default function ProductDetailsScreen({ route, navigation }) {
         date: seguimiento.fechaInspeccionTecnica, 
         description: seguimiento.deposito ? `El artículo se encuentra en el depósito ${seguimiento.deposito}.${seguimiento.seguro ? ` Se le ha asignado un seguro a cargo de ${seguimiento.seguro.compania}.` : ''}` : null 
       },
-      { 
-        title: isRechazado ? 'Rechazado' : 'Aceptado', 
-        date: isRechazado ? (seguimiento.fechaRechazado || seguimiento.fechaRevision) : seguimiento.fechaAceptado, 
-        isFinal: true, 
-        isRechazadoNode: isRechazado 
+      {
+        title: isCancelado
+          ? 'Cancelado'
+          : isRechazado
+          ? 'Rechazado'
+          : 'Aceptado',
+
+        date:
+          isCancelado
+            ? (seguimiento.fechaCancelado || seguimiento.fechaRevision)
+            : isRechazado
+            ? (seguimiento.fechaRechazado || seguimiento.fechaRevision)
+            : seguimiento.fechaAceptado,
+
+        isFinal: true,
+        isRechazadoNode: isRechazado,
+        isCanceladoNode: isCancelado
       }
     ];
 
-    const TimelineItem = ({ title, date, index, isFinal, description, isRechazadoNode }) => {
+    const TimelineItem = ({ title, date, index, isFinal, description, isRechazadoNode,isCanceladoNode }) => {
       const isAchieved = index <= currentStepIndex;
       const isLastNode = index === steps.length - 1;
 
@@ -158,13 +202,19 @@ export default function ProductDetailsScreen({ route, navigation }) {
       let iconContent = null;
 
       if (isAchieved) {
-        if (isFinal && isRechazadoNode) {
+        if (isFinal && isCanceladoNode) {
+          iconContainerStyle = styles.iconContainerCanceled;
+          iconContent = <Icon name="close" size={18} color="#6B7280" />;
+        }
+        else if (isFinal && isRechazadoNode) {
           iconContainerStyle = styles.iconContainerRejected;
           iconContent = <Icon name="close" size={18} color="#701A34" />;
-        } else if (isFinal && !isRechazadoNode) {
+        }
+        else if (isFinal) {
           iconContainerStyle = styles.iconContainerSuccess;
           iconContent = <Icon name="checkmark" size={16} color="#FFFFFF" />;
-        } else {
+        }
+        else {
           iconContainerStyle = styles.iconContainerBlue;
           iconContent = <Icon name="checkmark" size={16} color="#FFFFFF" />;
         }
@@ -193,7 +243,12 @@ export default function ProductDetailsScreen({ route, navigation }) {
     const precioBase = seguimiento.precioBase ? parseFloat(seguimiento.precioBase) : 240.00;
     const comision = precioBase * 0.08;
     const costoVerif = seguimiento.costoVerificacion ? parseFloat(seguimiento.costoVerificacion) : 5.00;
-    const pagoEstimado = precioBase - comision - costoVerif;
+    
+    const showBasePrice = isAceptado;
+    const comisionSign = showBasePrice ? '-' : '';
+    const costoVerifSign = showBasePrice ? '-' : '';
+    const labelTotal = showBasePrice ? 'Pago estimado' : 'Total costos';
+    const totalValor = showBasePrice ? (precioBase - comision - costoVerif) : (comision + costoVerif);
     const showBilling = isAceptado || (estadoNorm === 'inspecciontecnica' || estadoNorm === 'eninspeccion');
 
     return (
@@ -219,6 +274,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
                 isFinal={step.isFinal}
                 description={step.description}
                 isRechazadoNode={step.isRechazadoNode}
+                isCanceladoNode={step.isCanceladoNode}
               />
             ))}
           </View>
@@ -265,7 +321,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
             {showBilling && (
               <>
                 <View style={styles.billingContainer}>
-                  {isAceptado && (
+                  {showBasePrice && (
                     <View style={styles.summaryRow}>
                       <Text style={styles.summaryLabel}>Precio base</Text>
                       <Text style={styles.summaryValue}>${precioBase.toFixed(2)}</Text>
@@ -273,19 +329,19 @@ export default function ProductDetailsScreen({ route, navigation }) {
                   )}
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Comisión de la plataforma (8%)</Text>
-                    <Text style={styles.summaryValueDiscount}>-${comision.toFixed(2)}</Text>
+                    <Text style={styles.summaryValueDiscount}>{comisionSign}${comision.toFixed(2)}</Text>
                   </View>
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Costo de verificación</Text>
-                    <Text style={styles.summaryValueDiscount}>-${costoVerif.toFixed(2)}</Text>
+                    <Text style={styles.summaryValueDiscount}>{costoVerifSign}${costoVerif.toFixed(2)}</Text>
                   </View>
                 </View>
                 
                 <View style={styles.summaryDivider} />
                 
                 <View style={[styles.summaryRow, { marginBottom: 8 }]}>
-                  <Text style={styles.summaryTotalLabel}>Pago estimado</Text>
-                  <Text style={styles.summaryTotalValue}>${pagoEstimado.toFixed(2)}</Text>
+                  <Text style={styles.summaryTotalLabel}>{labelTotal}</Text>
+                  <Text style={styles.summaryTotalValue}>${totalValor.toFixed(2)}</Text>
                 </View>
               </>
             )}
@@ -301,11 +357,12 @@ export default function ProductDetailsScreen({ route, navigation }) {
           </View>
 
           {/* Botonera Inferior */}
+          {!(isCancelado) && (
           <View style={styles.buttonsContainer}>
             {isAceptado && (
               <TouchableOpacity
                 style={styles.btnConfirm}
-                onPress={() => Alert.alert('Confirmar', 'Publicación confirmada')}
+                onPress={() => setConfirmPublishModalVisible(true)}
               >
                 <Text style={styles.btnConfirmText}>Confirmar Publicación</Text>
               </TouchableOpacity>
@@ -342,7 +399,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
               </TouchableOpacity>
             )}
           </View>
-
+          )} 
           {/* Modal de Cancelación/Devolución */}
           <Modal
             visible={cancelModalVisible}
@@ -353,7 +410,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
             <View style={styles.modalOverlay}>
               <View style={styles.returnModal}>
                 
-                {!(estadoNorm === 'revision' || estadoNorm === 'enrevision') && (
+                 {!(estadoNorm === 'enviado' || estadoNorm === 'revision' || estadoNorm === 'enrevision') && (
                   <TouchableOpacity
                     style={styles.closeModal}
                     onPress={() => setCancelModalVisible(false)}
@@ -367,7 +424,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
                 </Text>
 
                 <Text style={styles.returnText}>
-                  {(estadoNorm === 'revision' || estadoNorm === 'enrevision')
+                  {(estadoNorm === 'enviado' || estadoNorm === 'revision' || estadoNorm === 'enrevision')
                     ? "Lamentamos tu decisión. Estamos a disposición para cualquier duda."
                     : "Lamentamos tu decisión. Recuerda que de haber pasado por la instancia de inspección técnica, los costos de verificación y traslados del producto deben ser abonados antes de finalizar el proceso. ¿Estás seguro?"
                   }
@@ -404,6 +461,38 @@ export default function ProductDetailsScreen({ route, navigation }) {
                       </TouchableOpacity>
                     </>
                   )}
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Modal de Confirmación de Publicación */}
+          <Modal
+            visible={confirmPublishModalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setConfirmPublishModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.returnModal}>
+                <Text style={[styles.returnTitle, { fontSize: 20 }]}>
+                  ¡Muchas gracias por publicar con nosotros!
+                </Text>
+
+                <Text style={styles.returnText}>
+                  En breve recibirá su comprobante con el detalle de la operación, donde se desglosará el precio del producto junto con la comisión y los costos de gestión.
+                </Text>
+
+                <View style={styles.returnButtons}>
+                  <TouchableOpacity
+                    style={styles.modalAcceptBtn}
+                    onPress={handleConfirmarPublicacion}
+                    disabled={confirmingPublish}
+                  >
+                    <Text style={styles.modalAcceptText}>
+                      {confirmingPublish ? 'Confirmando...' : 'Aceptar'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -539,32 +628,46 @@ returnText: {
 },
 
 returnButtons: {
-  flexDirection: 'row',
-  justifyContent: 'flex-end',
-  gap: 12
+  flexDirection: 'column',
+  gap: 10,
+  width: '100%'
 },
 
 modalRetiroBtn: {
-  backgroundColor: '#333',
-  paddingHorizontal: 18,
-  paddingVertical: 12,
-  borderRadius: 8
+  backgroundColor: '#E5E7EB',
+  paddingVertical: 14,
+  borderRadius: 24,
+  alignItems: 'center',
+  width: '100%'
 },
 
 modalRetiroText: {
-  color: 'white',
-  fontWeight: '600'
+  color: '#374151',
+  fontWeight: '700',
+  fontSize: 15
+},
+
+iconContainerCanceled: {
+  width: 30,
+  height: 30,
+  borderRadius: 15,
+  backgroundColor: '#E5E7EB',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 2
 },
 
 modalAcceptBtn: {
   backgroundColor: '#0B2A6B',
-  paddingHorizontal: 18,
-  paddingVertical: 12,
-  borderRadius: 8
+  paddingVertical: 14,
+  borderRadius: 24,
+  alignItems: 'center',
+  width: '100%'
 },
 
 modalAcceptText: {
   color: 'white',
-  fontWeight: '600'
+  fontWeight: '700',
+  fontSize: 15
 }
 });

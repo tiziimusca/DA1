@@ -46,10 +46,10 @@ npx expo start -c
 
 En el archivo front/src/config/apiConfig.js:
 
-const DEV_API_URL = 'http://192.168.0.13:8080/api';
-const DEV_SERVER_URL = 'http://192.168.0.13:8080';
-const PROD_API_URL = 'http://192.168.0.13:8080/api';
-const PROD_SERVER_URL = 'http://192.168.0.13:8080';
+const DEV_API_URL = 'http://192.168.0.181:8080/api';
+const DEV_SERVER_URL = 'http://192.168.0.181:8080';
+const PROD_API_URL = 'http://192.168.0.181:8080/api';
+const PROD_SERVER_URL = 'http://192.168.0.181:8080';
 
 Reemplazar con la IP de su maquina.
 

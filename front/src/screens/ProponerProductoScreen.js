@@ -53,7 +53,7 @@ export default function ProponerProductoScreen({ navigation }) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
-      quality: 0.7,
+      quality: 0.3,
       base64: true,
     });
 
@@ -106,6 +106,7 @@ export default function ProponerProductoScreen({ navigation }) {
       const token = getToken();
       const payload = {
         titulo: title,
+        descripcionCatalogo: title,
         descripcionCompleta: description,
         historia: relevance,
         declaracionPropiedad: legalAccepted,

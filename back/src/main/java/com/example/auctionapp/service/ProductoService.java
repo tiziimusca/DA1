@@ -39,6 +39,11 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.transaction.annotation.Transactional;
+import javax.imageio.ImageIO;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 @Service
 public class ProductoService {
@@ -147,12 +152,19 @@ public class ProductoService {
         asegurarDueno(usuarioId);
 
         Producto p = MapperUtil.toProductoEntity(requestDto);
+        System.out.println("DEBUG PROPOSAL: requestDto.getTitulo() = " + requestDto.getTitulo());
+        System.out.println("DEBUG PROPOSAL: p.getDescripcionCatalogo() = " + p.getDescripcionCatalogo());
         p.setDuenio(usuarioId);
         p.setFecha(LocalDate.now());
         Producto productoGuardado = productoRepository.save(p);
 
         ProductoDetalle detalle = new ProductoDetalle();
         detalle.setProducto(productoGuardado);
+        String titleVal = requestDto.getTitulo();
+        if (titleVal == null || titleVal.trim().isEmpty()) {
+            titleVal = requestDto.getDescripcionCatalogo();
+        }
+        detalle.setTitulo(titleVal);
         detalle.setFechaAceptado(null);
         detalle.setFechaEnviado(LocalDateTime.now());
         detalle.setFechaInspeccionTecnica(null);
@@ -171,17 +183,13 @@ public class ProductoService {
             for (String fotoBase64 : requestDto.getFotos()) {
                 if (fotoBase64.contains(",")) fotoBase64 = fotoBase64.split(",")[1];
                 Foto foto = new Foto();
-                foto.setFoto(Base64.getDecoder().decode(fotoBase64));
+                byte[] decodedBytes = Base64.getDecoder().decode(fotoBase64);
+                byte[] compressedBytes = compressImage(decodedBytes);
+                foto.setFoto(compressedBytes);
                 foto.setProducto(productoGuardado);
                 fotoRepository.save(foto);
             }
         }
-
-        HistorialEstado historial = new HistorialEstado();
-        historial.setEstado("enviado");
-        historial.setFechaCambio(LocalDateTime.now());
-        historial.setProducto(productoGuardado);
-        historialEstadoRepository.save(historial);
 
         Map<String, Object> response = new HashMap<>();
         response.put("productoId", productoGuardado.getIdentificador());
@@ -270,9 +278,7 @@ public class ProductoService {
         if (titulo == null || titulo.isBlank() || titulo.equalsIgnoreCase("No posee")) {
             titulo = producto.getDescripcionCompleta();
         }
-        if (titulo == null || titulo.isBlank()) {
-            titulo = productoDetalle.getTitulo();
-        }
+
 
         responseDto.put("tituloProducto", titulo);
         
@@ -332,14 +338,9 @@ public class ProductoService {
             throw new IllegalStateException("El producto ya ha sido cancelado o ya está publicado");
         }
 
-        productoDetalle.setEstado("confirmado");
+        productoDetalle.setEstado("finalizado");
         productoDetalleRepository.save(productoDetalle);
 
-        HistorialEstado nuevoHistorial = new HistorialEstado();
-        nuevoHistorial.setEstado("confirmado");
-        nuevoHistorial.setFechaCambio(LocalDateTime.now());
-        nuevoHistorial.setProducto(productoDetalle.getProducto());
-        historialEstadoRepository.save(nuevoHistorial);
     }
 
     public Map<String, Object> devolverProducto(Integer productoId, String opcion, String authorizationHeader) {
@@ -355,18 +356,26 @@ public class ProductoService {
         }
         
         String estadoActual = productoDetalle.getEstado();
-        if ("cancelado".equalsIgnoreCase(estadoActual) || "publicado".equalsIgnoreCase(estadoActual)) {
-            throw new IllegalStateException("El producto ya ha sido cancelado o ya está publicado");
+        if ("publicado".equalsIgnoreCase(estadoActual)) {
+            throw new IllegalStateException("El producto ya está publicado");
+        }
+
+        if ("cancelado".equalsIgnoreCase(estadoActual)) {
+            // Si ya está cancelado, significa que se está registrando el pago de la devolución
+            HistorialEstado nuevoHistorial = new HistorialEstado();
+            nuevoHistorial.setEstado("pagado");
+            nuevoHistorial.setFechaCambio(LocalDateTime.now());
+            nuevoHistorial.setProducto(producto);
+            nuevoHistorial.setUsuario(usuario);
+            historialEstadoRepository.save(nuevoHistorial);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("mensaje", "Pago de devolución registrado exitosamente.");
+            return response;
         }
 
         productoDetalle.setEstado("cancelado");
         productoDetalleRepository.save(productoDetalle);
-
-        HistorialEstado nuevoHistorial = new HistorialEstado();
-        nuevoHistorial.setEstado("cancelado");
-        nuevoHistorial.setFechaCambio(LocalDateTime.now());
-        nuevoHistorial.setProducto(productoDetalle.getProducto());
-        historialEstadoRepository.save(nuevoHistorial);
 
         Map<String, Object> response = new HashMap<>();
         
@@ -383,5 +392,47 @@ public class ProductoService {
             }
         }
         return response;
+    }
+
+    private byte[] compressImage(byte[] imageBytes) {
+        if (imageBytes == null || imageBytes.length == 0) {
+            return imageBytes;
+        }
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+            BufferedImage originalImage = ImageIO.read(bais);
+            if (originalImage == null) {
+                return imageBytes;
+            }
+
+            int maxWidth = 800;
+            int maxHeight = 800;
+            int originWidth = originalImage.getWidth();
+            int originHeight = originalImage.getHeight();
+
+            if (originWidth <= maxWidth && originHeight <= maxHeight) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(originalImage, "jpg", baos);
+                return baos.toByteArray();
+            }
+
+            double ratio = Math.min((double) maxWidth / originWidth, (double) maxHeight / originHeight);
+            int newWidth = (int) (originWidth * ratio);
+            int newHeight = (int) (originHeight * ratio);
+
+            java.awt.Image resultingImage = originalImage.getScaledInstance(newWidth, newHeight, java.awt.Image.SCALE_SMOOTH);
+            BufferedImage outputImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+            
+            Graphics2D g2d = outputImage.createGraphics();
+            g2d.drawImage(resultingImage, 0, 0, null);
+            g2d.dispose();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(outputImage, "jpg", baos);
+            return baos.toByteArray();
+        } catch (Exception e) {
+            System.err.println("Error al comprimir la imagen: " + e.getMessage());
+            return imageBytes;
+        }
     }
 }

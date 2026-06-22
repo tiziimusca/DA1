@@ -10,7 +10,6 @@ import jakarta.validation.constraints.Size;
 
 public class ProponerProductoDTO {
 
-    @NotNull
     private String titulo;
 
     @Size(max = 500)

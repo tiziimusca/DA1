@@ -168,3 +168,16 @@ export async function devolverProductoApi(id, opcion, authToken) {
   }
   return response.json();
 }
+
+export async function confirmarProductoApi(id, authToken) {
+  const headers = {};
+  if (authToken) headers.Authorization = authToken;
+  const response = await fetch(`${BASE_URL}/productos/${id}/confirmar`, {
+    method: 'POST',
+    headers,
+  });
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+  return response.json();
+}

@@ -115,3 +115,21 @@ export async function completarPago(subastaId) {
     throw new Error(error.message);
   }
 }
+
+export async function completarPagoDevolucion(productoId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/productos/${productoId}/devolver`, {
+      method: 'POST',
+      headers: authHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) {
+      throw new Error('Error al completar el pago de devolución');
+    }
+    return await response.json();
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}

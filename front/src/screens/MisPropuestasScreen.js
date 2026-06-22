@@ -25,6 +25,8 @@ const TABS = [
   { key: 'inspeccion', label: 'En inspección' },
   { key: 'aceptado',   label: 'Aceptados' },
   { key: 'rechazado',  label: 'Rechazados' },
+  { key: 'finalizado', label: 'Finalizados' },
+  { key: 'cancelado',  label: 'Cancelados' },
 ];
  
 // ─── Badge ─────────────────────────────────────────────────────────────────────
@@ -36,7 +38,9 @@ function EstadoBadge({ estado, theme }) {
   const isRevision = ['revision', 'enrevision'].includes(normalizedState);
   const isInspeccion = ['eninspeccion', 'inspecciontecnica'].includes(normalizedState);
   const isAceptado = ['aceptado', 'confirmado', 'publicado'].includes(normalizedState);
-  const isRechazado = ['rechazado', 'cancelado'].includes(normalizedState);
+  const isRechazado = normalizedState === 'rechazado';
+  const isFinalizado = normalizedState === 'finalizado';
+  const isCancelado = normalizedState === 'cancelado';
 
   let c = { label: 'Desconocido', bg: '#EEE', text: '#555', border: '#CCC' };
 
@@ -50,6 +54,10 @@ function EstadoBadge({ estado, theme }) {
     c = { label: 'Aceptado', bg: '#E4F4EF', text: colors.success, border: '#5BBD9F' };
   } else if (isRechazado) {
     c = { label: 'Rechazado', bg: '#FDECEA', text: '#C0392B', border: '#E8A09A' };
+  } else if (isFinalizado) {
+    c = { label: 'Finalizado', bg: '#E0F2FE', text: '#0369A1', border: '#7DD3FC' };
+  } else if (isCancelado) {
+    c = { label: 'Cancelado', bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' };
   }
 
   return (
@@ -104,7 +112,7 @@ function ArticuloCard({ item, index, theme }) {
           {/* Fila título + badge */}
           <View style={cardStyles.row}>
             <Text style={[cardStyles.title, { color: colors.text, flex: 1 }]} numberOfLines={2}>
-              {item.titulo}
+              {item.titulo || 'Sin título'}
             </Text>
             <EstadoBadge estado={item.estado} theme={theme} />
           </View>
@@ -237,7 +245,9 @@ export default function ArticulosPropuestos({ navigation }) {
         if (tabActivo === 'revision') return ['revision', 'enrevision'].includes(st);
         if (tabActivo === 'inspeccion') return ['eninspeccion', 'inspecciontecnica'].includes(st);
         if (tabActivo === 'aceptado') return ['aceptado', 'confirmado', 'publicado'].includes(st);
-        if (tabActivo === 'rechazado') return ['rechazado', 'cancelado'].includes(st);
+        if (tabActivo === 'rechazado') return st === 'rechazado';
+        if (tabActivo === 'finalizado') return st === 'finalizado';
+        if (tabActivo === 'cancelado') return st === 'cancelado';
         return false;
       });
 
