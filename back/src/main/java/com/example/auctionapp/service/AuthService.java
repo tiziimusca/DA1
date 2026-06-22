@@ -113,8 +113,7 @@ public class AuthService {
         String specialEmail = "nina.12.6el@gmail.com";
         boolean isSpecial = request.getEmail() != null && request.getEmail().equalsIgnoreCase(specialEmail);
         nuevaPersona.setEstado(isSpecial ? "Activo" : "inactivo");
-        
-        // Auto-crop the face from the DNI front to set it as the profile picture
+
         byte[] croppedFace = cropFaceFromDniFront(request.getFotoDocumentoFrente());
         nuevaPersona.setFoto(croppedFace);
 
@@ -145,7 +144,7 @@ public class AuthService {
         try {
             smtpEmailService.enviarConfirmacionRegistro(request.getEmail(), request.getNombre());
         } catch (Exception e) {
-            System.err.println("Warning: Error sending registration confirmation email (user registered successfully): " + e.getMessage());
+            System.err.println("Error en el registro: " + e.getMessage());
         }
 
         return new RegistroResponseDTO(personaGuardada.getIdentificador(), personaGuardada.getEstado());
@@ -321,24 +320,25 @@ public class AuthService {
 
             int x, y, w, h;
             if (srcWidth >= srcHeight) {
-                // Horizontal DNI card: Photo is typically on the left side
                 x = (int) (srcWidth * 0.04);
                 y = (int) (srcHeight * 0.20);
                 w = (int) (srcWidth * 0.28);
                 h = (int) (srcHeight * 0.60);
             } else {
-                // Vertical (rotated/portrait): Crop upper-middle area
                 x = (int) (srcWidth * 0.20);
                 y = (int) (srcHeight * 0.04);
                 w = (int) (srcWidth * 0.60);
                 h = (int) (srcHeight * 0.28);
             }
 
-            // Safe boundary adjustments to prevent RasterFormatException
-            if (x < 0) x = 0;
-            if (y < 0) y = 0;
-            if (x + w > srcWidth) w = srcWidth - x;
-            if (y + h > srcHeight) h = srcHeight - y;
+            if (x < 0)
+                x = 0;
+            if (y < 0)
+                y = 0;
+            if (x + w > srcWidth)
+                w = srcWidth - x;
+            if (y + h > srcHeight)
+                h = srcHeight - y;
 
             if (w <= 0 || h <= 0) {
                 return null;
@@ -346,7 +346,6 @@ public class AuthService {
 
             BufferedImage croppedImage = srcImage.getSubimage(x, y, w, h);
 
-            // Resize it to standard profile picture square size (250x250 pixels)
             int targetSize = 250;
             BufferedImage resizedImage = new BufferedImage(targetSize, targetSize, BufferedImage.TYPE_INT_RGB);
             Graphics2D g = resizedImage.createGraphics();
@@ -358,8 +357,8 @@ public class AuthService {
             ImageIO.write(resizedImage, "jpg", baos);
             return baos.toByteArray();
         } catch (Exception e) {
-            System.err.println("Error cropping face from DNI front: " + e.getMessage());
-            return null; // Fallback silently
+            System.err.println("Error consiguiendo la foto: " + e.getMessage());
+            return null;
         }
     }
 }
