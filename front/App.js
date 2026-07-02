@@ -20,6 +20,7 @@ import ProponerProductoScreen from './src/screens/ProponerProductoScreen';
 import AgregarMetodoPagoScreen from './src/screens/AgregarMetodoPagoScreen';
 import MetodosDePagoScreen from './src/screens/MetodosPagoScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
+import CuentaBloqueadaScreen from './src/screens/CuentaBloqueadaScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -54,6 +55,7 @@ function RootNavigator() {
         <Stack.Screen name="AgregarMetodoPago" component={AgregarMetodoPagoScreen} options={{ title: 'Agregar Método de Pago', headerShown: false}} />
         <Stack.Screen name="MetodosDePago" component={MetodosDePagoScreen} options={{ title: 'Métodos de Pago', headerShown: false}} />
         <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: 'Pago', headerShown: false}} />
+        <Stack.Screen name="CuentaBloqueada" component={CuentaBloqueadaScreen} options={{ title: 'Cuenta Bloqueada', headerShown: false}} />
 
       </Stack.Navigator>
     </NavigationContainer>

@@ -18,6 +18,7 @@ import {
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { login, solicitarCodigo } from '../api/authApi';
+import { API_BASE_URL } from '../config/apiConfig';
 import { setSession } from '../auth/authManager';
 import { isValidEmail } from '../utils/validation';
 
@@ -64,6 +65,24 @@ export default function LoginScreen({ navigation }) {
           email: email.trim(),
         },
       });
+
+      try {
+        const checkDeudor = await fetch(`${API_BASE_URL}/deudores/me`, {
+          headers: {
+            Authorization: `Bearer ${response.token}`
+          }
+        });
+        if (checkDeudor.ok) {
+          const deudorData = await checkDeudor.json();
+          if (deudorData.deudor) {
+            navigation.replace('CuentaBloqueada', { monto: deudorData.monto, subastaId: deudorData.subastaId });
+            return;
+          }
+        }
+      } catch (deudorError) {
+        console.error('Error checking deudor:', deudorError);
+      }
+
       navigation.replace('Home', { accessMode: 'authenticated' });
     } catch (error) {
       const msg = (error.message || '').toLowerCase();

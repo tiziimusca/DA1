@@ -31,6 +31,9 @@ public class MetodoPagoCheque {
     @Column(nullable = false, length = 20)
     private String estado; // "en_revision", "aprobado", "rechazado"
 
+    @Column(name = "monto_disponible", nullable = false, columnDefinition = "DECIMAL(19,2) DEFAULT 0.00")
+    private java.math.BigDecimal montoDisponible = java.math.BigDecimal.ZERO;
+
     @Column(name = "fecha_creacion")
     private Long fechaCreacion;
 

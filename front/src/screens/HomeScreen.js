@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, ScrollView, Dimensions } from 'react-native';
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, ScrollView, Dimensions, Alert } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import { getUser, getToken } from '../auth/authManager';
 import { fetchHomeDashboard, fetchCatalogo } from '../api/auctionApi';
+import { fetchMetodosPago } from '../api/paymentApi';
 import { SERVER_BASE_URL } from '../config/apiConfig';
 import AppFooterNav from '../components/AppFooterNav';
 import PhotoCarousel from '../components/PhotoCarousel';
@@ -64,7 +65,7 @@ const carouselStyles = StyleSheet.create({
   dot: { height: 7, borderRadius: 4 },
 });
 
-function AuctionCard({ item, colors, radius, onPress, isGuest }) {
+function AuctionCard({ item, colors, radius, onPress, isGuest, loadingAccess }) {
   const [photoUris, setPhotoUris] = useState(null);
 
   const itemId = item.identificador || item.id;
@@ -138,12 +139,17 @@ function AuctionCard({ item, colors, radius, onPress, isGuest }) {
         </View>
 
         <TouchableOpacity
-          style={[styles.cardBtn, { backgroundColor: colors.primary, borderRadius: radius.round }]}
+          style={[styles.cardBtn, { backgroundColor: loadingAccess ? colors.muted : colors.primary, borderRadius: radius.round }]}
           onPress={onPress}
+          disabled={loadingAccess}
         >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>
-            {isGuest ? 'Ver catálogo' : 'Ingresar'}
-          </Text>
+          {loadingAccess ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontWeight: '600' }}>
+              {isGuest ? 'Ver catálogo' : 'Ingresar'}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -163,6 +169,59 @@ export default function HomeScreen({ navigation, route }) {
   const authUser = getUser();
   const token = getToken();
   const userName = authUser?.nombre || route?.params?.userName || 'Usuario';
+  const [verifyingAccessId, setVerifyingAccessId] = useState(null);
+
+  const handleIngresarSubasta = async (item) => {
+    if (isGuest) {
+      navigation.navigate('Catalog', { product: item });
+      return;
+    }
+
+    try {
+      setVerifyingAccessId(item.identificador || item.id);
+
+      const categoryRank = {
+        'comun': 1,
+        'especial': 2,
+        'plata': 3,
+        'oro': 4,
+        'platino': 5
+      };
+      const userCategory = (authUser?.categoria || 'comun').toLowerCase();
+      const auctionCategory = (item.categoria || 'comun').toLowerCase();
+      const userCategoryRank = categoryRank[userCategory] || 1;
+      const auctionCategoryRank = categoryRank[auctionCategory] || 1;
+
+      const isCategoryAllowed = userCategoryRank >= auctionCategoryRank;
+
+      const paymentMethods = await fetchMetodosPago();
+      const hasPaymentMethod = paymentMethods && paymentMethods.length > 0;
+
+      if (!isCategoryAllowed && !hasPaymentMethod) {
+        Alert.alert(
+          'Acceso Denegado',
+          'No puedes ingresar a esta subasta por los siguientes motivos:\n• La subasta pertenece a una categoría mayor a la tuya.\n• No tienes ningún método de pago registrado.'
+        );
+      } else if (!isCategoryAllowed) {
+        Alert.alert(
+          'Acceso Denegado',
+          'No puedes ingresar a esta subasta porque pertenece a una categoría mayor a la tuya.'
+        );
+      } else if (!hasPaymentMethod) {
+        Alert.alert(
+          'Acceso Denegado',
+          'No puedes ingresar a esta subasta porque no tienes ningún método de pago registrado.'
+        );
+      } else {
+        navigation.navigate('Bid', { product: item });
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'No se pudo verificar el acceso a la subasta. Intente nuevamente.');
+    } finally {
+      setVerifyingAccessId(null);
+    }
+  };
   useEffect(() => {
     const loadHomeData = async () => {
       try {
@@ -301,8 +360,9 @@ export default function HomeScreen({ navigation, route }) {
                 item={item}
                 colors={colors}
                 radius={radius}
-                onPress={() => navigation.navigate(isGuest ? 'Catalog' : 'Bid', { product: item })}
+                onPress={() => handleIngresarSubasta(item)}
                 isGuest={isGuest}
+                loadingAccess={verifyingAccessId === (item.identificador || item.id)}
               />
             )}
             ListFooterComponent={

@@ -8,10 +8,12 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  Alert,
 } from 'react-native';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchHomeDashboard, fetchCatalogo } from '../api/auctionApi';
+import { fetchMetodosPago } from '../api/paymentApi';
 import { getToken, getUser } from '../auth/authManager';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import AppFooterNav from '../components/AppFooterNav';
@@ -41,6 +43,66 @@ export default function AuctionListScreen({ navigation, route }) {
   const authUser = getUser();
   const isGuest = !token;
   const userName = authUser?.nombre || route?.params?.userName || 'Usuario';
+  const [checkingAccessId, setCheckingAccessId] = useState(null);
+
+  const handleIngresarSubasta = async (item) => {
+    if (isGuest) {
+      Alert.alert(
+        'Acceso Denegado',
+        'Debes iniciar sesión para ingresar a la subasta.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Iniciar Sesión', onPress: () => navigation.navigate('Login') }
+        ]
+      );
+      return;
+    }
+
+    try {
+      setCheckingAccessId(item.identificador || item.id);
+
+      const categoryRank = {
+        'comun': 1,
+        'especial': 2,
+        'plata': 3,
+        'oro': 4,
+        'platino': 5
+      };
+      const userCategory = (authUser?.categoria || 'comun').toLowerCase();
+      const auctionCategory = (item.categoria || 'comun').toLowerCase();
+      const userCategoryRank = categoryRank[userCategory] || 1;
+      const auctionCategoryRank = categoryRank[auctionCategory] || 1;
+
+      const isCategoryAllowed = userCategoryRank >= auctionCategoryRank;
+
+      const paymentMethods = await fetchMetodosPago();
+      const hasPaymentMethod = paymentMethods && paymentMethods.length > 0;
+
+      if (!isCategoryAllowed && !hasPaymentMethod) {
+        Alert.alert(
+          'Acceso Denegado',
+          'No puedes ingresar a esta subasta por los siguientes motivos:\n• La subasta pertenece a una categoria mayor a la tuya.\n• No tienes ningun metodo de pago registrado.'
+        );
+      } else if (!isCategoryAllowed) {
+        Alert.alert(
+          'Acceso Denegado',
+          'No puedes ingresar a esta subasta porque pertenece a una categoria mayor a la tuya.'
+        );
+      } else if (!hasPaymentMethod) {
+        Alert.alert(
+          'Acceso Denegado',
+          'No puedes ingresar a esta subasta porque no tienes ningun metodo de pago registrado.'
+        );
+      } else {
+        navigation.navigate('Bid', { product: item });
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'No se pudo verificar el acceso a la subasta. Intente nuevamente.');
+    } finally {
+      setCheckingAccessId(null);
+    }
+  };
 
   const priceCeil = PRICE_CEIL_BY_CURRENCY[selectedCurrency] || DEFAULT_PRICE_CEIL;
   const [priceRange, setPriceRange] = useState([0, DEFAULT_PRICE_CEIL]);
@@ -127,7 +189,13 @@ export default function AuctionListScreen({ navigation, route }) {
   };
 
   const renderSubasta = ({ item }) => (
-    <AuctionCard item={item} navigation={navigation} colors={colors} radius={radius} />
+    <AuctionCard 
+      item={item} 
+      colors={colors} 
+      radius={radius} 
+      onPress={() => handleIngresarSubasta(item)}
+      loadingAccess={checkingAccessId === (item.identificador || item.id)}
+    />
   );
 
   if (loading) {
@@ -320,7 +388,7 @@ export default function AuctionListScreen({ navigation, route }) {
   );
 }
 
-function AuctionCard({ item, navigation, colors, radius }) {
+function AuctionCard({ item, colors, radius, onPress, loadingAccess }) {
   const fallbackUris = ['https://images.unsplash.com/photo-1513602855647-7dbafac0f632?auto=format&fit=crop&w=900&q=80'];
 
   const homeFoto = item.fotos && item.fotos.length > 0 ? item.fotos : (item.foto ? [item.foto] : []);
@@ -400,13 +468,17 @@ function AuctionCard({ item, navigation, colors, radius }) {
         </View>
 
         <TouchableOpacity
-          style={[styles.cardButton, { backgroundColor: isActive ? colors.primary : colors.border, borderRadius: radius.round }]}
-          onPress={() => isActive && navigation.navigate('Bid', { product: item })}
-          disabled={!isActive}
+          style={[styles.cardButton, { backgroundColor: !isActive ? colors.border : (loadingAccess ? colors.muted : colors.primary), borderRadius: radius.round }]}
+          onPress={onPress}
+          disabled={!isActive || loadingAccess}
         >
-          <Text style={[styles.buttonText, { color: isActive ? '#fff' : colors.muted }]}>
-            {isActive ? 'Ingresar' : 'Finalizada'}
-          </Text>
+          {loadingAccess ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={[styles.buttonText, { color: isActive ? '#fff' : colors.muted }]}>
+              {isActive ? 'Ingresar' : 'Finalizada'}
+            </Text>
+          )}
 
         </TouchableOpacity>
       </View>

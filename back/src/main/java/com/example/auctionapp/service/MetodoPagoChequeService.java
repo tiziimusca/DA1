@@ -149,8 +149,10 @@ public class MetodoPagoChequeService {
         MetodoPagoChequeResponseDTO.MetodoPagoChequeDatosDTO datos = new MetodoPagoChequeResponseDTO.MetodoPagoChequeDatosDTO();
         datos.setNumeroCheque(enmascararCheque(cheque.getNumeroCheque()));
         datos.setFotos(fotos);
+        datos.setMontoDisponible(cheque.getMontoDisponible());
 
         dto.setDatos(datos);
+        dto.setMontoDisponible(cheque.getMontoDisponible());
         return dto;
     }
 

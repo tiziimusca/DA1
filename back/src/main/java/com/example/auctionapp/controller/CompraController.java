@@ -15,8 +15,27 @@ public class CompraController {
     }
 
     @PostMapping("/{id}/completar-pago")
-    public ResponseEntity<?> completarPago(@PathVariable Integer id) {
-        return compraService.completarPago(id)
+    public ResponseEntity<?> completarPago(
+            @PathVariable Integer id,
+            @RequestBody(required = false) java.util.Map<String, Object> body) {
+        
+        Integer metodoPagoId = null;
+        String tipo = null;
+        Boolean retirarEnPersona = false;
+
+        if (body != null) {
+            if (body.get("metodoPagoId") != null) {
+                metodoPagoId = ((Number) body.get("metodoPagoId")).intValue();
+            }
+            if (body.get("tipo") != null) {
+                tipo = (String) body.get("tipo");
+            }
+            if (body.get("retirarEnPersona") != null) {
+                retirarEnPersona = (Boolean) body.get("retirarEnPersona");
+            }
+        }
+
+        return compraService.completarPago(id, metodoPagoId, tipo, retirarEnPersona)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

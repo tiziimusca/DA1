@@ -478,13 +478,14 @@ public class DataSeeder implements CommandLineRunner {
 
                 jdbcTemplate.update(connection -> {
                         PreparedStatement statement = connection.prepareStatement(
-                                        "INSERT INTO metodos_pago_cheque (cliente_id, numero_cheque, foto_frente, foto_dorso, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?)");
+                                        "INSERT INTO metodos_pago_cheque (cliente_id, numero_cheque, foto_frente, foto_dorso, estado, fecha_creacion, monto_disponible) VALUES (?, ?, ?, ?, ?, ?, ?)");
                         statement.setInt(1, clienteUnoId);
                         statement.setInt(2, 1001);
                         statement.setBytes(3, "cheque-frente".getBytes(StandardCharsets.UTF_8));
                         statement.setBytes(4, "cheque-dorso".getBytes(StandardCharsets.UTF_8));
                         statement.setString(5, "en_revision");
                         statement.setLong(6, System.currentTimeMillis());
+                        statement.setBigDecimal(7, new java.math.BigDecimal("15000.00"));
                         return statement;
                 });
 

@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView,
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { createWebSocket, enviarPujaRest, fetchEstadoVivo, fetchDetalleEstatico } from '../api/auctionApi';
-import { completarPago } from '../api/paymentApi';
+import { completarPago, fetchMetodosPago } from '../api/paymentApi';
+import { API_BASE_URL } from '../config/apiConfig';
 import { getToken, getUser } from '../auth/authManager';
 import Svg, { Path, Line } from 'react-native-svg';
 
@@ -169,6 +170,21 @@ export default function BidScreen({ navigation, route }) {
   const [staticDetails, setStaticDetails] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [userPaymentMethods, setUserPaymentMethods] = useState([]);
+
+  useEffect(() => {
+    const loadUserPaymentMethods = async () => {
+      try {
+        const methods = await fetchMetodosPago();
+        const approved = methods?.filter(m => m.estado?.toLowerCase() === 'aprobado') || [];
+        setUserPaymentMethods(approved);
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    };
+    loadUserPaymentMethods();
+  }, []);
+
   const [hasStarted, setHasStarted] = useState(() => {
     if (!subasta?.fecha) return true;
     const startDate = new Date(
@@ -277,7 +293,23 @@ export default function BidScreen({ navigation, route }) {
   useEffect(() => {
     const handleAuctionEnd = async () => {
       if (isHighestBidder) {
-        navigation.replace('Payment', { subasta, winningBid: currentPrice, image: staticDetails?.items?.[0]?.fotos?.[0], comision: staticDetails?.items?.[0]?.comision });
+        try {
+          if (subasta?.id) {
+            const token = await getToken();
+            await fetch(`${API_BASE_URL}/deudores/registrar`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({ subastaId: subasta.id }),
+            });
+          }
+        } catch (error) {
+          console.error('Error al registrar deuda de ganador:', error);
+        } finally {
+          navigation.replace('Payment', { subasta, winningBid: currentPrice, image: staticDetails?.items?.[0]?.fotos?.[0], comision: staticDetails?.items?.[0]?.comision });
+        }
       } else {
         try {
           if (subasta?.id) {
@@ -372,6 +404,23 @@ export default function BidScreen({ navigation, route }) {
     }
 
     const bidValue = parseFloat(monto);
+
+    const hasOnlyCheques = userPaymentMethods.length > 0 && userPaymentMethods.every(m => m.tipo === 'cheque');
+    if (hasOnlyCheques) {
+      const totalChequeMonto = userPaymentMethods.reduce((sum, m) => {
+        const amt = m.montoDisponible ?? m.datos?.montoDisponible ?? 0;
+        return sum + parseFloat(amt);
+      }, 0);
+
+      if (bidValue > totalChequeMonto) {
+        Alert.alert(
+          'Monto no permitido',
+          `No puedes pujar un valor mayor al monto disponible de tus cheques (USD ${totalChequeMonto.toFixed(2)}).`
+        );
+        return;
+      }
+    }
+
     const base = basePrice || 0;
     const lastBid = currentPrice || base;
 

@@ -10,11 +10,41 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Switch,
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { fetchMetodosPago, completarPago, completarPagoDevolucion } from '../api/paymentApi';
 import { getUser } from '../auth/authManager';
+
+const getMethodTitle = (method) => {
+  if (!method || !method.datos) return 'Método de pago';
+  if (method.tipo === 'tarjeta') {
+    const num = method.datos.numeroTarjeta || '';
+    return `${method.datos.tipoTarjeta || 'Tarjeta'} terminada en ${num.slice(-4)}`;
+  } else if (method.tipo === 'banco') {
+    const num = method.datos.numeroCuenta || '';
+    return `${method.datos.nombreBanco || 'Banco'} terminado en ${num.slice(-4)}`;
+  } else if (method.tipo === 'cheque') {
+    const num = method.datos.numeroCheque || '';
+    const numStr = String(num);
+    return `Cheque N° ${numStr.startsWith('********') ? numStr : '********' + numStr.slice(-4)}`;
+  }
+  return 'Método de pago';
+};
+
+const getMethodSubtitle = (method) => {
+  if (!method || !method.datos) return '';
+  if (method.tipo === 'tarjeta') {
+    return `Expira ${method.datos.fechaVencimiento || 'N/A'}`;
+  } else if (method.tipo === 'banco') {
+    return `Titular: ${method.datos.nombreTitular || 'N/A'}`;
+  } else if (method.tipo === 'cheque') {
+    const amt = method.montoDisponible ?? method.datos.montoDisponible ?? 0;
+    return `Monto disponible: USD ${parseFloat(amt).toFixed(2)}`;
+  }
+  return '';
+};
 
 
 export default function PaymentScreen({ navigation, route }) {
@@ -29,17 +59,35 @@ export default function PaymentScreen({ navigation, route }) {
   const [showMethodsModal, setShowMethodsModal] = useState(false);
   const [completingPayment, setCompletingPayment] = useState(false);
 
+  const [retirarEnPersona, setRetirarEnPersona] = useState(false);
+
   const precioGanador = winningBid || subasta?.precioBase || 0;
   const envio = 45;
   const costoVerif = costoVerificacion ? parseFloat(costoVerificacion) : 0;
   const costoEnv = (isProposal && opcion === 'envio') ? (costoEnvio ? parseFloat(costoEnvio) : 0) : 0;
-  const total = isProposal ? (costoVerif + costoEnv) : (precioGanador + comision + envio);
+
+  const envioActual = retirarEnPersona ? 0 : envio;
+  const costoEnvActual = retirarEnPersona ? 0 : costoEnv;
+  const total = isProposal ? (costoVerif + costoEnvActual) : (precioGanador + comision + envioActual);
   const currentUser = getUser();
   const paymentCompletedRef = useRef(false);
 
   useEffect(() => {
     loadPaymentMethods();
   }, []);
+
+  useEffect(() => {
+    if (selectedMethod && selectedMethod.tipo === 'cheque') {
+      const amt = parseFloat(selectedMethod.montoDisponible ?? selectedMethod.datos?.montoDisponible ?? 0);
+      if (amt < total) {
+        Alert.alert(
+          'Fondos Insuficientes',
+          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}. Se ha deseleccionado el método.`
+        );
+        setSelectedMethod(null);
+      }
+    }
+  }, [total, selectedMethod]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
@@ -70,7 +118,14 @@ export default function PaymentScreen({ navigation, route }) {
       setMetodosPago(approved);
 
       if (approved.length > 0) {
-        setSelectedMethod(approved[0]);
+        const price = winningBid || subasta?.precioBase || 0;
+        const currentTotal = isProposal ? (costoVerif + (retirarEnPersona ? 0 : costoEnv)) : (price + comision + (retirarEnPersona ? 0 : 45));
+        const firstValid = approved.find(m => {
+          if (m.tipo !== 'cheque') return true;
+          const amt = parseFloat(m.montoDisponible ?? m.datos?.montoDisponible ?? 0);
+          return amt >= currentTotal;
+        });
+        setSelectedMethod(firstValid || null);
       }
     } catch (error) {
       console.error(error);
@@ -86,7 +141,7 @@ export default function PaymentScreen({ navigation, route }) {
       if (isProposal) {
         await completarPagoDevolucion(productoId);
       } else {
-        await completarPago(subasta?.id);
+        await completarPago(subasta?.id, selectedMethod.id, selectedMethod.tipo, retirarEnPersona);
       }
       paymentCompletedRef.current = true;
       setShowSuccess(true);
@@ -190,6 +245,51 @@ export default function PaymentScreen({ navigation, route }) {
             { color: colors.text },
           ]}
         >
+          OPCION DE ENTREGA
+        </Text>
+
+        <View
+          style={[
+            styles.deliveryCard,
+            {
+              backgroundColor: colors.metricsBackground,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View style={styles.deliveryRow}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={[styles.deliveryLabel, { color: colors.text }]}>
+                Retirar en persona
+              </Text>
+              <Text style={[styles.deliverySubtitle, { color: colors.muted }]}>
+                Retira tu articulo directamente sin costos de envio.
+              </Text>
+            </View>
+            <Switch
+              value={retirarEnPersona}
+              onValueChange={setRetirarEnPersona}
+              trackColor={{ false: '#767577', true: colors.primary }}
+              thumbColor={retirarEnPersona ? '#FFF' : '#f4f3f4'}
+            />
+          </View>
+
+          {retirarEnPersona && (
+            <View style={styles.warningContainer}>
+              <Icon name="warning-outline" size={18} color="#D97706" style={{ marginRight: 6 }} />
+              <Text style={styles.warningText}>
+                Al retirar el producto en persona pierde la cobertura del seguro.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <Text
+          style={[
+            styles.sectionTitle,
+            { color: colors.text },
+          ]}
+        >
           RESUMEN DEL PAGO
         </Text>
 
@@ -213,7 +313,9 @@ export default function PaymentScreen({ navigation, route }) {
               {opcion === 'envio' && costoEnv > 0 && (
                 <View style={styles.row}>
                   <Text style={styles.label}>Costo de Envío / Traslado</Text>
-                  <Text style={styles.value}>USD {costoEnv.toFixed(2)}</Text>
+                  <Text style={styles.value}>
+                    {retirarEnPersona ? 'Gratis (Retiro)' : `USD ${costoEnv.toFixed(2)}`}
+                  </Text>
                 </View>
               )}
               {total === 0 && (
@@ -249,7 +351,7 @@ export default function PaymentScreen({ navigation, route }) {
                 <Text style={styles.label}>Envío</Text>
 
                 <Text style={styles.value}>
-                  USD {envio.toFixed(2)}
+                  {retirarEnPersona ? 'Gratis (Retiro)' : `USD ${envio.toFixed(2)}`}
                 </Text>
               </View>
             </>
@@ -311,12 +413,11 @@ export default function PaymentScreen({ navigation, route }) {
 
               <View style={{ marginLeft: 12 }}>
                 <Text style={styles.selectedCardTitle}>
-                  Visa terminada en{' '}
-                  {selectedMethod.datos.numeroTarjeta.slice(-4)}
+                  {getMethodTitle(selectedMethod)}
                 </Text>
 
                 <Text style={styles.selectedCardSubtitle}>
-                  Expira {selectedMethod.datos.fechaVencimiento}
+                  {getMethodSubtitle(selectedMethod)}
                 </Text>
               </View>
             </View>
@@ -370,8 +471,10 @@ export default function PaymentScreen({ navigation, route }) {
 
             <Text style={styles.modalText}>
               {isProposal 
-                ? 'El pago de los costos de devolución se ha efectuado con éxito.'
-                : 'La compra se ha efectuado con éxito. Nos contactaremos para organizar la entrega.'}
+                ? 'El pago de los costos de devolucion se ha efectuado con exito.'
+                : retirarEnPersona 
+                  ? 'La compra se ha efectuado con exito. Nos contactaremos para organizar el retiro.'
+                  : 'La compra se ha efectuado con exito. Nos contactaremos para organizar la entrega.'}
             </Text>
 
             <TouchableOpacity
@@ -405,7 +508,7 @@ export default function PaymentScreen({ navigation, route }) {
 
       {metodosPago.map((method) => (
         <TouchableOpacity
-          key={method.id}
+          key={`${method.tipo}-${method.id}`}
           style={[
             styles.methodOption,
             selectedMethod?.id === method.id && {
@@ -414,18 +517,27 @@ export default function PaymentScreen({ navigation, route }) {
             },
           ]}
           onPress={() => {
+            if (method.tipo === 'cheque') {
+              const amt = parseFloat(method.montoDisponible ?? method.datos?.montoDisponible ?? 0);
+              if (amt < total) {
+                Alert.alert(
+                  'Fondos Insuficientes',
+                  `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}.`
+                );
+                return;
+              }
+            }
             setSelectedMethod(method);
             setShowMethodsModal(false);
           }}
         >
           <View>
             <Text style={styles.methodTitle}>
-              Visa terminada en{' '}
-              {method.datos.numeroTarjeta.slice(-4)}
+              {getMethodTitle(method)}
             </Text>
 
             <Text style={styles.methodSubtitle}>
-              Expira {method.datos.fechaVencimiento}
+              {getMethodSubtitle(method)}
             </Text>
           </View>
 
@@ -702,5 +814,40 @@ methodSubtitle: {
 cancelButton: {
   alignSelf: 'center',
   marginTop: 12,
+},
+deliveryCard: {
+  borderWidth: 1,
+  borderRadius: 18,
+  padding: 16,
+  marginBottom: 24,
+},
+deliveryRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
+deliveryLabel: {
+  fontWeight: '700',
+  fontSize: 15,
+},
+deliverySubtitle: {
+  fontSize: 12,
+  marginTop: 4,
+},
+warningContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: 12,
+  backgroundColor: '#FEF3C7',
+  padding: 10,
+  borderRadius: 10,
+  borderWidth: 1,
+  borderColor: '#FCD34D',
+},
+warningText: {
+  color: '#D97706',
+  fontSize: 11,
+  fontWeight: '600',
+  flex: 1,
 },
 });

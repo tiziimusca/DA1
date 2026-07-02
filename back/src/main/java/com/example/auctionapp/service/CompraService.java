@@ -5,6 +5,7 @@ import com.example.auctionapp.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,8 @@ public class CompraService {
     private final ProductoRepository productoRepository;
     private final UsuarioRepository usuarioRepository;
     private final HistorialEstadoRepository historialEstadoRepository;
+    private final DeudorRepository deudorRepository;
+    private final MetodoPagoChequeRepository metodoPagoChequeRepository;
     private final jakarta.persistence.EntityManager entityManager;
 
     public CompraService(SubastaRepository subastaRepository,
@@ -32,6 +35,8 @@ public class CompraService {
             ProductoRepository productoRepository,
             UsuarioRepository usuarioRepository,
             HistorialEstadoRepository historialEstadoRepository,
+            DeudorRepository deudorRepository,
+            MetodoPagoChequeRepository metodoPagoChequeRepository,
             jakarta.persistence.EntityManager entityManager) {
         this.subastaRepository = subastaRepository;
         this.catalogoRepository = catalogoRepository;
@@ -42,11 +47,19 @@ public class CompraService {
         this.productoRepository = productoRepository;
         this.usuarioRepository = usuarioRepository;
         this.historialEstadoRepository = historialEstadoRepository;
+        this.deudorRepository = deudorRepository;
+        this.metodoPagoChequeRepository = metodoPagoChequeRepository;
         this.entityManager = entityManager;
     }
 
     @Transactional
     public Optional<Subasta> completarPago(Integer subastaId) {
+        return completarPago(subastaId, null, null, false);
+    }
+
+    @Transactional
+    public Optional<Subasta> completarPago(Integer subastaId, Integer metodoPagoId, String tipo,
+            Boolean retirarEnPersona) {
         Optional<Subasta> subastaOpt = subastaRepository.findById(subastaId);
         if (subastaOpt.isEmpty()) {
             return Optional.empty();
@@ -112,6 +125,31 @@ public class CompraService {
             Usuario usuarioGanador = usuarioRepository.findByPersonaId(newDuenioId).orElse(null);
             historial.setUsuario(usuarioGanador);
             historialEstadoRepository.save(historial);
+
+            if (usuarioGanador != null) {
+                deudorRepository.findByUsuarioId(usuarioGanador.getIdentificador())
+                        .ifPresent(deudorRepository::delete);
+            }
+
+            if ("cheque".equalsIgnoreCase(tipo) && metodoPagoId != null) {
+                Optional<MetodoPagoCheque> chequeOpt = metodoPagoChequeRepository.findById(metodoPagoId);
+                if (chequeOpt.isPresent()) {
+                    MetodoPagoCheque cheque = chequeOpt.get();
+
+                    BigDecimal base = pujaGanadora.getImporte();
+                    BigDecimal comision = item.getComision();
+                    BigDecimal shipping = (retirarEnPersona != null && retirarEnPersona) ? BigDecimal.ZERO
+                            : new BigDecimal("45.00");
+                    BigDecimal total = base.add(comision).add(shipping);
+
+                    BigDecimal result = cheque.getMontoDisponible().subtract(total);
+                    if (result.compareTo(BigDecimal.ZERO) < 0) {
+                        result = BigDecimal.ZERO;
+                    }
+                    cheque.setMontoDisponible(result);
+                    metodoPagoChequeRepository.save(cheque);
+                }
+            }
         } else {
             subasta.setEstado("finalizada");
             subastaRepository.save(subasta);

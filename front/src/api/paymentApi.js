@@ -98,14 +98,18 @@ export async function deleteMetodoPago(id, tipo) {
   }
 }
 
-export async function completarPago(subastaId) {
+export async function completarPago(subastaId, metodoPagoId, tipo, retirarEnPersona) {
   try {
     const response = await fetch(`${API_BASE_URL}/compras/${subastaId}/completar-pago`, {
       method: 'POST',
       headers: authHeaders({
         'Content-Type': 'application/json',
       }),
-      body: JSON.stringify({}),
+      body: JSON.stringify({
+        metodoPagoId,
+        tipo,
+        retirarEnPersona
+      }),
     });
     if (!response.ok) {
       throw new Error('Error al completar el pago');

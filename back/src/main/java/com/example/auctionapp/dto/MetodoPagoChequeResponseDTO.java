@@ -15,6 +15,7 @@ public class MetodoPagoChequeResponseDTO {
     private String tipo = "cheque";
     private MetodoPagoChequeDatosDTO datos;
     private String estado;
+    private java.math.BigDecimal montoDisponible;
 
     @Getter
     @Setter
@@ -23,6 +24,7 @@ public class MetodoPagoChequeResponseDTO {
     public static class MetodoPagoChequeDatosDTO {
         private String numeroCheque;
         private MetodoPagoChequePhotosDTO fotos;
+        private java.math.BigDecimal montoDisponible;
     }
 
     @Getter
