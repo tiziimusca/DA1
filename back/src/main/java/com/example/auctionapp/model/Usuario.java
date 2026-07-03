@@ -25,11 +25,11 @@ public class Usuario {
     private String email;
 
     @Lob
-    @Column
+    @Column(columnDefinition = "LONGBLOB")
     private byte[] dorso_doc;
 
     @Lob
-    @Column
+    @Column(columnDefinition = "LONGBLOB")
     private byte[] frente_doc;
 
     @Column(name = "contraseña", nullable = false)

@@ -27,7 +27,7 @@ public class Foto {
     private Producto producto;
 
     @Lob
-    @Column
+    @Column(columnDefinition = "LONGBLOB")
     private byte[] foto;
 
 }

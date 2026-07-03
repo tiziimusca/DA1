@@ -33,6 +33,6 @@ public class Persona {
     private String estado;
 
     @Lob
-    @Column
+    @Column(columnDefinition = "LONGBLOB")
     private byte[] foto;
 }
