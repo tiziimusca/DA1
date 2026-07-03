@@ -28,12 +28,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
 public class BidController {
+
+    private final ConcurrentHashMap<Integer, Boolean> activeLocks = new ConcurrentHashMap<>();
 
     private static final Map<String, Integer> CATEGORIA_ORDEN = Map.of(
             "platino", 4,
@@ -84,91 +87,103 @@ public class BidController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no proporcionado");
         }
 
-        String token = jwtService.extraerToken(authorizationHeader);
-        String email = jwtService.validarTokenAutenticacion(token);
-        com.example.auctionapp.model.Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
-
-        Cliente cliente = clienteRepository.findById(usuario.getPersonaId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Cliente no encontrado"));
-
-        ItemCatalogo item = itemCatalogoService.obtenerPorId(request.getItemId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item de catálogo no encontrado"));
-
-        Subasta subastaItem = item.getCatalogo() != null ? item.getCatalogo().getSubasta() : null;
-        if (subastaItem == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El item no tiene subasta asociada");
+        Integer itemId = request.getItemId();
+        if (activeLocks.putIfAbsent(itemId, Boolean.TRUE) != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Hay otra puja en proceso para este lote");
         }
 
-        Asistente asistente = asistenteService
-                .obtenerPorClienteYSubasta(cliente.getIdentificador(), subastaItem.getIdentificador())
-                .orElseGet(() -> {
-                    Asistente nuevo = new Asistente();
-                    nuevo.setCliente(cliente);
-                    nuevo.setSubasta(subastaItem);
-                    int count = asistenteService.contarPorSubasta(subastaItem.getIdentificador());
-                    nuevo.setNumeroPostor(count + 1);
-                    return asistenteService.crear(nuevo);
-                });
+        try {
+            bidWebSocketHandler.broadcast(String.format("{\"type\":\"BID_LOCKED\",\"itemId\":%d}", itemId));
 
-        if (cliente == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El asistente no está asociado a un cliente válido");
-        }
-        if (!tieneMetodoPagoAprobado(cliente.getIdentificador())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Debe tener al menos un método de pago verificado/aprobado para enviar una puja");
-        }
+            String token = jwtService.extraerToken(authorizationHeader);
+            String email = jwtService.validarTokenAutenticacion(token);
+            com.example.auctionapp.model.Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
 
-        if (!subastaItem.getIdentificador().equals(asistente.getSubasta().getIdentificador())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El item no pertenece a la subasta asociada al asistente");
-        }
-        String categoriaCliente = normalizeCategoria(cliente.getCategoria());
-        String categoriaSubasta = normalizeCategoria(subastaItem.getCategoria());
-        if (!permiteCategoria(categoriaCliente, categoriaSubasta)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "La categoría del cliente no es suficiente para participar en esta subasta");
-        }
-        BigDecimal precioBase = item.getPrecioBase();
-        if (precioBase == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El item no tiene precio base definido");
-        }
+            Cliente cliente = clienteRepository.findById(usuario.getPersonaId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Cliente no encontrado"));
 
-        BigDecimal mejorPujaActual = pujaService.obtenerMejorPujaPorItem(item.getIdentificador())
-                .map(Puja::getImporte)
-                .orElse(precioBase);
+            ItemCatalogo item = itemCatalogoService.obtenerPorId(itemId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item de catálogo no encontrado"));
 
-        boolean exentoDeLimites = esCategoriaPremium(categoriaCliente);
-        if (!exentoDeLimites) {
-            BigDecimal minimo = mejorPujaActual.add(precioBase.multiply(new BigDecimal("0.01")))
-                    .setScale(2, RoundingMode.HALF_UP);
-            BigDecimal maximo = mejorPujaActual.add(precioBase.multiply(new BigDecimal("0.20")))
-                    .setScale(2, RoundingMode.HALF_UP);
-
-            if (request.getImporte().compareTo(minimo) < 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        String.format("La puja debe ser al menos %s", minimo));
+            Subasta subastaItem = item.getCatalogo() != null ? item.getCatalogo().getSubasta() : null;
+            if (subastaItem == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El item no tiene subasta asociada");
             }
-            if (request.getImporte().compareTo(maximo) > 0) {
+
+            Asistente asistente = asistenteService
+                    .obtenerPorClienteYSubasta(cliente.getIdentificador(), subastaItem.getIdentificador())
+                    .orElseGet(() -> {
+                        Asistente nuevo = new Asistente();
+                        nuevo.setCliente(cliente);
+                        nuevo.setSubasta(subastaItem);
+                        int count = asistenteService.contarPorSubasta(subastaItem.getIdentificador());
+                        nuevo.setNumeroPostor(count + 1);
+                        return asistenteService.crear(nuevo);
+                    });
+
+            if (cliente == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        String.format("La puja no puede superar %s", maximo));
+                        "El asistente no está asociado a un cliente válido");
             }
+            if (!tieneMetodoPagoAprobado(cliente.getIdentificador())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Debe tener al menos un método de pago verificado/aprobado para enviar una puja");
+            }
+
+            if (!subastaItem.getIdentificador().equals(asistente.getSubasta().getIdentificador())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El item no pertenece a la subasta asociada al asistente");
+            }
+            String categoriaCliente = normalizeCategoria(cliente.getCategoria());
+            String categoriaSubasta = normalizeCategoria(subastaItem.getCategoria());
+            if (!permiteCategoria(categoriaCliente, categoriaSubasta)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "La categoría del cliente no es suficiente para participar en esta subasta");
+            }
+            BigDecimal precioBase = item.getPrecioBase();
+            if (precioBase == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El item no tiene precio base definido");
+            }
+
+            BigDecimal mejorPujaActual = pujaService.obtenerMejorPujaPorItem(item.getIdentificador())
+                    .map(Puja::getImporte)
+                    .orElse(precioBase);
+
+            boolean exentoDeLimites = esCategoriaPremium(categoriaCliente);
+            if (!exentoDeLimites) {
+                BigDecimal minimo = mejorPujaActual.add(precioBase.multiply(new BigDecimal("0.01")))
+                        .setScale(2, RoundingMode.HALF_UP);
+                BigDecimal maximo = mejorPujaActual.add(precioBase.multiply(new BigDecimal("0.20")))
+                        .setScale(2, RoundingMode.HALF_UP);
+
+                if (request.getImporte().compareTo(minimo) < 0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            String.format("La puja debe ser al menos %s", minimo));
+                }
+                if (request.getImporte().compareTo(maximo) > 0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            String.format("La puja no puede superar %s", maximo));
+                }
+            }
+
+            Puja puja = new Puja();
+            puja.setAsistente(asistente);
+            puja.setItem(item);
+            puja.setImporte(request.getImporte());
+            puja.setGanador("no");
+
+            Puja savedPuja = pujaService.crear(puja);
+
+            String notification = String.format("{\"type\":\"NEW_BID\",\"subastaId\":%d,\"itemId\":%d,\"importe\":%s}",
+                    subastaItem.getIdentificador(), itemId, savedPuja.getImporte().toString());
+            bidWebSocketHandler.broadcast(notification);
+
+            return ResponseEntity.ok(savedPuja);
+        } finally {
+            activeLocks.remove(itemId);
+            bidWebSocketHandler.broadcast(String.format("{\"type\":\"BID_UNLOCKED\",\"itemId\":%d}", itemId));
         }
-
-        Puja puja = new Puja();
-        puja.setAsistente(asistente);
-        puja.setItem(item);
-        puja.setImporte(request.getImporte());
-        puja.setGanador("no");
-
-        Puja savedPuja = pujaService.crear(puja);
-
-        String notification = String.format("{\"type\":\"NEW_BID\",\"subastaId\":%d,\"importe\":%s}",
-                subastaItem.getIdentificador(), savedPuja.getImporte().toString());
-        bidWebSocketHandler.broadcast(notification);
-
-        return ResponseEntity.ok(savedPuja);
     }
 
     private boolean tieneMetodoPagoAprobado(Integer clienteId) {

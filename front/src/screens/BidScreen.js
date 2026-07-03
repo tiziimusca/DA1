@@ -170,6 +170,8 @@ export default function BidScreen({ navigation, route }) {
   const [staticDetails, setStaticDetails] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBidSystemLocked, setIsBidSystemLocked] = useState(false);
   const [userPaymentMethods, setUserPaymentMethods] = useState([]);
 
   useEffect(() => {
@@ -245,16 +247,23 @@ export default function BidScreen({ navigation, route }) {
       console.error('Error fetching live state:', error);
     }
   };
-
   useEffect(() => {
     loadData();
     
     const ws = createWebSocket(
       (data) => {
-        if (data && data.type === 'NEW_BID' && data.subastaId === subasta?.id) {
-          setTimeLeft(60);
-          setHasStarted(true);
-          loadLiveState();
+        if (data) {
+          const firstItemId = staticDetails?.items?.[0]?.id || 1;
+          if (data.type === 'NEW_BID' && data.subastaId === subasta?.id) {
+            setTimeLeft(60);
+            setHasStarted(true);
+            setIsBidSystemLocked(false);
+            loadLiveState();
+          } else if (data.type === 'BID_LOCKED' && data.itemId === firstItemId) {
+            setIsBidSystemLocked(true);
+          } else if (data.type === 'BID_UNLOCKED' && data.itemId === firstItemId) {
+            setIsBidSystemLocked(false);
+          }
         }
       },
       () => setConectado(true),
@@ -269,7 +278,7 @@ export default function BidScreen({ navigation, route }) {
     return () => {
       if (ws) ws.close();
     };
-  }, [subasta?.id]);
+  }, [subasta?.id, staticDetails]);
 
   const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
   const isHighestBidder = bidHistory.length > 0 && bidHistory[0].nombreAsistente === currentUser?.nombre;
@@ -398,6 +407,9 @@ export default function BidScreen({ navigation, route }) {
   const isCategoryAllowed = userCategoryRank >= auctionCategoryRank;
 
   const enviarPuja = async () => {
+    if (isSubmitting || isBidSystemLocked) {
+      return;
+    }
     if (!monto || isNaN(monto)) {
       Alert.alert('Error', 'Ingresa un monto válido');
       return;
@@ -438,6 +450,7 @@ export default function BidScreen({ navigation, route }) {
       }
     }
     try {
+      setIsSubmitting(true);
       const token = await getToken();
       const firstItemId = staticDetails?.items?.[0]?.id || 1;
 
@@ -453,6 +466,8 @@ export default function BidScreen({ navigation, route }) {
       loadLiveState();
     } catch (error) {
       Alert.alert('Error al pujar', error.message || 'No se pudo enviar la puja');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -661,11 +676,11 @@ export default function BidScreen({ navigation, route }) {
               onChangeText={setMonto}
             />
             <TouchableOpacity
-              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado && hasStarted && !isHighestBidder && isCategoryAllowed ? colors.primary : '#A0A7B3' }]}
+              style={[styles.bidButton, { paddingHorizontal: 24, backgroundColor: conectado && hasStarted && !isHighestBidder && isCategoryAllowed && !isSubmitting && !isBidSystemLocked ? colors.primary : '#A0A7B3' }]}
               onPress={enviarPuja}
-              disabled={!hasStarted || !conectado || isHighestBidder || !isCategoryAllowed}
+              disabled={!hasStarted || !conectado || isHighestBidder || !isCategoryAllowed || isSubmitting || isBidSystemLocked}
             >
-              <Text style={styles.bidButtonText}>{!hasStarted ? 'Bloqueado' : isHighestBidder ? 'Ganando' : !isCategoryAllowed ? 'Bloqueado' : 'Pujar'}</Text>
+              <Text style={styles.bidButtonText}>{isSubmitting || isBidSystemLocked ? 'Procesando...' : (!hasStarted ? 'Bloqueado' : isHighestBidder ? 'Ganando' : !isCategoryAllowed ? 'Bloqueado' : 'Pujar')}</Text>
             </TouchableOpacity>
           </View>
           <Text style={[styles.inputLabel, { color: colors.muted }]}>
