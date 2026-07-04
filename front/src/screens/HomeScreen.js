@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, ScrollView, Dimensions, Alert } from 'react-native';
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, ScrollView, Dimensions, Alert, Modal } from 'react-native';
 import { useAppTheme } from '../theme/AppTheme';
 import { getUser, getToken } from '../auth/authManager';
 import { fetchHomeDashboard, fetchCatalogo } from '../api/auctionApi';
@@ -10,6 +10,7 @@ import PhotoCarousel from '../components/PhotoCarousel';
 import { decodeImageUri } from '../utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchProfile } from '../api/authApi';
+import { useFocusEffect } from '@react-navigation/native';
 
 const HOST_URL = SERVER_BASE_URL;
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -165,6 +166,8 @@ export default function HomeScreen({ navigation, route }) {
   const [profileFoto, setProfileFoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isFirstLoad = useRef(true);
+  const [accessDeniedModal, setAccessDeniedModal] = useState({ visible: false, title: '', message: '' });
 
   const authUser = getUser();
   const token = getToken();
@@ -195,23 +198,26 @@ export default function HomeScreen({ navigation, route }) {
       const isCategoryAllowed = userCategoryRank >= auctionCategoryRank;
 
       const paymentMethods = await fetchMetodosPago();
-      const hasPaymentMethod = paymentMethods && paymentMethods.length > 0;
+      const hasPaymentMethod = paymentMethods && paymentMethods.some(m => m.estado?.toLowerCase() === 'aprobado');
 
       if (!isCategoryAllowed && !hasPaymentMethod) {
-        Alert.alert(
-          'Acceso Denegado',
-          'No puedes ingresar a esta subasta por los siguientes motivos:\n• La subasta pertenece a una categoría mayor a la tuya.\n• No tienes ningún método de pago registrado.'
-        );
+        setAccessDeniedModal({
+          visible: true,
+          title: 'Acceso Denegado',
+          message: 'No puedes ingresar a esta subasta por los siguientes motivos:\n\n• La subasta pertenece a una categoría mayor a la tuya.\n• No tienes ningún método de pago aprobado.'
+        });
       } else if (!isCategoryAllowed) {
-        Alert.alert(
-          'Acceso Denegado',
-          'No puedes ingresar a esta subasta porque pertenece a una categoría mayor a la tuya.'
-        );
+        setAccessDeniedModal({
+          visible: true,
+          title: 'Acceso Denegado',
+          message: 'No puedes ingresar a esta subasta porque pertenece a una categoría mayor a la tuya.'
+        });
       } else if (!hasPaymentMethod) {
-        Alert.alert(
-          'Acceso Denegado',
-          'No puedes ingresar a esta subasta porque no tienes ningún método de pago registrado.'
-        );
+        setAccessDeniedModal({
+          visible: true,
+          title: 'Acceso Denegado',
+          message: 'No puedes ingresar a esta subasta porque no tienes ningún método de pago aprobado.'
+        });
       } else {
         navigation.navigate('Bid', { product: item });
       }
@@ -222,32 +228,38 @@ export default function HomeScreen({ navigation, route }) {
       setVerifyingAccessId(null);
     }
   };
-  useEffect(() => {
-    const loadHomeData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const authHeader = isGuest ? null : (token ? `Bearer ${token}` : null);
-        const data = await fetchHomeDashboard(authHeader);
-        setHomeData(data);
 
-        if (token) {
-          try {
-            const profileData = await fetchProfile(token);
-            if (profileData?.foto) {
-              setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
-            }
-          } catch (profileErr) {
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadHomeData = async () => {
+        try {
+          if (isFirstLoad.current) {
+            setLoading(true);
+            isFirstLoad.current = false;
           }
+          setError(null);
+          const authHeader = isGuest ? null : (token ? `Bearer ${token}` : null);
+          const data = await fetchHomeDashboard(authHeader);
+          setHomeData(data);
+
+          if (token) {
+            try {
+              const profileData = await fetchProfile(token);
+              if (profileData?.foto) {
+                setProfileFoto(`data:image/jpeg;base64,${profileData.foto}`);
+              }
+            } catch (profileErr) {
+            }
+          }
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadHomeData();
-  }, [isGuest, token]);
+      };
+      loadHomeData();
+    }, [isGuest, token])
+  );
 
   const auctions = homeData?.subastasActivas || [];
   const metricas = homeData?.metricas;
@@ -390,6 +402,37 @@ export default function HomeScreen({ navigation, route }) {
       <View style={{ backgroundColor: colors.surface}}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Home" />
       </View>
+
+      <Modal
+        transparent
+        visible={accessDeniedModal.visible}
+        animationType="fade"
+        onRequestClose={() => setAccessDeniedModal(prev => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.metricsBackground }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 10 }}>
+              <Ionicons name="lock-closed-outline" size={28} color="#D92727" />
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {accessDeniedModal.title}
+              </Text>
+            </View>
+
+            <Text style={[styles.modalText, { color: colors.text }]}>
+              {accessDeniedModal.message}
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: colors.primary, borderRadius: radius.sm }]}
+              onPress={() => setAccessDeniedModal(prev => ({ ...prev, visible: false }))}
+            >
+              <Text style={{ color: '#FFF', fontWeight: '700' }}>
+                Aceptar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -431,4 +474,34 @@ const styles = StyleSheet.create({
   cardSubtitle: { fontSize: 11, marginTop: 2 },
   cardPrice: { fontSize: 15, fontWeight: '700', textAlign: 'right' },
   cardBtn: { alignSelf: 'center', minWidth: 350, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, paddingHorizontal: 18 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '85%',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  modalText: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  modalButton: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+  },
 });

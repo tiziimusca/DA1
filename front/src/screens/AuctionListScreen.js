@@ -9,6 +9,7 @@ import {
   TextInput,
   Image,
   Alert,
+  Modal,
 } from 'react-native';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { useAppTheme } from '../theme/AppTheme';
@@ -38,6 +39,14 @@ export default function AuctionListScreen({ navigation, route }) {
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedCurrency, setSelectedCurrency] = useState('Todas');
+  const [accessDeniedModal, setAccessDeniedModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    onAccept: null,
+    acceptText: 'Aceptar',
+    showCancel: false,
+  });
 
   const token = getToken();
   const authUser = getUser();
@@ -47,14 +56,17 @@ export default function AuctionListScreen({ navigation, route }) {
 
   const handleIngresarSubasta = async (item) => {
     if (isGuest) {
-      Alert.alert(
-        'Acceso Denegado',
-        'Debes iniciar sesión para ingresar a la subasta.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Iniciar Sesión', onPress: () => navigation.navigate('Login') }
-        ]
-      );
+      setAccessDeniedModal({
+        visible: true,
+        title: 'Acceso Denegado',
+        message: 'Debes iniciar sesión para ingresar a la subasta.',
+        acceptText: 'Iniciar Sesión',
+        showCancel: true,
+        onAccept: () => {
+          setAccessDeniedModal(prev => ({ ...prev, visible: false }));
+          navigation.navigate('Login');
+        }
+      });
       return;
     }
 
@@ -76,23 +88,35 @@ export default function AuctionListScreen({ navigation, route }) {
       const isCategoryAllowed = userCategoryRank >= auctionCategoryRank;
 
       const paymentMethods = await fetchMetodosPago();
-      const hasPaymentMethod = paymentMethods && paymentMethods.length > 0;
+      const hasPaymentMethod = paymentMethods && paymentMethods.some(m => m.estado?.toLowerCase() === 'aprobado');
 
       if (!isCategoryAllowed && !hasPaymentMethod) {
-        Alert.alert(
-          'Acceso Denegado',
-          'No puedes ingresar a esta subasta por los siguientes motivos:\n• La subasta pertenece a una categoria mayor a la tuya.\n• No tienes ningun metodo de pago registrado.'
-        );
+        setAccessDeniedModal({
+          visible: true,
+          title: 'Acceso Denegado',
+          message: 'No puedes ingresar a esta subasta por los siguientes motivos:\n\n• La subasta pertenece a una categoria mayor a la tuya.\n• No tienes ningun metodo de pago aprobado.',
+          acceptText: 'Aceptar',
+          showCancel: false,
+          onAccept: () => setAccessDeniedModal(prev => ({ ...prev, visible: false }))
+        });
       } else if (!isCategoryAllowed) {
-        Alert.alert(
-          'Acceso Denegado',
-          'No puedes ingresar a esta subasta porque pertenece a una categoria mayor a la tuya.'
-        );
+        setAccessDeniedModal({
+          visible: true,
+          title: 'Acceso Denegado',
+          message: 'No puedes ingresar a esta subasta porque pertenece a una categoria mayor a la tuya.',
+          acceptText: 'Aceptar',
+          showCancel: false,
+          onAccept: () => setAccessDeniedModal(prev => ({ ...prev, visible: false }))
+        });
       } else if (!hasPaymentMethod) {
-        Alert.alert(
-          'Acceso Denegado',
-          'No puedes ingresar a esta subasta porque no tienes ningun metodo de pago registrado.'
-        );
+        setAccessDeniedModal({
+          visible: true,
+          title: 'Acceso Denegado',
+          message: 'No puedes ingresar a esta subasta porque no tienes ningun metodo de pago aprobado.',
+          acceptText: 'Aceptar',
+          showCancel: false,
+          onAccept: () => setAccessDeniedModal(prev => ({ ...prev, visible: false }))
+        });
       } else {
         navigation.navigate('Bid', { product: item });
       }
@@ -384,6 +408,50 @@ export default function AuctionListScreen({ navigation, route }) {
       <View style={{ backgroundColor: colors.surface }}>
         <AppFooterNav navigation={navigation} colors={colors} activeRouteName="Auctions" />
       </View>
+
+      <Modal
+        transparent
+        visible={accessDeniedModal.visible}
+        animationType="fade"
+        onRequestClose={() => setAccessDeniedModal(prev => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.metricsBackground }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 10 }}>
+              <Icon name="lock-closed-outline" size={28} color="#D92727" />
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {accessDeniedModal.title}
+              </Text>
+            </View>
+
+            <Text style={[styles.modalText, { color: colors.text }]}>
+              {accessDeniedModal.message}
+            </Text>
+
+            <View style={styles.modalButtonsRow}>
+              {accessDeniedModal.showCancel && (
+                <TouchableOpacity
+                  style={[styles.modalCancelButton, { borderColor: colors.border }]}
+                  onPress={() => setAccessDeniedModal(prev => ({ ...prev, visible: false }))}
+                >
+                  <Text style={[styles.modalCancelButtonText, { color: colors.text }]}>
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: colors.primary, borderRadius: radius.sm }]}
+                onPress={accessDeniedModal.onAccept}
+              >
+                <Text style={{ color: '#FFF', fontWeight: '700' }}>
+                  {accessDeniedModal.acceptText}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -570,4 +638,51 @@ const styles = StyleSheet.create({
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   userName: { fontSize: 16, fontWeight: '500' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '85%',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  modalText: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalButton: {
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelButton: {
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelButtonText: {
+    fontWeight: '700',
+  },
 });
