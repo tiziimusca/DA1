@@ -31,6 +31,9 @@ public class MetodoPagoCheque {
     @Column(nullable = false, length = 20)
     private String estado; // "en_revision", "aprobado", "rechazado"
 
+    @Column(name = "moneda", length = 3, nullable = false)
+    private String moneda = "USD";
+
     @Column(name = "monto_disponible", nullable = false, columnDefinition = "DECIMAL(19,2) DEFAULT 0.00")
     private java.math.BigDecimal montoDisponible = java.math.BigDecimal.ZERO;
 

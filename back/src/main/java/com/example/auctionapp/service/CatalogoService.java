@@ -10,6 +10,8 @@ import com.example.auctionapp.repository.CatalogoRepository;
 import com.example.auctionapp.repository.FotoRepository;
 import com.example.auctionapp.repository.ItemCatalogoRepository;
 import com.example.auctionapp.repository.SubastaRepository;
+import com.example.auctionapp.repository.SubastaMonedaRepository;
+import com.example.auctionapp.model.SubastaMoneda;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,7 @@ public class CatalogoService {
     private final ItemCatalogoRepository itemCatalogoRepository;
     private final FotoRepository fotoRepository;
     private final JwtService jwtService;
+    private final SubastaMonedaRepository subastaMonedaRepository;
 
     private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
 
@@ -36,12 +39,14 @@ public class CatalogoService {
             SubastaRepository subastaRepository,
             ItemCatalogoRepository itemCatalogoRepository,
             FotoRepository fotoRepository,
-            JwtService jwtService) {
+            JwtService jwtService,
+            SubastaMonedaRepository subastaMonedaRepository) {
         this.catalogoRepository = catalogoRepository;
         this.subastaRepository = subastaRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.fotoRepository = fotoRepository;
         this.jwtService = jwtService;
+        this.subastaMonedaRepository = subastaMonedaRepository;
     }
 
     public List<Catalogo> obtenerTodos() {
@@ -111,7 +116,10 @@ public class CatalogoService {
 
         if (autenticado) {
             dto.setPrecioBase(item.getPrecioBase());
-            dto.setMoneda("USD");
+            String moneda = subastaMonedaRepository.findById(subasta.getIdentificador())
+                                .map(SubastaMoneda::getMoneda)
+                                .orElse("USD");
+            dto.setMoneda(moneda);
         }
 
         return dto;

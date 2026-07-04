@@ -24,6 +24,9 @@ public class CompraService {
     private final HistorialEstadoRepository historialEstadoRepository;
     private final DeudorRepository deudorRepository;
     private final MetodoPagoChequeRepository metodoPagoChequeRepository;
+    private final MetodoPagoBancoRepository metodoPagoBancoRepository;
+    private final MetodoPagoTarjetaRepository metodoPagoTarjetaRepository;
+    private final SubastaMonedaRepository subastaMonedaRepository;
     private final jakarta.persistence.EntityManager entityManager;
 
     public CompraService(SubastaRepository subastaRepository,
@@ -37,6 +40,9 @@ public class CompraService {
             HistorialEstadoRepository historialEstadoRepository,
             DeudorRepository deudorRepository,
             MetodoPagoChequeRepository metodoPagoChequeRepository,
+            MetodoPagoBancoRepository metodoPagoBancoRepository,
+            MetodoPagoTarjetaRepository metodoPagoTarjetaRepository,
+            SubastaMonedaRepository subastaMonedaRepository,
             jakarta.persistence.EntityManager entityManager) {
         this.subastaRepository = subastaRepository;
         this.catalogoRepository = catalogoRepository;
@@ -49,6 +55,9 @@ public class CompraService {
         this.historialEstadoRepository = historialEstadoRepository;
         this.deudorRepository = deudorRepository;
         this.metodoPagoChequeRepository = metodoPagoChequeRepository;
+        this.metodoPagoBancoRepository = metodoPagoBancoRepository;
+        this.metodoPagoTarjetaRepository = metodoPagoTarjetaRepository;
+        this.subastaMonedaRepository = subastaMonedaRepository;
         this.entityManager = entityManager;
     }
 
@@ -65,6 +74,34 @@ public class CompraService {
             return Optional.empty();
         }
         Subasta subasta = subastaOpt.get();
+
+        String monedaSubasta = subastaMonedaRepository.findById(subastaId)
+                                   .map(SubastaMoneda::getMoneda)
+                                   .orElse("USD");
+
+        if (metodoPagoId != null && tipo != null) {
+            if ("USD".equalsIgnoreCase(monedaSubasta)) {
+                if ("banco".equalsIgnoreCase(tipo)) {
+                    MetodoPagoBanco banco = metodoPagoBancoRepository.findById(metodoPagoId)
+                        .orElseThrow(() -> new IllegalArgumentException("Cuenta bancaria no encontrada"));
+                    if (banco.getExtranjero() == null || !banco.getExtranjero()) {
+                        throw new IllegalArgumentException("Las subastas en dólares requieren una cuenta bancaria del exterior");
+                    }
+                } else if ("tarjeta".equalsIgnoreCase(tipo)) {
+                    MetodoPagoTarjeta tarjeta = metodoPagoTarjetaRepository.findById(metodoPagoId)
+                        .orElseThrow(() -> new IllegalArgumentException("Tarjeta no encontrada"));
+                    if (tarjeta.getInternacional() == null || !tarjeta.getInternacional()) {
+                        throw new IllegalArgumentException("Las subastas en dólares requieren una tarjeta internacional");
+                    }
+                } else if ("cheque".equalsIgnoreCase(tipo)) {
+                    MetodoPagoCheque cheque = metodoPagoChequeRepository.findById(metodoPagoId)
+                        .orElseThrow(() -> new IllegalArgumentException("Cheque no encontrado"));
+                    if (cheque.getMoneda() == null || !cheque.getMoneda().equalsIgnoreCase("USD")) {
+                        throw new IllegalArgumentException("Las subastas en dólares requieren un cheque en dólares");
+                    }
+                }
+            }
+        }
 
         Optional<Catalogo> catalogoOpt = catalogoRepository.findBySubasta_Identificador(subastaId);
         if (catalogoOpt.isEmpty()) {

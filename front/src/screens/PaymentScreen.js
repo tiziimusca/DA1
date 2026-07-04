@@ -41,16 +41,43 @@ const getMethodSubtitle = (method) => {
     return `Titular: ${method.datos.nombreTitular || 'N/A'}`;
   } else if (method.tipo === 'cheque') {
     const amt = method.montoDisponible ?? method.datos.montoDisponible ?? 0;
-    return `Monto disponible: USD ${parseFloat(amt).toFixed(2)}`;
+    const mon = method.moneda ?? method.datos.moneda ?? 'USD';
+    return `Monto disponible: ${mon} ${parseFloat(amt).toFixed(2)}`;
   }
   return '';
 };
 
 
+const isMethodAllowed = (method, subastaMoneda) => {
+  if (!method) return false;
+  if (!subastaMoneda) return true;
+  if (subastaMoneda === 'USD') {
+    if (method.tipo === 'banco') {
+      return !!(method.extranjero ?? method.datos?.extranjero);
+    }
+    if (method.tipo === 'tarjeta') {
+      return !!(method.internacional ?? method.datos?.internacional);
+    }
+    if (method.tipo === 'cheque') {
+      return (method.moneda ?? method.datos?.moneda) === 'USD';
+    }
+    return false;
+  }
+  if (subastaMoneda === 'ARS') {
+    if (method.tipo === 'cheque') {
+      return (method.moneda ?? method.datos?.moneda) === 'ARS';
+    }
+    return true;
+  }
+  return true;
+};
+
 export default function PaymentScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
 
   const { subasta, winningBid, image, comision, isProposal, costoEnvio, costoVerificacion, tituloProducto, productoId, opcion } = route.params || {};
+  const subastaMoneda = subasta ? (subasta.moneda || 'USD') : null;
+  const monedaSimbolo = subastaMoneda || 'USD';
 
   const [metodosPago, setMetodosPago] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -79,15 +106,16 @@ export default function PaymentScreen({ navigation, route }) {
   useEffect(() => {
     if (selectedMethod && selectedMethod.tipo === 'cheque') {
       const amt = parseFloat(selectedMethod.montoDisponible ?? selectedMethod.datos?.montoDisponible ?? 0);
+      const chequeMoneda = selectedMethod.moneda ?? selectedMethod.datos?.moneda ?? 'USD';
       if (amt < total) {
         Alert.alert(
           'Fondos Insuficientes',
-          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}. Se ha deseleccionado el método.`
+          `El cheque seleccionado tiene un saldo disponible de ${chequeMoneda} ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de ${monedaSimbolo} ${total.toFixed(2)}. Se ha deseleccionado el método.`
         );
         setSelectedMethod(null);
       }
     }
-  }, [total, selectedMethod]);
+  }, [total, selectedMethod, monedaSimbolo]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
@@ -115,12 +143,13 @@ export default function PaymentScreen({ navigation, route }) {
           (m) => m.estado?.toLowerCase() === 'aprobado'
         ) || [];
 
-      setMetodosPago(approved);
+      const allowed = approved.filter(m => isMethodAllowed(m, subastaMoneda));
+      setMetodosPago(allowed);
 
-      if (approved.length > 0) {
+      if (allowed.length > 0) {
         const price = winningBid || subasta?.precioBase || 0;
         const currentTotal = isProposal ? (costoVerif + (retirarEnPersona ? 0 : costoEnv)) : (price + comision + (retirarEnPersona ? 0 : 45));
-        const firstValid = approved.find(m => {
+        const firstValid = allowed.find(m => {
           if (m.tipo !== 'cheque') return true;
           const amt = parseFloat(m.montoDisponible ?? m.datos?.montoDisponible ?? 0);
           return amt >= currentTotal;
@@ -307,14 +336,14 @@ export default function PaymentScreen({ navigation, route }) {
               {costoVerif > 0 && (
                 <View style={styles.row}>
                   <Text style={styles.label}>Costo de Verificación</Text>
-                  <Text style={styles.value}>USD {costoVerif.toFixed(2)}</Text>
+                  <Text style={styles.value}>{monedaSimbolo} {costoVerif.toFixed(2)}</Text>
                 </View>
               )}
               {opcion === 'envio' && costoEnv > 0 && (
                 <View style={styles.row}>
                   <Text style={styles.label}>Costo de Envío / Traslado</Text>
                   <Text style={styles.value}>
-                    {retirarEnPersona ? 'Gratis (Retiro)' : `USD ${costoEnv.toFixed(2)}`}
+                    {retirarEnPersona ? 'Gratis (Retiro)' : `${monedaSimbolo} ${costoEnv.toFixed(2)}`}
                   </Text>
                 </View>
               )}
@@ -333,7 +362,7 @@ export default function PaymentScreen({ navigation, route }) {
                 </Text>
 
                 <Text style={styles.value}>
-                  USD {precioGanador.toFixed(2)}
+                  {monedaSimbolo} {precioGanador.toFixed(2)}
                 </Text>
               </View>
 
@@ -343,7 +372,7 @@ export default function PaymentScreen({ navigation, route }) {
                 </Text>
 
                 <Text style={styles.value}>
-                  USD {(comision || 0).toFixed(2)}
+                  {monedaSimbolo} {(comision || 0).toFixed(2)}
                 </Text>
               </View>
 
@@ -351,7 +380,7 @@ export default function PaymentScreen({ navigation, route }) {
                 <Text style={styles.label}>Envío</Text>
 
                 <Text style={styles.value}>
-                  {retirarEnPersona ? 'Gratis (Retiro)' : `USD ${envio.toFixed(2)}`}
+                  {retirarEnPersona ? 'Gratis (Retiro)' : `${monedaSimbolo} ${envio.toFixed(2)}`}
                 </Text>
               </View>
             </>
@@ -370,7 +399,7 @@ export default function PaymentScreen({ navigation, route }) {
                 { color: colors.primary },
               ]}
             >
-              USD {total.toFixed(2)}
+              {monedaSimbolo} {total.toFixed(2)}
             </Text>
           </View>
         </View>
@@ -519,10 +548,11 @@ export default function PaymentScreen({ navigation, route }) {
           onPress={() => {
             if (method.tipo === 'cheque') {
               const amt = parseFloat(method.montoDisponible ?? method.datos?.montoDisponible ?? 0);
+              const chequeMoneda = method.moneda ?? method.datos?.moneda ?? 'USD';
               if (amt < total) {
                 Alert.alert(
                   'Fondos Insuficientes',
-                  `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}.`
+                  `El cheque seleccionado tiene un saldo disponible de ${chequeMoneda} ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de ${monedaSimbolo} ${total.toFixed(2)}.`
                 );
                 return;
               }

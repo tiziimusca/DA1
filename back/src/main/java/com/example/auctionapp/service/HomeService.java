@@ -16,6 +16,8 @@ import com.example.auctionapp.repository.UsuarioRepository;
 import com.example.auctionapp.repository.PujaRepository;
 import com.example.auctionapp.model.Usuario;
 import com.example.auctionapp.model.Puja;
+import com.example.auctionapp.repository.SubastaMonedaRepository;
+import com.example.auctionapp.model.SubastaMoneda;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -35,6 +37,7 @@ public class HomeService {
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
     private final PujaRepository pujaRepository;
+    private final SubastaMonedaRepository subastaMonedaRepository;
 
     public HomeService(SubastaRepository subastaRepository,
             CatalogoRepository catalogoRepository,
@@ -43,7 +46,8 @@ public class HomeService {
             FotoRepository fotoRepository,
             JwtService jwtService,
             UsuarioRepository usuarioRepository,
-            PujaRepository pujaRepository) {
+            PujaRepository pujaRepository,
+            SubastaMonedaRepository subastaMonedaRepository) {
         this.subastaRepository = subastaRepository;
         this.catalogoRepository = catalogoRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
@@ -52,6 +56,7 @@ public class HomeService {
         this.jwtService = jwtService;
         this.usuarioRepository = usuarioRepository;
         this.pujaRepository = pujaRepository;
+        this.subastaMonedaRepository = subastaMonedaRepository;
     }
 
     public HomeResponseDTO obtenerHome(String authorizationHeader) {
@@ -155,10 +160,14 @@ public class HomeService {
                 ? subasta.getFecha().atStartOfDay()
                 : subasta.getFecha().atTime(subasta.getHora());
 
+        String moneda = subastaMonedaRepository.findById(subasta.getIdentificador())
+                            .map(SubastaMoneda::getMoneda)
+                            .orElse("USD");
+
         return new HomeSubastaDTO(
                 subasta.getIdentificador(),
                 titulo,
-                autenticado ? "USD" : null,
+                moneda,
                 subasta.getCategoria(),
                 precioBase,
                 fechaHora,

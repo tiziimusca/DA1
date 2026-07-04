@@ -12,6 +12,7 @@ import com.example.auctionapp.model.Asistente;
 import com.example.auctionapp.model.Puja;
 import com.example.auctionapp.model.RegistroDeSubasta;
 import com.example.auctionapp.model.Foto;
+import com.example.auctionapp.model.SubastaMoneda;
 import com.example.auctionapp.repository.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,7 @@ public class ClienteService {
     private final PujaRepository pujaRepository;
     private final RegistroDeSubastaRepository registroDeSubastaRepository;
     private final FotoRepository fotoRepository;
+    private final SubastaMonedaRepository subastaMonedaRepository;
 
     public ClienteService(ClienteRepository clienteRepository,
             PersonaRepository personaRepository,
@@ -48,7 +50,8 @@ public class ClienteService {
             AsistenteRepository asistenteRepository,
             PujaRepository pujaRepository,
             RegistroDeSubastaRepository registroDeSubastaRepository,
-            FotoRepository fotoRepository) {
+            FotoRepository fotoRepository,
+            SubastaMonedaRepository subastaMonedaRepository) {
         this.clienteRepository = clienteRepository;
         this.personaRepository = personaRepository;
         this.usuarioRepository = usuarioRepository;
@@ -59,6 +62,7 @@ public class ClienteService {
         this.pujaRepository = pujaRepository;
         this.registroDeSubastaRepository = registroDeSubastaRepository;
         this.fotoRepository = fotoRepository;
+        this.subastaMonedaRepository = subastaMonedaRepository;
     }
 
     public List<Cliente> obtenerTodos() {
@@ -231,7 +235,9 @@ public class ClienteService {
 
             String dbCat = subasta.getCategoria();
             String categoriaExt = dbCat;
-            String moneda = "USD";
+            String moneda = subastaMonedaRepository.findById(subasta.getIdentificador())
+                                .map(SubastaMoneda::getMoneda)
+                                .orElse("USD");
 
             String fotoUrl = null;
             List<Foto> fotos = fotoRepository

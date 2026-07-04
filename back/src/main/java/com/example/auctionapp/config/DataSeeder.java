@@ -338,7 +338,8 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?q=80&w=390&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1582561424760-0321d75e81fa?q=80&w=489&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                new BidSpec(clienteUnoId, 1, new BigDecimal("3550.00"), "SI"));
+                                new BidSpec(clienteUnoId, 1, new BigDecimal("3550.00"), "SI"),
+                                "USD");
 
                 seedAuction(
                                 LocalDate.now().plusDays(2),
@@ -369,7 +370,8 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1590587754330-6fc06e3a9bb7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1558603655-491ecfa8324f?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                null);
+                                null,
+                                "ARS");
 
                 seedAuction(
                                 LocalDate.now().plusDays(14),
@@ -400,7 +402,8 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1528629297340-d1d466945dc5?q=80&w=1222&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                null);
+                                null,
+                                "USD");
 
                 LocalDateTime especialTime = LocalDateTime.now().plusMinutes(3);
                 LocalDate fechaEspecial = especialTime.toLocalDate();
@@ -435,7 +438,8 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1593494193844-c2bd6b1a0e16?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1591102972305-213abaa76d6f?q=80&w=436&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                null);
+                                null,
+                                "ARS");
 
                 LocalDate fechaPlatino = LocalDate.now().plusDays(5);
                 LocalTime horaPlatino = LocalTime.of(15, 0);
@@ -469,38 +473,40 @@ public class DataSeeder implements CommandLineRunner {
                                                                 "https://images.unsplash.com/photo-1677045419454-e8b201856472?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                                                                 "https://images.unsplash.com/photo-1481980235850-66e47651e431?q=80&w=388&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                                 }),
-                                null);
+                                null,
+                                "USD");
 
                 jdbcTemplate.update(
-                                "INSERT INTO metodos_pago_banco (cliente_id, nombre_titular, dni_titular, nombre_banco, numero_cuenta, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                clienteUnoId, "Cliente Demo 1", 12345678, "Banco Demo", "000123456789", "aprobado",
+                                "INSERT INTO metodos_pago_banco (cliente_id, nombre_titular, dni_titular, nombre_banco, numero_cuenta, estado, extranjero, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                clienteUnoId, "Cliente Demo 1", 12345678, "Banco Demo", "000123456789", "aprobado", true,
                                 System.currentTimeMillis());
 
                 jdbcTemplate.update(connection -> {
                         PreparedStatement statement = connection.prepareStatement(
-                                        "INSERT INTO metodos_pago_cheque (cliente_id, numero_cheque, foto_frente, foto_dorso, estado, fecha_creacion, monto_disponible) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                                        "INSERT INTO metodos_pago_cheque (cliente_id, numero_cheque, foto_frente, foto_dorso, estado, moneda, fecha_creacion, monto_disponible) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                         statement.setInt(1, clienteUnoId);
                         statement.setInt(2, 1001);
                         statement.setBytes(3, "cheque-frente".getBytes(StandardCharsets.UTF_8));
                         statement.setBytes(4, "cheque-dorso".getBytes(StandardCharsets.UTF_8));
-                        statement.setString(5, "en_revision");
-                        statement.setLong(6, System.currentTimeMillis());
-                        statement.setBigDecimal(7, new java.math.BigDecimal("15000.00"));
+                        statement.setString(5, "aprobado");
+                        statement.setString(6, "USD");
+                        statement.setLong(7, System.currentTimeMillis());
+                        statement.setBigDecimal(8, new java.math.BigDecimal("15000.00"));
                         return statement;
                 });
 
                 jdbcTemplate.update(
-                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                clienteUnoId, "Cliente Demo 1", 4111111111111111L, "12/28", "123", "aprobado",
+                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, internacional, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                clienteUnoId, "Cliente Demo 1", 4111111111111111L, "12/28", "123", "aprobado", true,
                                 System.currentTimeMillis());
 
                 jdbcTemplate.update(
-                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                personaUsuarioId, "Usuario Demo", 5111111111111111L, "12/29", "456", "aprobado",
+                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, internacional, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                personaUsuarioId, "Usuario Demo", 5111111111111111L, "12/29", "456", "aprobado", true,
                                 System.currentTimeMillis());
                 jdbcTemplate.update(
-                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                personaUsuarioId, "Usuario Demo", 5111111111112222L, "06/34", "123", "aprobado",
+                                "INSERT INTO metodos_pago_tarjeta (cliente_id, nombre_titular, numero_tarjeta, fecha_vencimiento, cvv, estado, internacional, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                personaUsuarioId, "Usuario Demo", 5111111111112222L, "06/34", "123", "aprobado", false,
                                 System.currentTimeMillis());
 
                 Integer catalogo2Id = getInteger("SELECT identificador FROM catalogos WHERE descripcion = ?",
@@ -544,6 +550,7 @@ public class DataSeeder implements CommandLineRunner {
                                 subastadorSeisId, "Salon Rolex", 30, "SI", "SI", "Oro");
                 Integer subastaRolexId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?",
                                 "Salon Rolex");
+                jdbcTemplate.update("INSERT INTO subastas_monedas (subasta_id, moneda) VALUES (?, ?)", subastaRolexId, "USD");
 
                 jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
                                 "Subasta Rolex", subastaRolexId, responsableSeisId);
@@ -584,6 +591,7 @@ public class DataSeeder implements CommandLineRunner {
                                 subastadorSieteId, "Salon Mustang", 30, "SI", "SI", "Especial");
                 Integer subastaMustangId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?",
                                 "Salon Mustang");
+                jdbcTemplate.update("INSERT INTO subastas_monedas (subasta_id, moneda) VALUES (?, ?)", subastaMustangId, "USD");
 
                 jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
                                 "Subasta Mustang", subastaMustangId, responsableSieteId);
@@ -624,6 +632,7 @@ public class DataSeeder implements CommandLineRunner {
                                 subastadorOchoId, "Salon Horizonte", 30, "SI", "SI", "Comun");
                 Integer subastaHorizonteId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?",
                                 "Salon Horizonte");
+                jdbcTemplate.update("INSERT INTO subastas_monedas (subasta_id, moneda) VALUES (?, ?)", subastaHorizonteId, "ARS");
 
                 jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
                                 "Subasta Horizonte", subastaHorizonteId, responsableOchoId);
@@ -696,7 +705,8 @@ public class DataSeeder implements CommandLineRunner {
                         String catalogoDescripcion,
                         Integer responsableId,
                         ProductSpec product,
-                        BidSpec bid) {
+                        BidSpec bid,
+                        String moneda) {
 
                 jdbcTemplate.update(
                                 "INSERT INTO subastas (fecha, hora, estado, subastador, ubicacion, capacidad_asistentes, tiene_deposito, seguridad_propia, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -704,6 +714,7 @@ public class DataSeeder implements CommandLineRunner {
                                 tieneDeposito,
                                 seguridadPropia, categoria);
                 Integer subastaId = getInteger("SELECT identificador FROM subastas WHERE ubicacion = ?", ubicacion);
+                jdbcTemplate.update("INSERT INTO subastas_monedas (subasta_id, moneda) VALUES (?, ?)", subastaId, moneda);
 
                 jdbcTemplate.update("INSERT INTO catalogos (descripcion, subasta, responsable) VALUES (?, ?, ?)",
                                 catalogoDescripcion, subastaId, responsableId);

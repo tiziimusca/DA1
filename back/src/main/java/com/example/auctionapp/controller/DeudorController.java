@@ -26,6 +26,7 @@ public class DeudorController {
     private final PujaRepository pujaRepository;
     private final CompraService compraService;
     private final JwtService jwtService;
+    private final SubastaMonedaRepository subastaMonedaRepository;
 
     public DeudorController(DeudorRepository deudorRepository,
             UsuarioRepository usuarioRepository,
@@ -34,7 +35,8 @@ public class DeudorController {
             ItemCatalogoRepository itemCatalogoRepository,
             PujaRepository pujaRepository,
             CompraService compraService,
-            JwtService jwtService) {
+            JwtService jwtService,
+            SubastaMonedaRepository subastaMonedaRepository) {
         this.deudorRepository = deudorRepository;
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
@@ -43,6 +45,7 @@ public class DeudorController {
         this.pujaRepository = pujaRepository;
         this.compraService = compraService;
         this.jwtService = jwtService;
+        this.subastaMonedaRepository = subastaMonedaRepository;
     }
 
     private Usuario obtenerUsuarioDeToken(String authHeader) {
@@ -116,6 +119,10 @@ public class DeudorController {
         Deudor deudor = new Deudor();
         deudor.setUsuarioId(usuario.getIdentificador());
         deudor.setMonto(total);
+        String moneda = subastaMonedaRepository.findById(subastaId)
+                            .map(SubastaMoneda::getMoneda)
+                            .orElse("USD");
+        deudor.setMoneda(moneda);
         deudorRepository.save(deudor);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(deudor);

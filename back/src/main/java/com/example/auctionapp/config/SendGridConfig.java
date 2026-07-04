@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SendGridConfig {
 
-    @Value("${SENDGRID_API_KEY}")
+    @Value("4848448")
     private String apiKey;
 
     @Bean

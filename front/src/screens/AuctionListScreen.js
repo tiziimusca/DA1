@@ -184,7 +184,7 @@ export default function AuctionListScreen({ navigation, route }) {
       const matchesCategory =
         selectedCategory === 'Todas' || (item.categoria || '').toString().toUpperCase() === selectedCategory;
 
-      const moneda = (item.moneda || 'ARS').toUpperCase();
+      const moneda = (item.moneda || 'USD').toUpperCase();
       const matchesCurrency = selectedCurrency === 'Todas' || moneda === selectedCurrency;
 
       const precio = Number(item.precioBase ?? 0);
@@ -195,7 +195,7 @@ export default function AuctionListScreen({ navigation, route }) {
     });
   }, [subastas, searchText, selectedCategory, selectedCurrency, priceRange]);
 
-  const formatPrice = (value, moneda = 'ARS') => {
+  const formatPrice = (value, moneda = 'USD') => {
     if (value == null || Number.isNaN(Number(value))) return '---';
     return `${moneda} ${Number(value).toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
   };
@@ -512,7 +512,7 @@ function AuctionCard({ item, colors, radius, onPress, loadingAccess }) {
     : true;
   const title = item.titulo || item.descripcion || `Subasta #${item.identificador}`;
   const price = item.precioBase != null
-    ? `${item.moneda || 'ARS'} ${Number(item.precioBase).toLocaleString('es-AR')}`
+    ? `${item.moneda || 'USD'} ${Number(item.precioBase).toLocaleString('es-AR')}`
     : '---';
 
   return (

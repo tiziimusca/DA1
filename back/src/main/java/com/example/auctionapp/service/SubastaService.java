@@ -15,6 +15,8 @@ import com.example.auctionapp.repository.FotoRepository;
 import com.example.auctionapp.repository.ItemCatalogoRepository;
 import com.example.auctionapp.repository.SubastaRepository;
 import com.example.auctionapp.repository.PujaRepository;
+import com.example.auctionapp.repository.SubastaMonedaRepository;
+import com.example.auctionapp.model.SubastaMoneda;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -32,6 +34,7 @@ public class SubastaService {
     private final ItemCatalogoRepository itemCatalogoRepository;
     private final FotoRepository fotoRepository;
     private final PujaRepository pujaRepository;
+    private final SubastaMonedaRepository subastaMonedaRepository;
 
     private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -39,12 +42,14 @@ public class SubastaService {
             CatalogoRepository catalogoRepository,
             ItemCatalogoRepository itemCatalogoRepository,
             FotoRepository fotoRepository,
-            PujaRepository pujaRepository) {
+            PujaRepository pujaRepository,
+            SubastaMonedaRepository subastaMonedaRepository) {
         this.subastaRepository = subastaRepository;
         this.catalogoRepository = catalogoRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.fotoRepository = fotoRepository;
         this.pujaRepository = pujaRepository;
+        this.subastaMonedaRepository = subastaMonedaRepository;
     }
 
     public List<Subasta> obtenerTodas() {
@@ -119,7 +124,10 @@ public class SubastaService {
         dto.setCategoria(subasta.getCategoria());
         dto.setFecha(formatFecha(subasta));
         dto.setPrecioBase(item.getPrecioBase());
-        dto.setMoneda("USD");
+        String moneda = subastaMonedaRepository.findById(subasta.getIdentificador())
+                            .map(SubastaMoneda::getMoneda)
+                            .orElse("USD");
+        dto.setMoneda(moneda);
         dto.setImagen(primerUrlImagen(item));
         return dto;
     }
@@ -164,6 +172,10 @@ public class SubastaService {
                 dto.setRematador(subasta.getSubastador().getPersona().getNombre());
             }
 
+            String subastaMoneda = subastaMonedaRepository.findById(subasta.getIdentificador())
+                                       .map(SubastaMoneda::getMoneda)
+                                       .orElse("USD");
+
             Catalogo catalogo = catalogoRepository.findBySubasta_Identificador(subasta.getIdentificador()).orElse(null);
             if (catalogo != null) {
                 List<ItemCatalogo> items = itemCatalogoRepository
@@ -204,7 +216,7 @@ public class SubastaService {
                             }
                         }
                         itemDto.setPrecioBase(item.getPrecioBase());
-                        itemDto.setMoneda("USD");
+                        itemDto.setMoneda(subastaMoneda);
                         itemDto.setComision(item.getComision());
                         return itemDto;
                     }).toList();

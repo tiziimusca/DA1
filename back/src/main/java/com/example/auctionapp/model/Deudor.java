@@ -24,4 +24,7 @@ public class Deudor {
 
     @Column(name = "Monto", nullable = false)
     private BigDecimal monto;
+
+    @Column(name = "moneda", length = 3, nullable = false)
+    private String moneda = "USD";
 }

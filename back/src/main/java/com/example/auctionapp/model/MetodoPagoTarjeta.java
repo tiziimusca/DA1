@@ -32,6 +32,9 @@ public class MetodoPagoTarjeta {
     @Column(nullable = false, length = 20)
     private String estado; // "en_revision", "aprobado", "rechazado"
 
+    @Column(nullable = false)
+    private Boolean internacional = false;
+
     @Column(name = "fecha_creacion")
     private Long fechaCreacion;
 

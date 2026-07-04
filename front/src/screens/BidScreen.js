@@ -388,6 +388,7 @@ export default function BidScreen({ navigation, route }) {
 
   const currentPrice = bidHistory.length > 0 ? bidHistory[0].importe : (staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || 0);
   const basePrice = staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || subasta?.precio || 0;
+  const subastaMoneda = staticDetails?.items?.[0]?.moneda || subasta?.moneda || 'USD';
   const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subasta?.id}`;
   const itemStatus = String(liveState?.estado || subasta?.estado || 'ATENCIÓN').toUpperCase();
   const itemLocation = subasta?.ubicacion || 'Ubicación no definida';
@@ -419,7 +420,8 @@ export default function BidScreen({ navigation, route }) {
 
     const hasOnlyCheques = userPaymentMethods.length > 0 && userPaymentMethods.every(m => m.tipo === 'cheque');
     if (hasOnlyCheques) {
-      const totalChequeMonto = userPaymentMethods.reduce((sum, m) => {
+      const chequesCoincidentes = userPaymentMethods.filter(m => (m.datos?.moneda || m.moneda || 'USD') === subastaMoneda);
+      const totalChequeMonto = chequesCoincidentes.reduce((sum, m) => {
         const amt = m.montoDisponible ?? m.datos?.montoDisponible ?? 0;
         return sum + parseFloat(amt);
       }, 0);
@@ -427,7 +429,7 @@ export default function BidScreen({ navigation, route }) {
       if (bidValue > totalChequeMonto) {
         Alert.alert(
           'Monto no permitido',
-          `No puedes pujar un valor mayor al monto disponible de tus cheques (USD ${totalChequeMonto.toFixed(2)}).`
+          `No tienes suficientes cheques en ${subastaMoneda} para respaldar esta oferta (Monto disponible: ${subastaMoneda} ${totalChequeMonto.toFixed(2)}).`
         );
         return;
       }
@@ -441,11 +443,11 @@ export default function BidScreen({ navigation, route }) {
       const maxBid = lastBid + base * 0.20;
 
       if (bidValue < minBid) {
-        Alert.alert('Error', `La puja mínima es ${subasta?.moneda || 'USD'} ${minBid.toFixed(2)}`);
+        Alert.alert('Error', `La puja mínima es ${subastaMoneda} ${minBid.toFixed(2)}`);
         return;
       }
       if (bidValue > maxBid) {
-        Alert.alert('Error', `La puja máxima es ${subasta?.moneda || 'USD'} ${maxBid.toFixed(2)}`);
+        Alert.alert('Error', `La puja máxima es ${subastaMoneda} ${maxBid.toFixed(2)}`);
         return;
       }
     }
@@ -596,7 +598,7 @@ export default function BidScreen({ navigation, route }) {
                 <Text style={styles.cardLabel}>PRECIO BASE</Text>
 
                 <Text style={styles.cardAmount}>
-                  ${Number(basePrice).toLocaleString()}
+                  {subastaMoneda} {Number(basePrice).toLocaleString()}
                 </Text>
               </View>
 
@@ -604,7 +606,7 @@ export default function BidScreen({ navigation, route }) {
                 <Text style={styles.cardLabel}>MAYOR PUJA</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={styles.cardAmountBlue}>
-                    ${Number(currentPrice).toLocaleString()}
+                    {subastaMoneda} {Number(currentPrice).toLocaleString()}
                   </Text>
 
                   <View style={styles.topBadge}>
@@ -645,7 +647,7 @@ export default function BidScreen({ navigation, route }) {
                 </View>
                     <View style={{ flexDirection: 'column', alignItems: 'center' }}>
                 <Text style={[styles.historyAmount, {color: colors.primary}]}>
-                  ${Number(amount).toLocaleString()}
+                  {subastaMoneda} {Number(amount).toLocaleString()}
                 </Text>
                 {index === 0 && (
                   <View style={styles.winnerBadge}>
@@ -685,7 +687,7 @@ export default function BidScreen({ navigation, route }) {
           </View>
           <Text style={[styles.inputLabel, { color: colors.muted }]}>
             {categoria !== 'oro' && categoria !== 'platino'
-              ? `Puja minima: ${subasta?.moneda || 'USD'} ${(currentPrice + basePrice * 0.01).toFixed(2)}      Puja maxima: ${(currentPrice + basePrice * 0.20).toFixed(2)}`
+              ? `Puja minima: ${subastaMoneda} ${(currentPrice + basePrice * 0.01).toFixed(2)}      Puja maxima: ${subastaMoneda} ${(currentPrice + basePrice * 0.20).toFixed(2)}`
               : `Sin límites de puja`}
           </Text>
         </View>

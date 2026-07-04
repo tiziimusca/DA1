@@ -12,6 +12,7 @@ import {
   Platform,
   Alert,
   Modal,
+  Switch,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -206,6 +207,15 @@ const cmp = StyleSheet.create({
 function FormBanco({ theme, formData, onChange, errores }) {
   return (
     <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
+        <Text style={[cmp.label, { color: theme.colors.text }]}>Cuenta radicada en el exterior (USD)</Text>
+        <Switch
+          value={formData.extranjero}
+          onValueChange={v => onChange('extranjero', v)}
+          trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+          thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
+        />
+      </View>
       <Campo label="Nombre del titular" placeholder="Juan Perez" theme={theme}
         value={formData.titular} onChangeText={t => onChange('titular', t)} error={errores.titular} />
       <Campo label="Numero de DNI" placeholder="30123456" keyboardType="numeric" maxLength={9} theme={theme}
@@ -225,6 +235,15 @@ function FormTarjeta({ theme, formData, onChange, modoEdicion = false, errores }
  
   return (
     <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+        <Text style={[cmp.label, { color: colors.text }]}>Tarjeta internacional (USD)</Text>
+        <Switch
+          value={formData.internacional}
+          onValueChange={v => onChange('internacional', v)}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
+        />
+      </View>
       <View style={{ marginBottom: errores.tipoTarjeta ? 4 : spacing.md }}>
         <Text style={[cmp.label, { color: colors.text, marginBottom: spacing.xs }]}>Tipo de tarjeta</Text>
         <TouchableOpacity
@@ -360,6 +379,33 @@ function FormCheque({ theme, formData, onChange, errores }) {
   const { colors, spacing } = theme;
   return (
     <View>
+      <View style={{ marginBottom: spacing.md }}>
+        <Text style={[cmp.label, { color: colors.text, marginBottom: spacing.xs }]}>Moneda del cheque</Text>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {['USD', 'ARS'].map(mon => {
+            const isSel = formData.moneda === mon;
+            return (
+              <TouchableOpacity
+                key={mon}
+                onPress={() => onChange('moneda', mon)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: theme.radius.sm,
+                  backgroundColor: isSel ? colors.primary : colors.surface,
+                  borderWidth: 1,
+                  borderColor: isSel ? colors.primary : colors.border,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: isSel ? '#FFFFFF' : colors.text, fontWeight: '700' }}>
+                  {mon}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
       <Campo label="Nombre del banco" placeholder="Galicia" theme={theme}
         value={formData.banco} onChangeText={t => onChange('banco', t)} error={errores.banco} />
       <Campo label="Numero de cheque" placeholder="12345678" keyboardType="numeric" maxLength={9} theme={theme}
@@ -443,6 +489,9 @@ export default function AgregarMetodoPago() {
     numeroCheque:    '',
     imagenFrente:    null,
     imagenDorso:     null,
+    extranjero:      datosExistente.extranjero    || false,
+    internacional:   datosExistente.internacional || false,
+    moneda:          datosExistente.moneda        || 'USD',
   });
  
   const handleChange = (campo, valor) => {
@@ -469,6 +518,7 @@ export default function AgregarMetodoPago() {
           ...(formData.dni    ? { dniTitular: Number(formData.dni) } : {}),
           nombreBanco:   formData.banco,
           ...(formData.cuenta ? { numeroCuenta: formData.cuenta }   : {}),
+          extranjero:    formData.extranjero,
         };
       } else if (metodo === 'Tarjeta') {
         datosLimpios = {
@@ -477,6 +527,7 @@ export default function AgregarMetodoPago() {
           fechaVencimiento: `${formData.vencimientoMes}/${formData.vencimientoAnio}`,
           ...(formData.cvv          ? { cvv: formData.cvv }                            : {}),
           ...(formData.tipoTarjeta  ? { tipoTarjeta: formData.tipoTarjeta }            : {}),
+          internacional:    formData.internacional,
         };
       } else if (metodo === 'Cheque') {
         const limpiarBase64 = (str) => str?.replace(/^data:image\/\w+;base64,/, '') ?? null;
@@ -485,6 +536,7 @@ export default function AgregarMetodoPago() {
           numeroCheque: parseInt(formData.numeroCheque, 10),
           fotoFrente:   limpiarBase64(formData.imagenFrente),
           fotoDorso:    limpiarBase64(formData.imagenDorso),
+          moneda:       formData.moneda,
         };
       }
     } catch (e) {
