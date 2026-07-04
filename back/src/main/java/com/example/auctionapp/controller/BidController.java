@@ -79,17 +79,17 @@ public class BidController {
     }
 
     @PostMapping("/pujar")
-    public ResponseEntity<Puja> pujar(
+    public ResponseEntity<?> pujar(
             @org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody PujaBidRequestDTO request) {
 
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no proporcionado");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Token no proporcionado"));
         }
 
         Integer itemId = request.getItemId();
         if (activeLocks.putIfAbsent(itemId, Boolean.TRUE) != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Hay otra puja en proceso para este lote");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Otra subasta ha sido procesada"));
         }
 
         try {
@@ -159,7 +159,7 @@ public class BidController {
 
                 if (request.getImporte().compareTo(minimo) < 0) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            String.format("La puja debe ser al menos %s", minimo));
+                            "Otra subasta ha sido procesada");
                 }
                 if (request.getImporte().compareTo(maximo) > 0) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -180,6 +180,10 @@ public class BidController {
             bidWebSocketHandler.broadcast(notification);
 
             return ResponseEntity.ok(savedPuja);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", e.getReason()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         } finally {
             activeLocks.remove(itemId);
             bidWebSocketHandler.broadcast(String.format("{\"type\":\"BID_UNLOCKED\",\"itemId\":%d}", itemId));

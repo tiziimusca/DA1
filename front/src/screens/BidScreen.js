@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, SafeAreaView, Modal } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/AppTheme';
 import { createWebSocket, enviarPujaRest, fetchEstadoVivo, fetchDetalleEstatico } from '../api/auctionApi';
@@ -174,6 +174,45 @@ export default function BidScreen({ navigation, route }) {
   const [isBidSystemLocked, setIsBidSystemLocked] = useState(false);
   const [userPaymentMethods, setUserPaymentMethods] = useState([]);
 
+  const [alertModal, setAlertModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    onAccept: null,
+    acceptText: 'Aceptar',
+    iconName: 'information-circle-outline',
+    iconColor: colors.primary,
+  });
+
+  const showAlert = (title, message, type = 'info', onAccept = null) => {
+    let iconName = 'information-circle-outline';
+    let iconColor = colors.primary;
+
+    if (type === 'error' || type === 'danger') {
+      iconName = 'alert-circle-outline';
+      iconColor = '#D92727';
+    } else if (type === 'success') {
+      iconName = 'checkmark-circle-outline';
+      iconColor = '#0F8A5F';
+    } else if (type === 'warning') {
+      iconName = 'warning-outline';
+      iconColor = '#F59E0B';
+    }
+
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      onAccept: () => {
+        setAlertModal(prev => ({ ...prev, visible: false }));
+        if (onAccept) onAccept();
+      },
+      acceptText: 'Aceptar',
+      iconName,
+      iconColor,
+    });
+  };
+
   useEffect(() => {
     const loadUserPaymentMethods = async () => {
       try {
@@ -341,7 +380,7 @@ export default function BidScreen({ navigation, route }) {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       if (isHighestBidder && timeLeft > 0) {
         e.preventDefault();
-        Alert.alert('Espera', 'No puedes salir mientras seas la mayor puja.');
+        showAlert('Espera', 'No puedes salir mientras seas la mayor puja.', 'warning');
       }
     });
     return unsubscribe;
@@ -411,7 +450,7 @@ export default function BidScreen({ navigation, route }) {
       return;
     }
     if (!monto || isNaN(monto)) {
-      Alert.alert('Error', 'Ingresa un monto válido');
+      showAlert('Error', 'Ingresa un monto válido', 'error');
       return;
     }
 
@@ -425,9 +464,10 @@ export default function BidScreen({ navigation, route }) {
       }, 0);
 
       if (bidValue > totalChequeMonto) {
-        Alert.alert(
+        showAlert(
           'Monto no permitido',
-          `No puedes pujar un valor mayor al monto disponible de tus cheques (USD ${totalChequeMonto.toFixed(2)}).`
+          `No puedes pujar un valor mayor al monto disponible de tus cheques (USD ${totalChequeMonto.toFixed(2)}).`,
+          'error'
         );
         return;
       }
@@ -441,11 +481,11 @@ export default function BidScreen({ navigation, route }) {
       const maxBid = lastBid + base * 0.20;
 
       if (bidValue < minBid) {
-        Alert.alert('Error', `La puja mínima es ${subasta?.moneda || 'USD'} ${minBid.toFixed(2)}`);
+        showAlert('Error', `La puja mínima es ${subasta?.moneda || 'USD'} ${minBid.toFixed(2)}`, 'error');
         return;
       }
       if (bidValue > maxBid) {
-        Alert.alert('Error', `La puja máxima es ${subasta?.moneda || 'USD'} ${maxBid.toFixed(2)}`);
+        showAlert('Error', `La puja máxima es ${subasta?.moneda || 'USD'} ${maxBid.toFixed(2)}`, 'error');
         return;
       }
     }
@@ -460,12 +500,12 @@ export default function BidScreen({ navigation, route }) {
       };
 
       await enviarPujaRest(bidData, token ? `Bearer ${token}` : null);
-      Alert.alert('Éxito', 'Puja enviada');
+      showAlert('Éxito', 'Puja enviada', 'success');
       setMonto('');
       setTimeLeft(60);
       loadLiveState();
     } catch (error) {
-      Alert.alert('Error al pujar', error.message || 'No se pudo enviar la puja');
+      showAlert('Error al pujar', error.message || 'No se pudo enviar la puja', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -487,7 +527,7 @@ export default function BidScreen({ navigation, route }) {
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => {
             if (isHighestBidder) {
-              Alert.alert('Espera', 'No puedes salir mientras seas la mayor puja.');
+              showAlert('Espera', 'No puedes salir mientras seas la mayor puja.', 'warning');
             } else {
               navigation.goBack();
             }
@@ -689,6 +729,39 @@ export default function BidScreen({ navigation, route }) {
               : `Sin límites de puja`}
           </Text>
         </View>
+
+        <Modal
+          transparent
+          visible={alertModal.visible}
+          animationType="fade"
+          onRequestClose={() => setAlertModal(prev => ({ ...prev, visible: false }))}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: colors.metricsBackground || colors.surface }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 10 }}>
+                <Icon name={alertModal.iconName} size={28} color={alertModal.iconColor} />
+                <Text style={[styles.modalTitle, { color: colors.text }]}>
+                  {alertModal.title}
+                </Text>
+              </View>
+
+              <Text style={[styles.modalText, { color: colors.text }]}>
+                {alertModal.message}
+              </Text>
+
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: colors.primary, borderRadius: radius.sm }]}
+                  onPress={alertModal.onAccept}
+                >
+                  <Text style={{ color: '#FFF', fontWeight: '700' }}>
+                    {alertModal.acceptText}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
     </SafeAreaView>
   );
 }
@@ -1033,5 +1106,47 @@ bottomBar: {
   backgroundColor: '#FFF',
   borderTopWidth: 1,
   borderColor: '#EEE',
+},
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.45)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+modalCard: {
+  width: '85%',
+  borderRadius: 20,
+  padding: 24,
+  shadowColor: '#000',
+  shadowOpacity: 0.15,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 5,
+},
+
+modalTitle: {
+  fontSize: 22,
+  fontWeight: '800',
+},
+
+modalText: {
+  fontSize: 15,
+  lineHeight: 22,
+  marginBottom: 20,
+},
+
+modalButtonsRow: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  gap: 12,
+},
+
+modalButton: {
+  paddingHorizontal: 22,
+  paddingVertical: 11,
+  alignItems: 'center',
+  justifyContent: 'center',
 },
 });
