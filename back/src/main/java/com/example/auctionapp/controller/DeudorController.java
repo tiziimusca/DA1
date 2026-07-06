@@ -22,6 +22,7 @@ public class DeudorController {
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;
     private final SubastaRepository subastaRepository;
+    private final CatalogoRepository catalogoRepository;
     private final ItemCatalogoRepository itemCatalogoRepository;
     private final PujaRepository pujaRepository;
     private final CompraService compraService;
@@ -31,6 +32,7 @@ public class DeudorController {
             UsuarioRepository usuarioRepository,
             ClienteRepository clienteRepository,
             SubastaRepository subastaRepository,
+            CatalogoRepository catalogoRepository,
             ItemCatalogoRepository itemCatalogoRepository,
             PujaRepository pujaRepository,
             CompraService compraService,
@@ -39,6 +41,7 @@ public class DeudorController {
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
         this.subastaRepository = subastaRepository;
+        this.catalogoRepository = catalogoRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.pujaRepository = pujaRepository;
         this.compraService = compraService;
@@ -94,8 +97,14 @@ public class DeudorController {
         }
         Subasta subasta = subastaOpt.get();
 
+        Optional<Catalogo> catalogoOpt = catalogoRepository.findBySubasta_Identificador(subasta.getIdentificador());
+        if (catalogoOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Catálogo no encontrado para la subasta");
+        }
+        Catalogo catalogo = catalogoOpt.get();
+
         List<ItemCatalogo> items = itemCatalogoRepository
-                .findByCatalogo_IdentificadorOrderByIdentificadorAsc(subasta.getIdentificador());
+                .findByCatalogo_IdentificadorOrderByIdentificadorAsc(catalogo.getIdentificador());
         if (items.isEmpty()) {
             return ResponseEntity.badRequest().body("La subasta no tiene items");
         }
