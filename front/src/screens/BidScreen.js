@@ -278,6 +278,11 @@ export default function BidScreen({ navigation, route }) {
     }
   };
 
+  const staticDetailsRef = React.useRef(staticDetails);
+  useEffect(() => {
+    staticDetailsRef.current = staticDetails;
+  }, [staticDetails]);
+
   const loadLiveState = async () => {
     if (!subastaId) return;
     try {
@@ -293,15 +298,15 @@ export default function BidScreen({ navigation, route }) {
     const ws = createWebSocket(
       (data) => {
         if (data) {
-          const firstItemId = staticDetails?.items?.[0]?.id || 1;
-          if (data.type === 'NEW_BID' && data.subastaId === subastaId) {
+          const firstItemId = staticDetailsRef.current?.items?.[0]?.id || 1;
+          if (data.type === 'NEW_BID' && Number(data.subastaId) === Number(subastaId)) {
             setTimeLeft(60);
             setHasStarted(true);
             setIsBidSystemLocked(false);
             loadLiveState();
-          } else if (data.type === 'BID_LOCKED' && data.itemId === firstItemId) {
+          } else if (data.type === 'BID_LOCKED' && Number(data.itemId) === Number(firstItemId)) {
             setIsBidSystemLocked(true);
-          } else if (data.type === 'BID_UNLOCKED' && data.itemId === firstItemId) {
+          } else if (data.type === 'BID_UNLOCKED' && Number(data.itemId) === Number(firstItemId)) {
             setIsBidSystemLocked(false);
           }
         }
@@ -318,7 +323,7 @@ export default function BidScreen({ navigation, route }) {
     return () => {
       if (ws) ws.close();
     };
-  }, [subastaId, staticDetails]);
+  }, [subastaId]);
 
   const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
   const isHighestBidder = bidHistory.length > 0 && bidHistory[0].nombreAsistente === currentUser?.nombre;
