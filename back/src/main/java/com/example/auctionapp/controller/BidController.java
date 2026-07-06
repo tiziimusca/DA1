@@ -175,8 +175,12 @@ public class BidController {
 
             Puja savedPuja = pujaService.crear(puja);
 
-            String notification = String.format("{\"type\":\"NEW_BID\",\"subastaId\":%d,\"itemId\":%d,\"importe\":%s}",
-                    subastaItem.getIdentificador(), itemId, savedPuja.getImporte().toString());
+            String name = asistente.getCliente() != null && asistente.getCliente().getPersona() != null
+                    ? asistente.getCliente().getPersona().getNombre()
+                    : "Usuario";
+            String notification = String.format(
+                    "{\"type\":\"NEW_BID\",\"subastaId\":%d,\"itemId\":%d,\"importe\":%s,\"nombreAsistente\":\"%s\"}",
+                    subastaItem.getIdentificador(), itemId, savedPuja.getImporte().toString(), name);
             bidWebSocketHandler.broadcast(notification);
 
             return ResponseEntity.ok(savedPuja);

@@ -295,44 +295,89 @@ export default function BidScreen({ navigation, route }) {
   useEffect(() => {
     loadData();
     
-    const ws = createWebSocket(
-      (data) => {
-        console.log('[BidScreen WS] Message received:', data);
-        if (data) {
-          const firstItemId = staticDetailsRef.current?.items?.[0]?.id || 1;
-          console.log('[BidScreen WS] Comparing subastaId:', data.subastaId, 'with', subastaId, 'Result:', Number(data.subastaId) === Number(subastaId));
-          console.log('[BidScreen WS] Comparing itemId:', data.itemId, 'with', firstItemId, 'Result:', Number(data.itemId) === Number(firstItemId));
-          
-          if (data.type === 'NEW_BID' && Number(data.subastaId) === Number(subastaId)) {
-            console.log('[BidScreen WS] NEW_BID matched! Reloading live state...');
-            setTimeLeft(60);
-            setHasStarted(true);
-            setIsBidSystemLocked(false);
-            loadLiveState();
-          } else if (data.type === 'BID_LOCKED' && Number(data.itemId) === Number(firstItemId)) {
-            console.log('[BidScreen WS] BID_LOCKED matched!');
-            setIsBidSystemLocked(true);
-          } else if (data.type === 'BID_UNLOCKED' && Number(data.itemId) === Number(firstItemId)) {
-            console.log('[BidScreen WS] BID_UNLOCKED matched!');
-            setIsBidSystemLocked(false);
-          }
-        }
-      },
-      () => {
-        console.log('[BidScreen WS] Connected successfully');
-        setConectado(true);
-      },
-      (error) => {
-        console.error('[BidScreen WS] Error:', error);
-        setConectado(false);
-      }
-    );
+    let ws = null;
+    let reconnectTimeout = null;
+    let isMounted = true;
 
-    setSocket(ws);
+    const connect = () => {
+      if (!isMounted || !subastaId) return;
+
+      console.log('[BidScreen WS] Connecting...');
+      ws = createWebSocket(
+        (data) => {
+          if (!isMounted) return;
+          console.log('[BidScreen WS] Message received:', data);
+          if (data) {
+            const firstItemId = staticDetailsRef.current?.items?.[0]?.id || 1;
+            console.log('[BidScreen WS] Comparing subastaId:', data.subastaId, 'with', subastaId, 'Result:', Number(data.subastaId) === Number(subastaId));
+            console.log('[BidScreen WS] Comparing itemId:', data.itemId, 'with', firstItemId, 'Result:', Number(data.itemId) === Number(firstItemId));
+            
+            if (data.type === 'NEW_BID' && Number(data.subastaId) === Number(subastaId)) {
+              console.log('[BidScreen WS] NEW_BID matched! Updating local state instantly and reloading live state with delay...');
+              setTimeLeft(60);
+              setHasStarted(true);
+              setIsBidSystemLocked(false);
+              
+              // Update local state instantly from WebSocket payload
+              setLiveState(prev => {
+                const newBid = {
+                  id: Date.now(), // Temporary ID
+                  importe: Number(data.importe),
+                  nombreAsistente: data.nombreAsistente || 'Usuario',
+                  fecha: new Date().toISOString()
+                };
+                const oldPujas = prev?.ultimasPujas || [];
+                // Avoid duplicating the state if the server fetch completes first
+                if (oldPujas.length > 0 && Number(oldPujas[0].importe) >= Number(data.importe)) {
+                  return prev;
+                }
+                return {
+                  ...prev,
+                  ultimasPujas: [newBid, ...oldPujas]
+                };
+              });
+
+              // Schedule database sync after 300ms
+              setTimeout(() => {
+                if (isMounted) loadLiveState();
+              }, 300);
+            } else if (data.type === 'BID_LOCKED' && Number(data.itemId) === Number(firstItemId)) {
+              console.log('[BidScreen WS] BID_LOCKED matched!');
+              setIsBidSystemLocked(true);
+            } else if (data.type === 'BID_UNLOCKED' && Number(data.itemId) === Number(firstItemId)) {
+              console.log('[BidScreen WS] BID_UNLOCKED matched!');
+              setIsBidSystemLocked(false);
+            }
+          }
+        },
+        () => {
+          if (!isMounted) return;
+          console.log('[BidScreen WS] Connected successfully');
+          setConectado(true);
+        },
+        (error) => {
+          if (!isMounted) return;
+          console.error('[BidScreen WS] Error/Disconnect:', error);
+          setConectado(false);
+          // Try to reconnect in 3 seconds
+          if (ws) {
+            ws.close();
+            ws = null;
+          }
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = setTimeout(connect, 3000);
+        }
+      );
+      setSocket(ws);
+    };
+
+    connect();
 
     return () => {
+      isMounted = false;
+      clearTimeout(reconnectTimeout);
       if (ws) {
-        console.log('[BidScreen WS] Closing socket');
+        console.log('[BidScreen WS] Cleanup: Closing socket');
         ws.close();
       }
     };
