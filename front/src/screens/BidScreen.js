@@ -591,7 +591,12 @@ export default function BidScreen({ navigation, route }) {
         loadLiveState();
       }
     } catch (error) {
-      showAlert('Error al pujar', error.message || 'No se pudo enviar la puja', 'error');
+      const errMsg = error.message || '';
+      if (errMsg.includes('Network request failed') || errMsg.includes('Failed to connect') || errMsg.includes('timeout')) {
+        showAlert('Puja en curso', 'Se está procesando otra puja o la conexión es inestable. Por favor, intente nuevamente.', 'warning');
+      } else {
+        showAlert('Error al pujar', errMsg || 'No se pudo enviar la puja', 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
