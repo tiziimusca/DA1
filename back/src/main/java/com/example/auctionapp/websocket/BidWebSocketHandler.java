@@ -22,7 +22,7 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
-        log.debug("WebSocket conectado: {} (total={})", session.getId(), sessions.size());
+        log.info("[WS CONNECTED] Session ID: {} (Total active: {})", session.getId(), sessions.size());
     }
 
     @Override
@@ -43,6 +43,7 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
     }
 
     public void broadcast(String message) {
+        log.info("[WS BROADCAST] Broadcasting to {} sessions: {}", sessions.size(), message);
         for (WebSocketSession target : sessions) {
             if (target.isOpen()) {
                 try {
@@ -66,7 +67,7 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
-        log.debug("WebSocket cerrado: {} (status={}), remaining={} ", session.getId(), status, sessions.size());
+        log.info("[WS CLOSED] Session ID: {} (status={}, Remaining active: {})", session.getId(), status, sessions.size());
     }
 
     private void safeCloseAndRemove(WebSocketSession session) {

@@ -146,7 +146,13 @@ export async function enviarPujaRest(pujaData, authToken) {
 }
 
 export async function fetchEstadoVivo(subastaId) {
-  const response = await fetch(`${BASE_URL}/subastas/${subastaId}/estado-vivo`);
+  const response = await fetch(`${BASE_URL}/subastas/${subastaId}/estado-vivo?t=${Date.now()}`, {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  });
   if (!response.ok) {
     throw new Error(await parseError(response));
   }

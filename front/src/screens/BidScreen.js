@@ -297,23 +297,33 @@ export default function BidScreen({ navigation, route }) {
     
     const ws = createWebSocket(
       (data) => {
+        console.log('[BidScreen WS] Message received:', data);
         if (data) {
           const firstItemId = staticDetailsRef.current?.items?.[0]?.id || 1;
+          console.log('[BidScreen WS] Comparing subastaId:', data.subastaId, 'with', subastaId, 'Result:', Number(data.subastaId) === Number(subastaId));
+          console.log('[BidScreen WS] Comparing itemId:', data.itemId, 'with', firstItemId, 'Result:', Number(data.itemId) === Number(firstItemId));
+          
           if (data.type === 'NEW_BID' && Number(data.subastaId) === Number(subastaId)) {
+            console.log('[BidScreen WS] NEW_BID matched! Reloading live state...');
             setTimeLeft(60);
             setHasStarted(true);
             setIsBidSystemLocked(false);
             loadLiveState();
           } else if (data.type === 'BID_LOCKED' && Number(data.itemId) === Number(firstItemId)) {
+            console.log('[BidScreen WS] BID_LOCKED matched!');
             setIsBidSystemLocked(true);
           } else if (data.type === 'BID_UNLOCKED' && Number(data.itemId) === Number(firstItemId)) {
+            console.log('[BidScreen WS] BID_UNLOCKED matched!');
             setIsBidSystemLocked(false);
           }
         }
       },
-      () => setConectado(true),
+      () => {
+        console.log('[BidScreen WS] Connected successfully');
+        setConectado(true);
+      },
       (error) => {
-        console.error('WebSocket error:', error);
+        console.error('[BidScreen WS] Error:', error);
         setConectado(false);
       }
     );
@@ -321,12 +331,16 @@ export default function BidScreen({ navigation, route }) {
     setSocket(ws);
 
     return () => {
-      if (ws) ws.close();
+      if (ws) {
+        console.log('[BidScreen WS] Closing socket');
+        ws.close();
+      }
     };
   }, [subastaId]);
 
   const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
-  const isHighestBidder = bidHistory.length > 0 && bidHistory[0].nombreAsistente === currentUser?.nombre;
+  const isHighestBidder = bidHistory.length > 0 && 
+    bidHistory[0].nombreAsistente?.trim().toLowerCase() === currentUser?.nombre?.trim().toLowerCase();
 
   useEffect(() => {
     if (!conectado || !hasStarted || timeLeft <= 0) return;
