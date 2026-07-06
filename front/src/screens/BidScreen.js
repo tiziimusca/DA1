@@ -579,11 +579,17 @@ export default function BidScreen({ navigation, route }) {
         importe: bidValue,
       };
 
-      await enviarPujaRest(bidData, token ? `Bearer ${token}` : null);
-      showAlert('Éxito', 'Puja enviada', 'success');
-      setMonto('');
-      setTimeLeft(60);
-      loadLiveState();
+      const response = await enviarPujaRest(bidData, token ? `Bearer ${token}` : null);
+      if (response && response.status === 'conflict') {
+        showAlert('Puja en curso', 'Se está procesando otra puja. Por favor, intente nuevamente.', 'warning');
+      } else if (response && response.status === 'error') {
+        showAlert('Error al pujar', response.message || 'No se pudo enviar la puja', 'error');
+      } else {
+        showAlert('Éxito', 'Puja enviada', 'success');
+        setMonto('');
+        setTimeLeft(60);
+        loadLiveState();
+      }
     } catch (error) {
       showAlert('Error al pujar', error.message || 'No se pudo enviar la puja', 'error');
     } finally {

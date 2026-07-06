@@ -89,7 +89,7 @@ public class BidController {
 
         Integer itemId = request.getItemId();
         if (activeLocks.putIfAbsent(itemId, Boolean.TRUE) != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Otra subasta ha sido procesada"));
+            return ResponseEntity.ok(Map.of("status", "conflict", "message", "Otra subasta ha sido procesada"));
         }
 
         try {
@@ -185,7 +185,11 @@ public class BidController {
 
             return ResponseEntity.ok(savedPuja);
         } catch (ResponseStatusException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", e.getReason()));
+            String status = "error";
+            if (e.getReason() != null && e.getReason().contains("Otra subasta")) {
+                status = "conflict";
+            }
+            return ResponseEntity.ok(Map.of("status", status, "message", e.getReason()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
         } finally {

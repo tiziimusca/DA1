@@ -68,7 +68,8 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        log.warn("Error de transporte {}: {}", session.getId(), exception.getMessage());
+        String msg = exception.getMessage() != null ? exception.getMessage() : exception.getClass().getSimpleName();
+        log.warn("[WS TRANSPORT ERROR] Session ID: {}: {}", session.getId(), msg);
         safeCloseAndRemove(session);
     }
 
