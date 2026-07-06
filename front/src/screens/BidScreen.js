@@ -345,11 +345,6 @@ export default function BidScreen({ navigation, route }) {
                   ultimasPujas: [newBid, ...oldPujas]
                 };
               });
-
-              // Schedule database sync after 300ms
-              setTimeout(() => {
-                if (isMounted) loadLiveState();
-              }, 300);
             } else if (data.type === 'BID_LOCKED' && Number(data.itemId) === Number(firstItemId)) {
               console.log('[BidScreen WS] BID_LOCKED matched!');
               setIsBidSystemLocked(true);
@@ -363,6 +358,7 @@ export default function BidScreen({ navigation, route }) {
           if (!isMounted) return;
           console.log('[BidScreen WS] Connected successfully');
           setConectado(true);
+          loadLiveState();
           if (heartbeatInterval) clearInterval(heartbeatInterval);
           heartbeatInterval = setInterval(() => {
             if (ws && ws.readyState === WebSocket.OPEN) {
@@ -443,11 +439,12 @@ export default function BidScreen({ navigation, route }) {
         }
       } else {
         try {
-          if (subastaId) {
+          // If there were no bids at all, we finalize the empty auction
+          if (subastaId && bidHistory.length === 0) {
             await completarPago(subastaId);
           }
         } catch (error) {
-          console.error('Error al finalizar subasta para no ganador:', error);
+          console.error('Error al finalizar subasta vacía:', error);
         } finally {
           navigation.replace('Home');
         }
@@ -457,7 +454,7 @@ export default function BidScreen({ navigation, route }) {
     if (timeLeft === 0) {
       handleAuctionEnd();
     }
-  }, [timeLeft, isHighestBidder, navigation, subasta, currentPrice, staticDetails]);
+  }, [timeLeft, isHighestBidder, navigation, subasta, currentPrice, staticDetails, bidHistory]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {

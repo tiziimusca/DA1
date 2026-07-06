@@ -56,6 +56,50 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
   const [showMethodsModal, setShowMethodsModal] = useState(false);
   const [completingPayment, setCompletingPayment] = useState(false);
 
+  const [alertModal, setAlertModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    iconName: 'information-circle-outline',
+    iconColor: '#00D084',
+    buttons: []
+  });
+
+  const showAlert = (title, message, type = 'info', buttons = null) => {
+    let iconName = 'information-circle-outline';
+    let iconColor = colors.primary || '#153B8A';
+
+    if (type === 'error') {
+      iconName = 'alert-circle-outline';
+      iconColor = colors.danger || '#E45B5B';
+    } else if (type === 'success') {
+      iconName = 'checkmark-circle-outline';
+      iconColor = colors.success || '#5BE486';
+    } else if (type === 'warning') {
+      iconName = 'warning-outline';
+      iconColor = colors.warning || '#E4C15B';
+    }
+
+    const defaultButtons = [{ text: 'Entendido', onPress: () => setAlertModal(prev => ({ ...prev, visible: false })) }];
+    const modalButtons = buttons ? buttons.map(btn => ({
+      text: btn.text,
+      onPress: () => {
+        setAlertModal(prev => ({ ...prev, visible: false }));
+        if (btn.onPress) btn.onPress();
+      },
+      style: btn.style
+    })) : defaultButtons;
+
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      iconName,
+      iconColor,
+      buttons: modalButtons
+    });
+  };
+
   useEffect(() => {
     loadPaymentMethods();
   }, []);
@@ -64,9 +108,10 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
     if (selectedMethod && selectedMethod.tipo === 'cheque') {
       const amt = parseFloat(selectedMethod.montoDisponible ?? selectedMethod.datos?.montoDisponible ?? 0);
       if (amt < monto) {
-        Alert.alert(
+        showAlert(
           'Fondos Insuficientes',
-          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir la deuda de USD ${monto.toFixed(2)}. Se ha deseleccionado el método.`
+          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir la deuda de USD ${monto.toFixed(2)}. Se ha deseleccionado el método.`,
+          'warning'
         );
         setSelectedMethod(null);
       }
@@ -100,11 +145,12 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
 
   const handlePagarDeuda = async () => {
     if (!selectedMethod) {
-      Alert.alert(
-        'Metodo de pago requerido',
-        'Debe seleccionar o registrar un metodo de pago para completar el pago.',
+      showAlert(
+        'Método de pago requerido',
+        'Debe seleccionar o registrar un método de pago para completar el pago.',
+        'warning',
         [
-          { text: 'Registrar Metodo', onPress: () => navigation.navigate('AgregarMetodoPago') },
+          { text: 'Registrar Método', onPress: () => navigation.navigate('AgregarMetodoPago') },
           { text: 'Cancelar', style: 'cancel' }
         ]
       );
@@ -130,9 +176,10 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
         throw new Error('Error al procesar el pago de la deuda');
       }
 
-      Alert.alert(
+      showAlert(
         'Pago Exitoso',
         'Tu pago ha sido procesado correctamente. Tu cuenta ha sido desbloqueada.',
+        'success',
         [
           {
             text: 'Aceptar',
@@ -147,7 +194,7 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
       );
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'No se pudo completar el pago de la deuda. Intente nuevamente.');
+      showAlert('Error', 'No se pudo completar el pago de la deuda. Intente nuevamente.', 'error');
     } finally {
       setCompletingPayment(false);
     }
@@ -303,7 +350,7 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
           <Text style={[styles.footerText, { color: colors.muted }]}>
             ¿Necesita ayuda?{' '}
           </Text>
-          <TouchableOpacity onPress={() => Alert.alert('Soporte', 'Soporte tecnico contactado. Nos comunicaremos a la brevedad.')}>
+          <TouchableOpacity onPress={() => showAlert('Soporte', 'Soporte técnico contactado. Nos comunicaremos a la brevedad.', 'info')}>
             <Text style={[styles.footerLink, { color: '#C2410C' }]}>
               Contacte a soporte
             </Text>
@@ -321,12 +368,12 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
         <View style={styles.modalOverlay}>
           <View style={styles.methodsModal}>
             <Text style={styles.methodsTitle}>
-              Seleccionar metodo de pago
+              Seleccionar método de pago
             </Text>
 
             {metodosPago.length === 0 ? (
               <Text style={{ textAlign: 'center', marginVertical: 20, color: colors.muted }}>
-                No tienes metodos de pago aprobados.
+                No tienes métodos de pago aprobados.
               </Text>
             ) : (
               metodosPago.map((method) => (
@@ -343,9 +390,10 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
                     if (method.tipo === 'cheque') {
                       const amt = parseFloat(method.montoDisponible ?? method.datos?.montoDisponible ?? 0);
                       if (amt < monto) {
-                        Alert.alert(
+                        showAlert(
                           'Fondos Insuficientes',
-                          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir la deuda de USD ${monto.toFixed(2)}.`
+                          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir la deuda de USD ${monto.toFixed(2)}.`,
+                          'warning'
                         );
                         return;
                       }
@@ -375,6 +423,48 @@ export default function CuentaBloqueadaScreen({ navigation, route }) {
             >
               <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Cerrar</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        transparent
+        visible={alertModal.visible}
+        animationType="fade"
+        onRequestClose={() => setAlertModal(prev => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCardAlert, { backgroundColor: colors.metricsBackground || colors.surface || '#FFF' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 10 }}>
+              <Icon name={alertModal.iconName} size={28} color={alertModal.iconColor} />
+              <Text style={[styles.modalTitleAlert, { color: colors.text }]}>
+                {alertModal.title}
+              </Text>
+            </View>
+
+            <Text style={[styles.modalTextAlert, { color: colors.text }]}>
+              {alertModal.message}
+            </Text>
+
+            <View style={styles.modalButtonsRow}>
+              {alertModal.buttons.map((btn, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.modalButtonAlert,
+                    {
+                      backgroundColor: btn.style === 'cancel' ? '#EEE' : colors.primary,
+                      borderRadius: radius.sm || 8
+                    }
+                  ]}
+                  onPress={btn.onPress}
+                >
+                  <Text style={{ color: btn.style === 'cancel' ? '#333' : '#FFF', fontWeight: '700' }}>
+                    {btn.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
       </Modal>
@@ -631,5 +721,35 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 12,
+  },
+  modalCardAlert: {
+    width: '85%',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  modalTitleAlert: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  modalTextAlert: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalButtonAlert: {
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

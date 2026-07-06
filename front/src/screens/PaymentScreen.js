@@ -59,6 +59,50 @@ export default function PaymentScreen({ navigation, route }) {
   const [showMethodsModal, setShowMethodsModal] = useState(false);
   const [completingPayment, setCompletingPayment] = useState(false);
 
+  const [alertModal, setAlertModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    iconName: 'information-circle-outline',
+    iconColor: '#00D084',
+    buttons: []
+  });
+
+  const showAlert = (title, message, type = 'info', buttons = null) => {
+    let iconName = 'information-circle-outline';
+    let iconColor = colors.primary || '#153B8A';
+
+    if (type === 'error') {
+      iconName = 'alert-circle-outline';
+      iconColor = colors.danger || '#E45B5B';
+    } else if (type === 'success') {
+      iconName = 'checkmark-circle-outline';
+      iconColor = colors.success || '#5BE486';
+    } else if (type === 'warning') {
+      iconName = 'warning-outline';
+      iconColor = colors.warning || '#E4C15B';
+    }
+
+    const defaultButtons = [{ text: 'Entendido', onPress: () => setAlertModal(prev => ({ ...prev, visible: false })) }];
+    const modalButtons = buttons ? buttons.map(btn => ({
+      text: btn.text,
+      onPress: () => {
+        setAlertModal(prev => ({ ...prev, visible: false }));
+        if (btn.onPress) btn.onPress();
+      },
+      style: btn.style
+    })) : defaultButtons;
+
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      iconName,
+      iconColor,
+      buttons: modalButtons
+    });
+  };
+
   const [retirarEnPersona, setRetirarEnPersona] = useState(false);
 
   const precioGanador = winningBid || subasta?.precioBase || 0;
@@ -80,9 +124,10 @@ export default function PaymentScreen({ navigation, route }) {
     if (selectedMethod && selectedMethod.tipo === 'cheque') {
       const amt = parseFloat(selectedMethod.montoDisponible ?? selectedMethod.datos?.montoDisponible ?? 0);
       if (amt < total) {
-        Alert.alert(
+        showAlert(
           'Fondos Insuficientes',
-          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}. Se ha deseleccionado el método.`
+          `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}. Se ha deseleccionado el método.`,
+          'warning'
         );
         setSelectedMethod(null);
       }
@@ -95,11 +140,12 @@ export default function PaymentScreen({ navigation, route }) {
         return;
       }
       e.preventDefault();
-      Alert.alert(
+      showAlert(
         'Pago Obligatorio',
         isProposal
           ? 'Debe completar el pago de la devolución para poder salir de esta pantalla.'
           : 'Debe completar el pago de la subasta ganada para poder salir de esta pantalla.',
+        'warning',
         [{ text: 'Entendido', style: 'cancel' }]
       );
     });
@@ -144,18 +190,27 @@ export default function PaymentScreen({ navigation, route }) {
         await completarPago(subasta?.id, selectedMethod.id, selectedMethod.tipo, retirarEnPersona);
       }
       paymentCompletedRef.current = true;
-      setShowSuccess(true);
 
-      setTimeout(() => {
-        setShowSuccess(false);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-      }, 10000);
+      const successMsg = isProposal
+        ? 'El pago de los costos de devolución se ha efectuado con éxito.'
+        : retirarEnPersona
+          ? 'La compra se ha efectuado con éxito. Nos contactaremos para organizar el retiro.'
+          : 'La compra se ha efectuado con éxito. Nos contactaremos para organizar la entrega.';
+
+      showAlert('Pago realizado', successMsg, 'success', [
+        {
+          text: 'Aceptar',
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          }
+        }
+      ]);
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'No se pudo completar el pago. Por favor intente nuevamente.');
+      showAlert('Error', 'No se pudo completar el pago. Por favor intente nuevamente.', 'error');
     } finally {
       setCompletingPayment(false);
     }
@@ -460,106 +515,112 @@ export default function PaymentScreen({ navigation, route }) {
 
       <Modal
         transparent
-        visible={showSuccess}
+        visible={alertModal.visible}
+        animationType="fade"
+        onRequestClose={() => setAlertModal(prev => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCardAlert, { backgroundColor: colors.metricsBackground || colors.surface || '#FFF' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 10 }}>
+              <Icon name={alertModal.iconName} size={28} color={alertModal.iconColor} />
+              <Text style={[styles.modalTitleAlert, { color: colors.text }]}>
+                {alertModal.title}
+              </Text>
+            </View>
+
+            <Text style={[styles.modalTextAlert, { color: colors.text }]}>
+              {alertModal.message}
+            </Text>
+
+            <View style={styles.modalButtonsRow}>
+              {alertModal.buttons.map((btn, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.modalButtonAlert,
+                    {
+                      backgroundColor: btn.style === 'cancel' ? '#EEE' : colors.primary,
+                      borderRadius: radius.sm || 8
+                    }
+                  ]}
+                  onPress={btn.onPress}
+                >
+                  <Text style={{ color: btn.style === 'cancel' ? '#333' : '#FFF', fontWeight: '700' }}>
+                    {btn.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showMethodsModal}
+        transparent
         animationType="fade"
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              Pago realizado
+          <View style={styles.methodsModal}>
+            <Text style={styles.methodsTitle}>
+              Seleccionar método de pago
             </Text>
 
-            <Text style={styles.modalText}>
-              {isProposal 
-                ? 'El pago de los costos de devolucion se ha efectuado con exito.'
-                : retirarEnPersona 
-                  ? 'La compra se ha efectuado con exito. Nos contactaremos para organizar el retiro.'
-                  : 'La compra se ha efectuado con exito. Nos contactaremos para organizar la entrega.'}
-            </Text>
+            {metodosPago.map((method) => (
+              <TouchableOpacity
+                key={`${method.tipo}-${method.id}`}
+                style={[
+                  styles.methodOption,
+                  selectedMethod?.id === method.id && {
+                    borderColor: colors.primary,
+                    borderWidth: 2,
+                  },
+                ]}
+                onPress={() => {
+                  if (method.tipo === 'cheque') {
+                    const amt = parseFloat(method.montoDisponible ?? method.datos?.montoDisponible ?? 0);
+                    if (amt < total) {
+                      showAlert(
+                        'Fondos Insuficientes',
+                        `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}.`,
+                        'warning'
+                      );
+                      return;
+                    }
+                  }
+                  setSelectedMethod(method);
+                  setShowMethodsModal(false);
+                }}
+              >
+                <View>
+                  <Text style={styles.methodTitle}>
+                    {getMethodTitle(method)}
+                  </Text>
+
+                  <Text style={styles.methodSubtitle}>
+                    {getMethodSubtitle(method)}
+                  </Text>
+                </View>
+
+                {selectedMethod?.id === method.id && (
+                  <Icon
+                    name="checkmark-circle"
+                    size={24}
+                    color="#00D084"
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
 
             <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                setShowSuccess(false);
-
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Home' }],
-                });
-              }}
+              style={styles.cancelButton}
+              onPress={() => setShowMethodsModal(false)}
             >
-              <Text style={{ color: '#FFF' }}>
-                Aceptar
-              </Text>
+              <Text>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-      <Modal
-  visible={showMethodsModal}
-  transparent
-  animationType="fade"
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.methodsModal}>
-      <Text style={styles.methodsTitle}>
-        Seleccionar método de pago
-      </Text>
-
-      {metodosPago.map((method) => (
-        <TouchableOpacity
-          key={`${method.tipo}-${method.id}`}
-          style={[
-            styles.methodOption,
-            selectedMethod?.id === method.id && {
-              borderColor: colors.primary,
-              borderWidth: 2,
-            },
-          ]}
-          onPress={() => {
-            if (method.tipo === 'cheque') {
-              const amt = parseFloat(method.montoDisponible ?? method.datos?.montoDisponible ?? 0);
-              if (amt < total) {
-                Alert.alert(
-                  'Fondos Insuficientes',
-                  `El cheque seleccionado tiene un saldo disponible de USD ${amt.toFixed(2)}, el cual es insuficiente para cubrir el total de USD ${total.toFixed(2)}.`
-                );
-                return;
-              }
-            }
-            setSelectedMethod(method);
-            setShowMethodsModal(false);
-          }}
-        >
-          <View>
-            <Text style={styles.methodTitle}>
-              {getMethodTitle(method)}
-            </Text>
-
-            <Text style={styles.methodSubtitle}>
-              {getMethodSubtitle(method)}
-            </Text>
-          </View>
-
-          {selectedMethod?.id === method.id && (
-            <Icon
-              name="checkmark-circle"
-              size={24}
-              color="#00D084"
-            />
-          )}
-        </TouchableOpacity>
-      ))}
-
-      <TouchableOpacity
-        style={styles.cancelButton}
-        onPress={() => setShowMethodsModal(false)}
-      >
-        <Text>Cerrar</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
     </SafeAreaView>
   );
 }
@@ -849,5 +910,35 @@ warningText: {
   fontSize: 11,
   fontWeight: '600',
   flex: 1,
+},
+modalCardAlert: {
+  width: '85%',
+  borderRadius: 20,
+  padding: 24,
+  shadowColor: '#000',
+  shadowOpacity: 0.15,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 5,
+},
+modalTitleAlert: {
+  fontSize: 22,
+  fontWeight: '800',
+},
+modalTextAlert: {
+  fontSize: 15,
+  lineHeight: 22,
+  marginBottom: 20,
+},
+modalButtonsRow: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  gap: 12,
+},
+modalButtonAlert: {
+  paddingHorizontal: 22,
+  paddingVertical: 11,
+  alignItems: 'center',
+  justifyContent: 'center',
 },
 });

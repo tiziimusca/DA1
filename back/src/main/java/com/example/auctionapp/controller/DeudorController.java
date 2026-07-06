@@ -97,6 +97,10 @@ public class DeudorController {
         }
         Subasta subasta = subastaOpt.get();
 
+        // Mark subasta as finalizada
+        subasta.setEstado("finalizada");
+        subastaRepository.save(subasta);
+
         Optional<Catalogo> catalogoOpt = catalogoRepository.findBySubasta_Identificador(subasta.getIdentificador());
         if (catalogoOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Catálogo no encontrado para la subasta");
@@ -116,6 +120,10 @@ public class DeudorController {
             return ResponseEntity.badRequest().body("No hay pujas en esta subasta");
         }
         Puja topBid = topBidOpt.get();
+
+        // Mark the highest bid as the winner when the auction ends
+        topBid.setGanador("SI");
+        pujaRepository.save(topBid);
 
         BigDecimal base = topBid.getImporte();
         BigDecimal comision = item.getComision();
@@ -169,14 +177,22 @@ public class DeudorController {
     private Subasta obtenerSubastaGanadaNoPagada(Integer clienteId) {
         List<Subasta> subastas = subastaRepository.findAll();
         for (Subasta subasta : subastas) {
-            if ("finalizada".equalsIgnoreCase(subasta.getEstado())) {
+            Optional<Catalogo> catalogoOpt = catalogoRepository.findBySubasta_Identificador(subasta.getIdentificador());
+            if (catalogoOpt.isEmpty()) {
                 continue;
             }
+            Catalogo catalogo = catalogoOpt.get();
             List<ItemCatalogo> items = itemCatalogoRepository
-                    .findByCatalogo_IdentificadorOrderByIdentificadorAsc(subasta.getIdentificador());
+                    .findByCatalogo_IdentificadorOrderByIdentificadorAsc(catalogo.getIdentificador());
             if (items.isEmpty())
                 continue;
             ItemCatalogo item = items.get(0);
+
+            // Skip paid items
+            if ("SI".equalsIgnoreCase(item.getSubastado())) {
+                continue;
+            }
+
             Optional<Puja> topBid = pujaRepository
                     .findTopByItem_IdentificadorOrderByImporteDesc(item.getIdentificador());
             if (topBid.isPresent() && topBid.get().getAsistente().getCliente().getIdentificador().equals(clienteId)) {
