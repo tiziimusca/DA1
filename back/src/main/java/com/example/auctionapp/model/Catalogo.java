@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -28,7 +29,7 @@ public class Catalogo {
     @JoinColumn(name = "subasta", referencedColumnName = "identificador")
     private Subasta subasta;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "responsable", referencedColumnName = "identificador", nullable = false)
     private Empleado responsable;
 

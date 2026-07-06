@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -32,7 +33,7 @@ public class Subasta {
     @Column(length = 10)
     private String estado;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "subastador", referencedColumnName = "identificador", nullable = false)
     private Subastador subastador;
 
