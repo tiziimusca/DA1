@@ -28,6 +28,14 @@ public class BidWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) {
         String payload = message.getPayload();
+        if ("ping".equalsIgnoreCase(payload)) {
+            try {
+                session.sendMessage(new TextMessage("pong"));
+            } catch (IOException e) {
+                log.warn("Fallo al responder ping para {}: {}", session.getId(), e.getMessage());
+            }
+            return;
+        }
         for (WebSocketSession target : sessions) {
             if (target.isOpen()) {
                 try {

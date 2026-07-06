@@ -287,7 +287,15 @@ export default function BidScreen({ navigation, route }) {
     if (!subastaId) return;
     try {
       const data = await fetchEstadoVivo(subastaId);
-      setLiveState(data);
+      setLiveState(prev => {
+        const prevMax = prev?.ultimasPujas?.[0]?.importe || 0;
+        const freshMax = data?.ultimasPujas?.[0]?.importe || 0;
+        if (freshMax < prevMax) {
+          console.log('[BidScreen] Rejecting stale server live state (freshMax:', freshMax, 'prevMax:', prevMax, ')');
+          return prev;
+        }
+        return data;
+      });
     } catch (error) {
       console.error('Error fetching live state:', error);
     }
@@ -297,6 +305,7 @@ export default function BidScreen({ navigation, route }) {
     
     let ws = null;
     let reconnectTimeout = null;
+    let heartbeatInterval = null;
     let isMounted = true;
 
     const connect = () => {
@@ -354,11 +363,19 @@ export default function BidScreen({ navigation, route }) {
           if (!isMounted) return;
           console.log('[BidScreen WS] Connected successfully');
           setConectado(true);
+          if (heartbeatInterval) clearInterval(heartbeatInterval);
+          heartbeatInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              console.log('[BidScreen WS] Sending ping heartbeat');
+              try { ws.send('ping'); } catch (err) {}
+            }
+          }, 25000);
         },
         (error) => {
           if (!isMounted) return;
           console.error('[BidScreen WS] Error/Disconnect:', error);
           setConectado(false);
+          if (heartbeatInterval) clearInterval(heartbeatInterval);
           // Try to reconnect in 3 seconds
           if (ws) {
             ws.close();
@@ -376,6 +393,7 @@ export default function BidScreen({ navigation, route }) {
     return () => {
       isMounted = false;
       clearTimeout(reconnectTimeout);
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
       if (ws) {
         console.log('[BidScreen WS] Cleanup: Closing socket');
         ws.close();

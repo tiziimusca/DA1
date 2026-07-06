@@ -128,6 +128,10 @@ export function createWebSocket(onMessage, onOpen, onError) {
     if (onError) onError(event);
   };
 
+  socket.onclose = event => {
+    if (onError) onError(event);
+  };
+
   return socket;
 }
 
