@@ -163,6 +163,7 @@ export default function BidScreen({ navigation, route }) {
   const { colors, radius } = useAppTheme();
   const { subasta: paramSubasta, product } = route.params || {};
   const subasta = paramSubasta || product;
+  const subastaId = subasta?.id || subasta?.identificador;
   const [monto, setMonto] = useState('');
   const [socket, setSocket] = useState(null);
   const [conectado, setConectado] = useState(false);
@@ -263,12 +264,12 @@ export default function BidScreen({ navigation, route }) {
     'Sin descripción disponible';
 
   const loadData = async () => {
-    if (!subasta?.id) return;
+    if (!subastaId) return;
     try {
       
       const [vivoData, estaticoData] = await Promise.all([
-        fetchEstadoVivo(subasta.id),
-        fetchDetalleEstatico(subasta.id)
+        fetchEstadoVivo(subastaId),
+        fetchDetalleEstatico(subastaId)
       ]);
       setLiveState(vivoData);
       setStaticDetails(estaticoData);
@@ -278,9 +279,9 @@ export default function BidScreen({ navigation, route }) {
   };
 
   const loadLiveState = async () => {
-    if (!subasta?.id) return;
+    if (!subastaId) return;
     try {
-      const data = await fetchEstadoVivo(subasta.id);
+      const data = await fetchEstadoVivo(subastaId);
       setLiveState(data);
     } catch (error) {
       console.error('Error fetching live state:', error);
@@ -293,7 +294,7 @@ export default function BidScreen({ navigation, route }) {
       (data) => {
         if (data) {
           const firstItemId = staticDetails?.items?.[0]?.id || 1;
-          if (data.type === 'NEW_BID' && data.subastaId === subasta?.id) {
+          if (data.type === 'NEW_BID' && data.subastaId === subastaId) {
             setTimeLeft(60);
             setHasStarted(true);
             setIsBidSystemLocked(false);
@@ -317,7 +318,7 @@ export default function BidScreen({ navigation, route }) {
     return () => {
       if (ws) ws.close();
     };
-  }, [subasta?.id, staticDetails]);
+  }, [subastaId, staticDetails]);
 
   const bidHistory = liveState?.ultimasPujas || subasta?.ultimasPujas || [];
   const isHighestBidder = bidHistory.length > 0 && bidHistory[0].nombreAsistente === currentUser?.nombre;
@@ -342,7 +343,7 @@ export default function BidScreen({ navigation, route }) {
     const handleAuctionEnd = async () => {
       if (isHighestBidder) {
         try {
-          if (subasta?.id) {
+          if (subastaId) {
             const token = await getToken();
             await fetch(`${API_BASE_URL}/deudores/registrar`, {
               method: 'POST',
@@ -350,7 +351,7 @@ export default function BidScreen({ navigation, route }) {
                 'Content-Type': 'application/json',
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
               },
-              body: JSON.stringify({ subastaId: subasta.id }),
+              body: JSON.stringify({ subastaId: subastaId }),
             });
           }
         } catch (error) {
@@ -360,8 +361,8 @@ export default function BidScreen({ navigation, route }) {
         }
       } else {
         try {
-          if (subasta?.id) {
-            await completarPago(subasta.id);
+          if (subastaId) {
+            await completarPago(subastaId);
           }
         } catch (error) {
           console.error('Error al finalizar subasta para no ganador:', error);
@@ -427,7 +428,7 @@ export default function BidScreen({ navigation, route }) {
 
   const currentPrice = bidHistory.length > 0 ? bidHistory[0].importe : (staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || 0);
   const basePrice = staticDetails?.items?.[0]?.precioBase || subasta?.precioBase || subasta?.precio || 0;
-  const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subasta?.id}`;
+  const itemTitle = staticDetails?.titulo || subasta?.titulo || subasta?.tituloProducto || subasta?.nombre || `Subasta #${subastaId}`;
   const itemStatus = String(liveState?.estado || subasta?.estado || 'ATENCIÓN').toUpperCase();
   const itemLocation = subasta?.ubicacion || 'Ubicación no definida';
   const itemCatalog = subasta?.categoria || 'comun';
